@@ -1,0 +1,112 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #F8F6ED;
+    color: #1F2937;
+    @apply font-sans antialiased transition-colors duration-300;
+  }
+  
+  body.dark {
+    @apply bg-[#0c140f] text-emerald-50;
+  }
+}
+
+.glass-panel {
+  background-color: #FFFFFF;
+  border: 1px solid #E8E2D3;
+  @apply shadow-sm rounded-[20px] transition-all;
+}
+
+.dark .glass-panel {
+  @apply bg-zinc-950/45 backdrop-blur-md border-emerald-950/40 shadow-emerald-950/10;
+}
+
+.glass-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E8E2D3;
+  @apply shadow-sm transition-all duration-300 rounded-[20px];
+}
+
+.dark .glass-card {
+  @apply bg-zinc-900/40 backdrop-blur-sm border border-emerald-950/30 shadow-none;
+}
+
+.glass-card-hover {
+  @apply hover:bg-white/85 hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5 hover:-translate-y-0.5;
+}
+
+.dark .glass-card-hover {
+  @apply hover:bg-zinc-900/70 hover:border-emerald-700/40 hover:shadow-lg hover:shadow-emerald-950/30;
+}
+
+.glass-input {
+  @apply w-full bg-white/45 border border-stone-200/80 rounded-xl px-4 py-3 text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200;
+}
+
+.dark .glass-input {
+  @apply bg-emerald-950/15 border-emerald-950/50 text-emerald-100 placeholder-emerald-800 focus:ring-emerald-500/20 focus:border-emerald-500;
+}
+
+/* Custom Webkit Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-stone-300 rounded-full hover:bg-stone-400 transition-colors;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-emerald-950/80 rounded-full hover:bg-emerald-900/80;
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.35; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+/* Blockchain Visual connectors */
+.blockchain-connector {
+  position: relative;
+}
+
+.blockchain-connector::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  bottom: -2rem;
+  width: 3px;
+  transform: translateX(-50%);
+  background: linear-gradient(to bottom, #10b981 0%, #059669 100%);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+  z-index: 0;
+}
+
+.blockchain-connector-last::after {
+  display: none;
+}

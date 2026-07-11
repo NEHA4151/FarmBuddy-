@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker-setup/frontend/Dockerfile
+    ports:
+      - "3000:3000"
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker-setup/backend/Dockerfile
+    ports:
+      - "5000:5000"
+
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: farmbuddy
+    ports:
+      - "3306:3306"
+
+  immudb:
+    image: codenotary/immudb
+    ports:
+      - "3322:3322"
+      - "8080:8080"

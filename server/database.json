@@ -1,0 +1,425 @@
+{
+  "batch_overview": [
+    {
+      "batch_id": "FB-2026-001",
+      "crop_name": "Organic Honeycrisp Apples",
+      "crop_image": "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=800&q=80",
+      "farm_name": "Green Valley Organic Farm",
+      "farm_location": "Section 4B, Green Valley Organic Farm, CA",
+      "cultivation_type": "Organic Drip",
+      "sowing_date": "2026-04-10",
+      "expected_harvest": "2026-09-15",
+      "status": "In Quality Check",
+      "trust_score": 80,
+      "blockchain_hash": "0xdddf7e7574c21927a7d5c920a3a6ef91af7c00f1ef5f173aee35cf8d6629468b",
+      "total_points": 80,
+      "current_level": "Sprout",
+      "earned_badges": [
+        "First Batch Created",
+        "First Activity Logged",
+        "First Crop Image Uploaded",
+        "Consistency Champion",
+        "First Batch",
+        "Record Starter",
+        "First Snapshot",
+        "Water Warrior",
+        "Workforce Manager",
+        "Harvest Hero"
+      ],
+      "unlocked_rewards": [
+        "10% Seed & Fertilizer Discount"
+      ],
+      "activity_streak": 4,
+      "last_activity_date": "2026-07-11",
+      "progress_percentage": 29
+    },
+    {
+      "batch_id": "FB-2026-002",
+      "crop_name": "Japanese Sweet Potatoes",
+      "crop_image": "https://images.unsplash.com/photo-1590779033100-9f60a05a013d?auto=format&fit=crop&w=800&q=80",
+      "farm_name": "Green Valley Organic Farm",
+      "farm_location": "Hillside Terrace A, Green Valley Organic Farm, CA",
+      "cultivation_type": "Raised Bed Micro-Sprinkler",
+      "sowing_date": "2026-03-05",
+      "expected_harvest": "2026-07-20",
+      "status": "In Quality Check",
+      "trust_score": 60,
+      "blockchain_hash": "0xd5618dd10482a4ca5cc22b558e3f79b36eb9973c9ee0d64387224d6169c2f317",
+      "total_points": 30,
+      "current_level": "Seedling",
+      "earned_badges": [
+        "First Batch Created",
+        "First Activity Logged",
+        "First Crop Image Uploaded",
+        "First Batch",
+        "Record Starter",
+        "First Snapshot",
+        "Workforce Manager",
+        "Harvest Hero"
+      ],
+      "unlocked_rewards": [],
+      "activity_streak": 2,
+      "last_activity_date": "2026-06-11",
+      "progress_percentage": 60
+    },
+    {
+      "batch_id": "FB-2026-003",
+      "crop_name": "Premium Arabica Coffee",
+      "crop_image": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80",
+      "farm_name": "Coffee Haven",
+      "farm_location": "Highland Ridge Zone 2, Coffee Haven, HI",
+      "cultivation_type": "Shade-Grown Canopy",
+      "sowing_date": "2025-11-20",
+      "expected_harvest": "2026-06-05",
+      "status": "QA Approved",
+      "trust_score": 60,
+      "blockchain_hash": "0xc6899a7037ab95fab04cc1d7bd5fd1f96e18faf46a49f8b8c1316139595aeff6",
+      "total_points": 75,
+      "current_level": "Sprout",
+      "earned_badges": [
+        "First Batch Created",
+        "First Crop Image Uploaded",
+        "First Batch",
+        "Record Starter",
+        "First Snapshot",
+        "Harvest Hero"
+      ],
+      "unlocked_rewards": [
+        "10% Seed & Fertilizer Discount"
+      ],
+      "activity_streak": 2,
+      "last_activity_date": "2026-06-05",
+      "progress_percentage": 24
+    }
+  ],
+  "pre_cultivation": [
+    {
+      "id": 1,
+      "soil_test_status": "Passed",
+      "heavy_metal_status": "Passed",
+      "water_quality": "Excellent (Groundwater Well #2)",
+      "seed_provenance": "Certified Non-GMO Heritage Nursery",
+      "buffer_zone_check": "Passed (50m boundary)",
+      "batch_id": "FB-2026-001"
+    },
+    {
+      "id": 2,
+      "soil_test_status": "Passed",
+      "heavy_metal_status": "Passed",
+      "water_quality": "Good (Micro-sprinkler filtration)",
+      "seed_provenance": "Miyazaki Prefecture Organic Rootstock",
+      "buffer_zone_check": "Passed",
+      "batch_id": "FB-2026-002"
+    },
+    {
+      "id": 3,
+      "soil_test_status": "Passed",
+      "heavy_metal_status": "Passed",
+      "water_quality": "Pure Rainwater & Natural Runoff",
+      "seed_provenance": "Kona Estate Selection",
+      "buffer_zone_check": "Passed",
+      "batch_id": "FB-2026-003"
+    }
+  ],
+  "cultivation_logs": [
+    {
+      "id": 1,
+      "batch_id": "FB-2026-001",
+      "activity_type": "Batch Created",
+      "description": "Organic Honeycrisp Apples batch initialized in Section 4B.",
+      "timestamp": "2026-04-10T08:30:00Z",
+      "hash": "0x3a92fd1b22e741c889a7c062db0e5c94285b73e5bf4cd18d9a6c91ecb2a4771b"
+    },
+    {
+      "id": 2,
+      "batch_id": "FB-2026-001",
+      "activity_type": "Irrigation Logged",
+      "description": "Natural Groundwater Well #2, Volume: 1200L, Soil Moisture Post: 52%",
+      "timestamp": "2026-05-01T10:15:00Z",
+      "hash": "0x8b54e7d4a9cfb058c49e29a95bc6e91ec088a8d1bb4c9e7a771bcfa9e7542d62"
+    },
+    {
+      "id": 3,
+      "batch_id": "FB-2026-001",
+      "activity_type": "Fertilizer Application",
+      "description": "BioGrow Organic Nutrients, 25kg, Soil Drenching.",
+      "timestamp": "2026-06-02T14:40:00Z",
+      "hash": "0x2c98d7fa28b5849e7b29a8f6e7c91eb44d85a3c9bb4c9e2b17fbc8d6542a17cb"
+    },
+    {
+      "id": 4,
+      "batch_id": "FB-2026-002",
+      "activity_type": "Batch Created",
+      "description": "Japanese Sweet Potatoes batch initialized in Hillside Terrace A.",
+      "timestamp": "2026-03-05T09:00:00Z",
+      "hash": "0x41f89bc728a5bc9006fe9b50ce711bc7a2a4b89e27c1bfd65c4efcda87a4de8b"
+    },
+    {
+      "id": 5,
+      "batch_id": "FB-2026-002",
+      "activity_type": "Crop Harvested",
+      "description": "Crop harvested: 850kg, Clear & Sunny weather, storage location: Silo C.",
+      "timestamp": "2026-06-11T16:00:00Z",
+      "hash": "0x9d5b73e5bf4cd18d9a6c91ecb2a4771bc84efc78b4f7e2a9b3d4f5c6b7a8d9e2"
+    },
+    {
+      "id": 6,
+      "batch_id": "FB-2026-003",
+      "activity_type": "Batch Created",
+      "description": "Arabica Coffee batch initialized in Highland Ridge Zone 2.",
+      "timestamp": "2025-11-20T07:15:00Z",
+      "hash": "0x5c4efcda87a4de8bf89bc728a5bc9006fe9b50ce711bc7a2a4b89e27c1bfd65c"
+    },
+    {
+      "id": 7,
+      "batch_id": "FB-2026-003",
+      "activity_type": "Crop Harvested",
+      "description": "Crop harvested: 420kg, cherry quality: AA Premium, storage: Climate-controlled Vault B.",
+      "timestamp": "2026-06-03T11:00:00Z",
+      "hash": "0x7e2a9b3d4f5c6b7a8d9e29d5b73e5bf4cd18d9a6c91ecb2a4771bc84efc78b4f"
+    },
+    {
+      "id": 8,
+      "batch_id": "FB-2026-003",
+      "activity_type": "QA Inspected",
+      "description": "Moisture level: 10.5%, chemical residue compliance: Passed.",
+      "timestamp": "2026-06-04T10:00:00Z",
+      "hash": "0x3c9bb4c9e2b17fbc8d6542a17cb2c98d7fa28b5849e7b29a8f6e7c91eb44d85a"
+    },
+    {
+      "id": 9,
+      "batch_id": "FB-2026-003",
+      "activity_type": "QA Approved",
+      "description": "Specialty Grade 1 Certified, Cert ID: CERT-HAWAII-448.",
+      "timestamp": "2026-06-05T09:30:00Z",
+      "hash": "0xba8efc78b4f7e2a9b3d4f5c6b7a8d9e29d5b73e5bf4cd18d9a6c91ecb2a4771b"
+    },
+    {
+      "id": 10,
+      "batch_id": "FB-2026-001",
+      "activity_type": "Irrigation Logged",
+      "description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
+      "timestamp": "2026-07-11T13:11:22.357Z",
+      "hash": "0xe9eaecd65761bc2c91e6534ce15886a8d5a74a563f275322bc03a02cf9e05b62"
+    },
+    {
+      "id": 11,
+      "batch_id": "FB-2026-001",
+      "activity_type": "Irrigation Logged",
+      "description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
+      "timestamp": "2026-07-11T13:13:48.240Z",
+      "hash": "0x51cab62f6e6ee088fc9d57f74366b9cd9e70d02aac24850d90fe21b2d8849934"
+    },
+    {
+      "id": 12,
+      "batch_id": "FB-2026-001",
+      "activity_type": "Pesticide Treatment",
+      "description": "{\n  \"compound\": \"Organic Neem Oil\",\n  \"dilutionRatio\": \"1:100\",\n  \"targetPest\": \"Spider Mites\"\n}",
+      "timestamp": "2026-07-11T13:17:13.322Z",
+      "hash": "0x50480b933ffdbae13e038f795129398afaf6cdae67ee75b297988de3a10d5f89"
+    },
+    {
+      "id": 13,
+      "batch_id": "FB-2026-001",
+      "activity_type": "Crop Harvested",
+      "description": "{\n  \"yieldWeightKg\": \"800\",\n  \"storageLocation\": \"Silo A\",\n  \"grade\": \"Grade AA Specialty\"\n}",
+      "timestamp": "2026-07-11T13:17:25.365Z",
+      "hash": "0x58db4b1440587892421a4bfbda6c342eec724b3f92ed5a35abedb545cb11f6dd"
+    }
+  ],
+  "harvest_qa": [
+    {
+      "id": 1,
+      "harvest_date": null,
+      "total_yield": "Pending",
+      "marketable_yield": "Pending",
+      "qa_status": "Pending",
+      "residue_free": true,
+      "quality_notes": "Crop is currently growing. Soil moisture is within target range.",
+      "batch_id": "FB-2026-001"
+    },
+    {
+      "id": 2,
+      "harvest_date": "2026-06-11",
+      "total_yield": "850 kg",
+      "marketable_yield": "820 kg",
+      "qa_status": "In Lab Audit",
+      "residue_free": true,
+      "quality_notes": "Excellent size and color uniformity. High mineral soil content benefits.",
+      "batch_id": "FB-2026-002"
+    },
+    {
+      "id": 3,
+      "harvest_date": "2026-06-03",
+      "total_yield": "420 kg",
+      "marketable_yield": "412 kg",
+      "qa_status": "Approved (Grade 1 Specialty)",
+      "residue_free": true,
+      "quality_notes": "Moisture level 10.5%. Cherry quality score AA Premium.",
+      "batch_id": "FB-2026-003"
+    }
+  ],
+  "transit_retail": [
+    {
+      "id": 1,
+      "pre_cooling_status": "Pending",
+      "dispatch_date": null,
+      "transport_status": "Pending Harvest",
+      "retail_handover": "Pending",
+      "delivery_status": "In Fields",
+      "batch_id": "FB-2026-001"
+    },
+    {
+      "id": 2,
+      "pre_cooling_status": "Completed",
+      "dispatch_date": null,
+      "transport_status": "Pending Dispatch",
+      "retail_handover": "Silo C Storage",
+      "delivery_status": "At Farm",
+      "batch_id": "FB-2026-002"
+    },
+    {
+      "id": 3,
+      "pre_cooling_status": "Completed",
+      "dispatch_date": "2026-06-05",
+      "transport_status": "In Transit (Refrigerated Sea Container)",
+      "retail_handover": "Specialty Roasters Corp, NY",
+      "delivery_status": "Delivered",
+      "batch_id": "FB-2026-003"
+    }
+  ],
+  "verification_logs": [],
+  "ai_chat_history": [],
+  "voice_logs": [],
+  "batch_events": [
+    {
+      "id": 1,
+      "batch_id": "FB-2026-001",
+      "farmer_id": "HELLO_UVFARMS",
+      "event_type": "Activity Missed",
+      "event_title": "Fertilizer Task Missed",
+      "event_description": "Missed scheduled activity [ID: sch-3]: Apply BioGrow compost.. Date: 2026-06-24",
+      "event_status": "Failed",
+      "trust_score_impact": -5,
+      "created_at": "2026-07-11T12:51:09.006Z"
+    },
+    {
+      "id": 2,
+      "batch_id": "FB-2026-001",
+      "farmer_id": "E_UVFARMS",
+      "event_type": "Irrigation Logged",
+      "event_title": "Irrigation Logged",
+      "event_description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
+      "event_status": "Success",
+      "trust_score_impact": 2,
+      "created_at": "2026-07-11T13:11:23.858Z"
+    },
+    {
+      "id": 3,
+      "batch_id": "FB-2026-001",
+      "farmer_id": "UK_UVFARMS",
+      "event_type": "Irrigation Logged",
+      "event_title": "Irrigation Logged",
+      "event_description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
+      "event_status": "Success",
+      "trust_score_impact": 2,
+      "created_at": "2026-07-11T13:13:50.099Z"
+    },
+    {
+      "id": 4,
+      "batch_id": "FB-2026-001",
+      "farmer_id": "UK_UVFARMS",
+      "event_type": "Pesticide Treatment",
+      "event_title": "Pesticide Treatment",
+      "event_description": "{\n  \"compound\": \"Organic Neem Oil\",\n  \"dilutionRatio\": \"1:100\",\n  \"targetPest\": \"Spider Mites\"\n}",
+      "event_status": "Success",
+      "trust_score_impact": 2,
+      "created_at": "2026-07-11T13:17:14.840Z"
+    },
+    {
+      "id": 5,
+      "batch_id": "FB-2026-001",
+      "farmer_id": "UK_UVFARMS",
+      "event_type": "Crop Harvested",
+      "event_title": "Crop Harvested",
+      "event_description": "{\n  \"yieldWeightKg\": \"800\",\n  \"storageLocation\": \"Silo A\",\n  \"grade\": \"Grade AA Specialty\"\n}",
+      "event_status": "Success",
+      "trust_score_impact": 2,
+      "created_at": "2026-07-11T13:17:26.839Z"
+    }
+  ],
+  "farmers": [
+    {
+      "id": 1,
+      "farmer_id": "HELLO_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-11T12:50:46.940Z"
+    },
+    {
+      "id": 2,
+      "farmer_id": "E_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-11T13:10:33.434Z"
+    },
+    {
+      "id": 3,
+      "farmer_id": "UK_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-11T13:12:38.187Z"
+    }
+  ],
+  "admins": [],
+  "labour_accounts": [
+    {
+      "batch_id": "FB-2026-002",
+      "date": "2026-06-15",
+      "total_labour": 12,
+      "male": 7,
+      "female": 5,
+      "duration": 8,
+      "wage": 15,
+      "total_expense": 1440,
+      "remarks": "Sowing sweet potatoes in terrace A."
+    },
+    {
+      "batch_id": "FB-2026-001",
+      "date": "2026-06-20",
+      "total_labour": 8,
+      "male": 4,
+      "female": 4,
+      "duration": 6,
+      "wage": 16.5,
+      "total_expense": 792,
+      "remarks": "Watering & weeding orchard Section 4B."
+    }
+  ],
+  "immudb_ledger": [
+    {
+      "batch_id": "FB-2026-001",
+      "blockchain_hash": "0xdddf7e7574c21927a7d5c920a3a6ef91af7c00f1ef5f173aee35cf8d6629468b"
+    },
+    {
+      "batch_id": "FB-2026-002",
+      "blockchain_hash": "0xd5618dd10482a4ca5cc22b558e3f79b36eb9973c9ee0d64387224d6169c2f317"
+    },
+    {
+      "batch_id": "FB-2026-003",
+      "blockchain_hash": "0xc6899a7037ab95fab04cc1d7bd5fd1f96e18faf46a49f8b8c1316139595aeff6"
+    }
+  ]
+}
