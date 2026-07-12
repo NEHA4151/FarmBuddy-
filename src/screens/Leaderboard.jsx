@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 export default function Leaderboard() {
-  const { setCurrentView } = useFarm();
+  const { setCurrentView, user } = useFarm();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,9 +48,10 @@ export default function Leaderboard() {
   );
 
   const topThree = data.slice(0, 3);
-  const currentUser = data.find(f => f.name === 'John Doe') || {
+  const loggedInName = user?.name || 'John Doe';
+  const currentUser = data.find(f => f.name.toLowerCase() === loggedInName.toLowerCase()) || {
     rank: '-',
-    name: 'John Doe',
+    name: loggedInName,
     totalPoints: 0,
     totalBadges: 0,
     trustScore: 95

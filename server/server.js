@@ -34,81 +34,53 @@ app.get('/api/status', (req, res) => {
 (async () => {
   if (isMysql) {
     try {
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS farmers (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          farmer_id VARCHAR(50) UNIQUE NOT NULL,
-          name VARCHAR(100),
-          email VARCHAR(100) UNIQUE,
-          password_hash VARCHAR(255),
-          is_registered BOOLEAN DEFAULT FALSE,
-          login_count INT DEFAULT 0,
-          trust_score INT DEFAULT 100,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-      
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS batch_events (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          batch_id VARCHAR(50) NOT NULL,
-          farmer_id VARCHAR(50) NOT NULL,
-          event_type VARCHAR(100) NOT NULL,
-          event_title VARCHAR(255) NOT NULL,
-          event_description TEXT,
-          event_status VARCHAR(50),
-          trust_score_impact DECIMAL(4,2) DEFAULT 0.00,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-
-      await pool.query(`
-        CREATE TABLE IF NOT EXISTS labour_accounts (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          batch_id VARCHAR(50) NOT NULL,
-          date DATE NOT NULL,
-          total_labour INT NOT NULL,
-          male INT NOT NULL,
-          female INT NOT NULL,
-          duration DECIMAL(5,2) NOT NULL,
-          duration_female DECIMAL(5,2) NOT NULL DEFAULT 0.00,
-          wage DECIMAL(10,2) NOT NULL,
-          wage_female DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-          total_expense DECIMAL(12,2) NOT NULL,
-          remarks TEXT,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-
+      // Check if admins table exists (if not, the schema is incomplete or empty)
+      let needsInit = false;
       try {
-        await pool.query('ALTER TABLE labour_accounts ADD COLUMN duration_female DECIMAL(5,2) NOT NULL DEFAULT 0.00 AFTER duration');
+        await pool.query('SELECT 1 FROM admins LIMIT 1');
       } catch (e) {
-        // Table upgrade already applied
+        needsInit = true;
       }
 
-      try {
-        await pool.query('ALTER TABLE batch_overview ADD COLUMN total_points INT DEFAULT 0');
-      } catch (e) {}
-      try {
-        await pool.query("ALTER TABLE batch_overview ADD COLUMN current_level VARCHAR(50) DEFAULT 'Seedling'");
-      } catch (e) {}
-      try {
-        await pool.query('ALTER TABLE batch_overview ADD COLUMN earned_badges TEXT');
-      } catch (e) {}
-      try {
-        await pool.query('ALTER TABLE batch_overview ADD COLUMN unlocked_rewards TEXT');
-      } catch (e) {}
-      try {
-        await pool.query('ALTER TABLE batch_overview ADD COLUMN activity_streak INT DEFAULT 1');
-      } catch (e) {}
-      try {
-        await pool.query('ALTER TABLE batch_overview ADD COLUMN last_activity_date VARCHAR(50) DEFAULT NULL');
-      } catch (e) {}
-      try {
-        await pool.query('ALTER TABLE batch_overview ADD COLUMN progress_percentage INT DEFAULT 0');
-      } catch (e) {}
-
-      console.log('MySQL Farmers, Batch Events, and Labour Accounts tables verified.');
+      if (needsInit) {
+        console.log('MySQL admins table not found. Initializing complete database schema on startup...');
+        const { initDb } = await import('./initDb.js');
+        await initDb(false); // Do not drop, just create IF NOT EXISTS and seed
+        console.log('MySQL database schema initialization and seeding completed.');
+      } else {
+        // Run safety alters just in case columns need to be added
+        try {
+          await pool.query('ALTER TABLE labour_accounts ADD COLUMN duration_female DECIMAL(5,2) NOT NULL DEFAULT 0.00 AFTER duration');
+        } catch (e) {}
+        try {
+          await pool.query('ALTER TABLE batch_overview ADD COLUMN total_points INT DEFAULT 0');
+        } catch (e) {}
+        try {
+          await pool.query("ALTER TABLE batch_overview ADD COLUMN current_level VARCHAR(50) DEFAULT 'Seedling'");
+        } catch (e) {}
+        try {
+          await pool.query('ALTER TABLE batch_overview ADD COLUMN earned_badges TEXT');
+        } catch (e) {}
+        try {
+          await pool.query('ALTER TABLE batch_overview ADD COLUMN unlocked_rewards TEXT');
+        } catch (e) {}
+        try {
+          await pool.query('ALTER TABLE batch_overview ADD COLUMN activity_streak INT DEFAULT 1');
+        } catch (e) {}
+        try {
+          await pool.query('ALTER TABLE batch_overview ADD COLUMN last_activity_date VARCHAR(50) DEFAULT NULL');
+        } catch (e) {}
+        try {
+          await pool.query('ALTER TABLE batch_overview ADD COLUMN progress_percentage INT DEFAULT 0');
+        } catch (e) {}
+        try {
+          await pool.query('ALTER TABLE batch_overview ADD COLUMN farmer_id VARCHAR(50) DEFAULT "FMR-0921"');
+        } catch (e) {}
+        try {
+          await pool.query('ALTER TABLE batch_overview ADD COLUMN farmer_name VARCHAR(100) DEFAULT "John Doe"');
+        } catch (e) {}
+        console.log('MySQL schema is verified and active.');
+      }
     } catch (err) {
       console.error('MySQL database tables initialization error:', err);
     }
@@ -630,7 +602,7 @@ app.post('/api/batches/:batch_id/restore', async (req, res) => {
 
 // API route: Create a new batch
 app.post('/api/batches', async (req, res) => {
-  const { cropType, seedDate, expectedHarvestDate, location, soilType, notes, imageUrl } = req.body;
+  const { cropType, seedDate, expectedHarvestDate, location, soilType, notes, imageUrl, farmerId, farmerName } = req.body;
   try {
     const batches = await dbService.getAllBatches();
     const newId = `FB-2026-${String(batches.length + 1).padStart(3, '0')}`;
@@ -646,7 +618,9 @@ app.post('/api/batches', async (req, res) => {
       expected_harvest: expectedHarvestDate || null,
       status: 'Growing',
       trust_score: 95,
-      blockchain_hash: '' // Calculated below
+      blockchain_hash: '', // Calculated below
+      farmer_id: farmerId || 'FMR-0921',
+      farmer_name: farmerName || 'John Doe'
     };
 
     const pre_cultivation = {

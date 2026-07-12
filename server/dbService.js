@@ -455,8 +455,8 @@ export const dbService = {
           cultivation_type, sowing_date, expected_harvest, status, 
           blockchain_hash, trust_score, total_points, current_level, 
           earned_badges, unlocked_rewards, activity_streak, last_activity_date, 
-          progress_percentage
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          progress_percentage, farmer_id, farmer_name
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           batch_overview.batch_id,
           batch_overview.crop_name,
@@ -475,7 +475,9 @@ export const dbService = {
           Array.isArray(batch_overview.unlocked_rewards) ? JSON.stringify(batch_overview.unlocked_rewards) : (batch_overview.unlocked_rewards || '[]'),
           batch_overview.activity_streak || 1,
           batch_overview.last_activity_date || null,
-          batch_overview.progress_percentage || 0
+          batch_overview.progress_percentage || 0,
+          batch_overview.farmer_id || 'FMR-0921',
+          batch_overview.farmer_name || 'John Doe'
         ]
       );
 

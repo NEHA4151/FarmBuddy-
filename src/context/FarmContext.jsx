@@ -509,8 +509,8 @@ export const FarmProvider = ({ children }) => {
         const mapped = data.map(b => ({
           id: b.batch_id,
           cropType: b.crop_name,
-          farmerId: 'FMR-0921',
-          farmerName: 'John Doe',
+          farmerId: b.farmer_id || 'FMR-0921',
+          farmerName: b.farmer_name || 'John Doe',
           seedDate: b.sowing_date ? b.sowing_date.split('T')[0] : '',
           expectedHarvestDate: b.expected_harvest ? b.expected_harvest.split('T')[0] : '',
           location: b.farm_location,
@@ -862,11 +862,16 @@ export const FarmProvider = ({ children }) => {
   };
 
   const createBatch = async (newBatchData) => {
+    const payload = {
+      ...newBatchData,
+      farmerId: user?.farmerId || 'FMR-0921',
+      farmerName: user?.name || 'John Doe'
+    };
     try {
       const res = await fetch(`${API_BASE}/api/batches`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newBatchData)
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
         const result = await res.json();

@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { pool, isMysql } from './db.js';
 import { calculateBatchHash, dbService } from './dbService.js';
 
@@ -172,28 +175,31 @@ const initialBatchesData = [
   }
 ];
 
-async function initDb() {
+export async function initDb(shouldDrop = false) {
   if (isMysql) {
     console.log('Initializing MySQL Tables...');
     try {
-      // 1. Drop existing tables if any
-      await pool.query('DROP TABLE IF EXISTS voice_logs');
-      await pool.query('DROP TABLE IF EXISTS ai_chat_history');
-      await pool.query('DROP TABLE IF EXISTS verification_logs');
-      await pool.query('DROP TABLE IF EXISTS immudb_ledger');
-      await pool.query('DROP TABLE IF EXISTS transit_retail');
-      await pool.query('DROP TABLE IF EXISTS harvest_qa');
-      await pool.query('DROP TABLE IF EXISTS cultivation_logs');
-      await pool.query('DROP TABLE IF EXISTS pre_cultivation');
-      await pool.query('DROP TABLE IF EXISTS batch_overview');
-      await pool.query('DROP TABLE IF EXISTS farmers');
-      await pool.query('DROP TABLE IF EXISTS admins');
-      await pool.query('DROP TABLE IF EXISTS batch_events');
-      await pool.query('DROP TABLE IF EXISTS labour_accounts');
+      // 1. Drop existing tables if requested
+      if (shouldDrop) {
+        console.log('Dropping existing tables...');
+        await pool.query('DROP TABLE IF EXISTS voice_logs');
+        await pool.query('DROP TABLE IF EXISTS ai_chat_history');
+        await pool.query('DROP TABLE IF EXISTS verification_logs');
+        await pool.query('DROP TABLE IF EXISTS immudb_ledger');
+        await pool.query('DROP TABLE IF EXISTS transit_retail');
+        await pool.query('DROP TABLE IF EXISTS harvest_qa');
+        await pool.query('DROP TABLE IF EXISTS cultivation_logs');
+        await pool.query('DROP TABLE IF EXISTS pre_cultivation');
+        await pool.query('DROP TABLE IF EXISTS batch_overview');
+        await pool.query('DROP TABLE IF EXISTS farmers');
+        await pool.query('DROP TABLE IF EXISTS admins');
+        await pool.query('DROP TABLE IF EXISTS batch_events');
+        await pool.query('DROP TABLE IF EXISTS labour_accounts');
+      }
 
       // 2. Create tables
       await pool.query(`
-        CREATE TABLE farmers (
+        CREATE TABLE IF NOT EXISTS farmers (
           id INT AUTO_INCREMENT PRIMARY KEY,
           farmer_id VARCHAR(50) UNIQUE NOT NULL,
           name VARCHAR(100),
@@ -207,7 +213,7 @@ async function initDb() {
       `);
 
       await pool.query(`
-        CREATE TABLE admins (
+        CREATE TABLE IF NOT EXISTS admins (
           id INT AUTO_INCREMENT PRIMARY KEY,
           admin_id VARCHAR(50) UNIQUE NOT NULL,
           name VARCHAR(100) NOT NULL,
@@ -219,7 +225,7 @@ async function initDb() {
       `);
 
       await pool.query(`
-        CREATE TABLE batch_events (
+        CREATE TABLE IF NOT EXISTS batch_events (
           id INT AUTO_INCREMENT PRIMARY KEY,
           batch_id VARCHAR(50) NOT NULL,
           farmer_id VARCHAR(50) NOT NULL,
@@ -233,14 +239,14 @@ async function initDb() {
       `);
 
       await pool.query(`
-        CREATE TABLE immudb_ledger (
+        CREATE TABLE IF NOT EXISTS immudb_ledger (
           batch_id VARCHAR(50) PRIMARY KEY,
           blockchain_hash VARCHAR(66) NOT NULL
         )
       `);
 
       await pool.query(`
-        CREATE TABLE batch_overview (
+        CREATE TABLE IF NOT EXISTS batch_overview (
           id INT AUTO_INCREMENT PRIMARY KEY,
           batch_id VARCHAR(50) UNIQUE NOT NULL,
           crop_name VARCHAR(100) NOT NULL,
@@ -259,12 +265,14 @@ async function initDb() {
           unlocked_rewards TEXT,
           activity_streak INT DEFAULT 1,
           last_activity_date VARCHAR(50) DEFAULT NULL,
-          progress_percentage INT DEFAULT 0
+          progress_percentage INT DEFAULT 0,
+          farmer_id VARCHAR(50) DEFAULT 'FMR-0921',
+          farmer_name VARCHAR(100) DEFAULT 'John Doe'
         )
       `);
 
       await pool.query(`
-        CREATE TABLE pre_cultivation (
+        CREATE TABLE IF NOT EXISTS pre_cultivation (
           id INT AUTO_INCREMENT PRIMARY KEY,
           batch_id VARCHAR(50) NOT NULL,
           soil_test_status VARCHAR(50) NOT NULL,
@@ -277,7 +285,7 @@ async function initDb() {
       `);
 
       await pool.query(`
-        CREATE TABLE cultivation_logs (
+        CREATE TABLE IF NOT EXISTS cultivation_logs (
           id INT AUTO_INCREMENT PRIMARY KEY,
           batch_id VARCHAR(50) NOT NULL,
           activity_type VARCHAR(100) NOT NULL,
@@ -289,7 +297,7 @@ async function initDb() {
       `);
 
       await pool.query(`
-        CREATE TABLE harvest_qa (
+        CREATE TABLE IF NOT EXISTS harvest_qa (
           id INT AUTO_INCREMENT PRIMARY KEY,
           batch_id VARCHAR(50) NOT NULL,
           harvest_date DATE,
@@ -303,7 +311,7 @@ async function initDb() {
       `);
 
       await pool.query(`
-        CREATE TABLE transit_retail (
+        CREATE TABLE IF NOT EXISTS transit_retail (
           id INT AUTO_INCREMENT PRIMARY KEY,
           batch_id VARCHAR(50) NOT NULL,
           pre_cooling_status VARCHAR(50) NOT NULL,
@@ -316,7 +324,7 @@ async function initDb() {
       `);
 
       await pool.query(`
-        CREATE TABLE verification_logs (
+        CREATE TABLE IF NOT EXISTS verification_logs (
           id INT AUTO_INCREMENT PRIMARY KEY,
           batch_id VARCHAR(50) NOT NULL,
           original_hash VARCHAR(66) NOT NULL,
@@ -328,7 +336,7 @@ async function initDb() {
       `);
 
       await pool.query(`
-        CREATE TABLE ai_chat_history (
+        CREATE TABLE IF NOT EXISTS ai_chat_history (
           id INT AUTO_INCREMENT PRIMARY KEY,
           farmer_id VARCHAR(50),
           input_type VARCHAR(20) NOT NULL,
@@ -343,7 +351,7 @@ async function initDb() {
       `);
 
       await pool.query(`
-        CREATE TABLE voice_logs (
+        CREATE TABLE IF NOT EXISTS voice_logs (
           id INT AUTO_INCREMENT PRIMARY KEY,
           farmer_id VARCHAR(50),
           raw_voice_text TEXT NOT NULL,
@@ -354,7 +362,7 @@ async function initDb() {
       `);
 
       await pool.query(`
-        CREATE TABLE labour_accounts (
+        CREATE TABLE IF NOT EXISTS labour_accounts (
           id INT AUTO_INCREMENT PRIMARY KEY,
           batch_id VARCHAR(50) NOT NULL,
           date DATE NOT NULL,
@@ -376,7 +384,7 @@ async function initDb() {
       console.log('Skipping predefined farmer seeding (created dynamically).');
     } catch (err) {
       console.error('Error creating MySQL tables:', err);
-      process.exit(1);
+      throw err;
     }
   } else {
     console.log('Skipping MySQL Table creation, running in JSON fallback mode.');
@@ -458,12 +466,19 @@ async function initDb() {
     console.log('Database initialization completed successfully.');
   } catch (err) {
     console.error('Error seeding data:', err);
-    process.exit(1);
-  }
-
-  if (isMysql) {
-    process.exit(0);
+    throw err;
   }
 }
 
-initDb();
+// Check if run directly
+const __filename = fileURLToPath(import.meta.url);
+const isMain = process.argv[1] && fs.realpathSync(process.argv[1]) === fs.realpathSync(__filename);
+
+if (isMain) {
+  initDb(true).then(() => {
+    if (isMysql) process.exit(0);
+  }).catch((err) => {
+    console.error('Fatal initialization error:', err);
+    process.exit(1);
+  });
+}
