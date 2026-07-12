@@ -44,7 +44,7 @@
       "expected_harvest": "2026-07-20",
       "status": "In Quality Check",
       "trust_score": 90,
-      "blockchain_hash": "0x64d3dc85e4d678755ae25207b5a2749a704d6ee5a39bb61cba043f9b9a1bfdf0",
+      "blockchain_hash": "0x030e84dae67cbbfe019babb68963d6dd5d3c9401b804c6a0c817752901c991b0",
       "total_points": 60,
       "current_level": "Sprout",
       "earned_badges": [
@@ -268,6 +268,14 @@
       "description": "{\n  \"brand\": \"Organic BioGrow\",\n  \"quantityKg\": \"15\",\n  \"method\": \"Soil Drenching\"\n}",
       "timestamp": "2026-07-12T05:14:28.167Z",
       "hash": "0xa3b0caa0891d7a0d40f25ea027730a296f73c76ca8ac5148983b61b5110ce2ec"
+    },
+    {
+      "id": 19,
+      "batch_id": "FB-2026-002",
+      "activity_type": "Irrigation Logged",
+      "description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
+      "timestamp": "2026-07-12T05:17:31.875Z",
+      "hash": "0x8429eba804791c3498aa246a82d93bc03d7e1600f6737cf6c956d6e04162035d"
     }
   ],
   "harvest_qa": [
@@ -455,6 +463,17 @@
       "event_status": "Success",
       "trust_score_impact": 2,
       "created_at": "2026-07-12T05:14:29.527Z"
+    },
+    {
+      "id": 12,
+      "batch_id": "FB-2026-002",
+      "farmer_id": "KO_UVFARMS",
+      "event_type": "Irrigation Logged",
+      "event_title": "Irrigation Logged",
+      "event_description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
+      "event_status": "Success",
+      "trust_score_impact": 2,
+      "created_at": "2026-07-12T05:17:33.238Z"
     }
   ],
   "farmers": [
@@ -512,6 +531,17 @@
       "login_count": 1,
       "trust_score": 100,
       "created_at": "2026-07-12T05:12:59.424Z"
+    },
+    {
+      "id": 6,
+      "farmer_id": "KO_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-12T05:16:53.105Z"
     }
   ],
   "admins": [],
@@ -560,7 +590,7 @@
     },
     {
       "batch_id": "FB-2026-002",
-      "blockchain_hash": "0x64d3dc85e4d678755ae25207b5a2749a704d6ee5a39bb61cba043f9b9a1bfdf0"
+      "blockchain_hash": "0x030e84dae67cbbfe019babb68963d6dd5d3c9401b804c6a0c817752901c991b0"
     },
     {
       "batch_id": "FB-2026-003",

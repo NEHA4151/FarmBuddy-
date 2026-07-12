@@ -295,6 +295,7 @@ export const FarmProvider = ({ children }) => {
   const lastMoistureAlert = useRef(false);
   const lastTempAlert = useRef(false);
   const prevBatchesRef = useRef([]);
+  const hasLoadedFromDb = useRef(false);
 
   const [floatingCoins, setFloatingCoins] = useState([]);
   const [floatingTexts, setFloatingTexts] = useState([]);
@@ -367,6 +368,10 @@ export const FarmProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    if (!hasLoadedFromDb.current) {
+      prevBatchesRef.current = JSON.parse(JSON.stringify(batches));
+      return;
+    }
     if (batches && batches.length > 0 && prevBatchesRef.current && prevBatchesRef.current.length > 0) {
       batches.forEach(newB => {
         const oldB = prevBatchesRef.current.find(o => o.id === newB.id);
@@ -534,6 +539,9 @@ export const FarmProvider = ({ children }) => {
         }));
         setBatches(mapped);
         refreshLeaderboardRank();
+        setTimeout(() => {
+          hasLoadedFromDb.current = true;
+        }, 100);
       }
 
       // Sync and load timeline logs from database
@@ -830,6 +838,7 @@ export const FarmProvider = ({ children }) => {
   };
 
   const login = (emailOrUserObj, password, role) => {
+    hasLoadedFromDb.current = false;
     if (emailOrUserObj && typeof emailOrUserObj === 'object') {
       setUser(emailOrUserObj);
       setCurrentView(emailOrUserObj.role === 'admin' ? 'admin-dashboard' : 'farmer-dashboard');
@@ -858,6 +867,7 @@ export const FarmProvider = ({ children }) => {
   };
 
   const logout = () => {
+    hasLoadedFromDb.current = false;
     setUser(null);
     setCurrentView('login');
   };
