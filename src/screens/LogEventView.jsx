@@ -470,7 +470,6 @@ export default function LogEventView() {
               </div>
             </div>
 
-              /* VISUAL TAB FORM FIELDS */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-borders/40 dark:border-emerald-950/20 pt-4">
                 {eventType === 'Irrigation Logged' && (
                   <>

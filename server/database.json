@@ -43,10 +43,10 @@
       "sowing_date": "2026-03-05",
       "expected_harvest": "2026-07-20",
       "status": "In Quality Check",
-      "trust_score": 60,
-      "blockchain_hash": "0xd5618dd10482a4ca5cc22b558e3f79b36eb9973c9ee0d64387224d6169c2f317",
-      "total_points": 30,
-      "current_level": "Seedling",
+      "trust_score": 75,
+      "blockchain_hash": "0xbcda5670039e788c5494ea8989c700fd5ae1f9b4cbe4a3d8d42d8a6e04c56634",
+      "total_points": 55,
+      "current_level": "Sprout",
       "earned_badges": [
         "First Batch Created",
         "First Activity Logged",
@@ -57,10 +57,12 @@
         "Workforce Manager",
         "Harvest Hero"
       ],
-      "unlocked_rewards": [],
-      "activity_streak": 2,
-      "last_activity_date": "2026-06-11",
-      "progress_percentage": 60
+      "unlocked_rewards": [
+        "10% Seed & Fertilizer Discount"
+      ],
+      "activity_streak": 3,
+      "last_activity_date": "2026-07-12",
+      "progress_percentage": 4
     },
     {
       "batch_id": "FB-2026-003",
@@ -249,6 +251,14 @@
       "description": "{\n  \"compound\": \"Organic Neem Oil\",\n  \"dilutionRatio\": \"1:100\",\n  \"targetPest\": \"Spider Mites\"\n}",
       "timestamp": "2026-07-12T04:27:45.728Z",
       "hash": "0x6a89a6162089bde3a73a87e252f03200ea9d56edaa591f82c9a04b7d0d4211a1"
+    },
+    {
+      "id": 17,
+      "batch_id": "FB-2026-002",
+      "activity_type": "Irrigation Logged",
+      "description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
+      "timestamp": "2026-07-12T05:13:34.993Z",
+      "hash": "0xe2efdc97936cbfba02d62c3f82e745624ba283148cffce003ebb464eac09bac8"
     }
   ],
   "harvest_qa": [
@@ -403,6 +413,28 @@
       "event_status": "Success",
       "trust_score_impact": 2,
       "created_at": "2026-07-12T04:27:47.354Z"
+    },
+    {
+      "id": 9,
+      "batch_id": "FB-2026-002",
+      "farmer_id": "H_UVFARMS",
+      "event_type": "Activity Missed",
+      "event_title": "Pesticide Task Missed",
+      "event_description": "Missed scheduled activity [ID: sch-6]: Insect check and spot treatment.. Date: 2026-06-24",
+      "event_status": "Failed",
+      "trust_score_impact": -5,
+      "created_at": "2026-07-12T05:13:06.719Z"
+    },
+    {
+      "id": 10,
+      "batch_id": "FB-2026-002",
+      "farmer_id": "H_UVFARMS",
+      "event_type": "Irrigation Logged",
+      "event_title": "Irrigation Logged",
+      "event_description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
+      "event_status": "Success",
+      "trust_score_impact": 2,
+      "created_at": "2026-07-12T05:13:36.614Z"
     }
   ],
   "farmers": [
@@ -449,6 +481,17 @@
       "login_count": 1,
       "trust_score": 100,
       "created_at": "2026-07-12T04:27:05.831Z"
+    },
+    {
+      "id": 5,
+      "farmer_id": "H_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-12T05:12:59.424Z"
     }
   ],
   "admins": [],
@@ -483,7 +526,7 @@
     },
     {
       "batch_id": "FB-2026-002",
-      "blockchain_hash": "0xd5618dd10482a4ca5cc22b558e3f79b36eb9973c9ee0d64387224d6169c2f317"
+      "blockchain_hash": "0xbcda5670039e788c5494ea8989c700fd5ae1f9b4cbe4a3d8d42d8a6e04c56634"
     },
     {
       "batch_id": "FB-2026-003",
