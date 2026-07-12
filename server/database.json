@@ -9,10 +9,10 @@
       "cultivation_type": "Organic Drip",
       "sowing_date": "2026-04-10",
       "expected_harvest": "2026-09-15",
-      "status": "In Quality Check",
+      "status": "Shipped",
       "trust_score": 80,
-      "blockchain_hash": "0xdddf7e7574c21927a7d5c920a3a6ef91af7c00f1ef5f173aee35cf8d6629468b",
-      "total_points": 80,
+      "blockchain_hash": "0x5f1575ce401fa2e08662eab89300112c731042e429cc9603738519bd1ee9d4ec",
+      "total_points": 130,
       "current_level": "Sprout",
       "earned_badges": [
         "First Batch Created",
@@ -29,9 +29,9 @@
       "unlocked_rewards": [
         "10% Seed & Fertilizer Discount"
       ],
-      "activity_streak": 4,
-      "last_activity_date": "2026-07-11",
-      "progress_percentage": 29
+      "activity_streak": 5,
+      "last_activity_date": "2026-07-12",
+      "progress_percentage": 80
     },
     {
       "batch_id": "FB-2026-002",
@@ -225,6 +225,30 @@
       "description": "{\n  \"yieldWeightKg\": \"800\",\n  \"storageLocation\": \"Silo A\",\n  \"grade\": \"Grade AA Specialty\"\n}",
       "timestamp": "2026-07-11T13:17:25.365Z",
       "hash": "0x58db4b1440587892421a4bfbda6c342eec724b3f92ed5a35abedb545cb11f6dd"
+    },
+    {
+      "id": 14,
+      "batch_id": "FB-2026-001",
+      "activity_type": "Irrigation Logged",
+      "description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
+      "timestamp": "2026-07-12T04:27:17.398Z",
+      "hash": "0x64ed66e58229920edb404fdb688336db2853b90e883c360114afa3f0827bebc1"
+    },
+    {
+      "id": 15,
+      "batch_id": "FB-2026-001",
+      "activity_type": "Shipped",
+      "description": "{\n  \"logisticsProvider\": \"Green Dispatch Logi\",\n  \"destination\": \"Whole Foods Depot, CA\",\n  \"temperatureCelsius\": \"12.4°C\"\n}",
+      "timestamp": "2026-07-12T04:27:31.442Z",
+      "hash": "0xcbcbba8aa3d0d7976b574ae1cfc0d43f41ae7a3ef9e54d329311269276ecbdd5"
+    },
+    {
+      "id": 16,
+      "batch_id": "FB-2026-001",
+      "activity_type": "Pesticide Treatment",
+      "description": "{\n  \"compound\": \"Organic Neem Oil\",\n  \"dilutionRatio\": \"1:100\",\n  \"targetPest\": \"Spider Mites\"\n}",
+      "timestamp": "2026-07-12T04:27:45.728Z",
+      "hash": "0x6a89a6162089bde3a73a87e252f03200ea9d56edaa591f82c9a04b7d0d4211a1"
     }
   ],
   "harvest_qa": [
@@ -346,6 +370,39 @@
       "event_status": "Success",
       "trust_score_impact": 2,
       "created_at": "2026-07-11T13:17:26.839Z"
+    },
+    {
+      "id": 6,
+      "batch_id": "FB-2026-001",
+      "farmer_id": "kk_uvfarms",
+      "event_type": "Irrigation Logged",
+      "event_title": "Irrigation Logged",
+      "event_description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
+      "event_status": "Success",
+      "trust_score_impact": 2,
+      "created_at": "2026-07-12T04:27:18.784Z"
+    },
+    {
+      "id": 7,
+      "batch_id": "FB-2026-001",
+      "farmer_id": "kk_uvfarms",
+      "event_type": "Shipped",
+      "event_title": "Shipped",
+      "event_description": "{\n  \"logisticsProvider\": \"Green Dispatch Logi\",\n  \"destination\": \"Whole Foods Depot, CA\",\n  \"temperatureCelsius\": \"12.4°C\"\n}",
+      "event_status": "Success",
+      "trust_score_impact": 2,
+      "created_at": "2026-07-12T04:27:33.052Z"
+    },
+    {
+      "id": 8,
+      "batch_id": "FB-2026-001",
+      "farmer_id": "kk_uvfarms",
+      "event_type": "Pesticide Treatment",
+      "event_title": "Pesticide Treatment",
+      "event_description": "{\n  \"compound\": \"Organic Neem Oil\",\n  \"dilutionRatio\": \"1:100\",\n  \"targetPest\": \"Spider Mites\"\n}",
+      "event_status": "Success",
+      "trust_score_impact": 2,
+      "created_at": "2026-07-12T04:27:47.354Z"
     }
   ],
   "farmers": [
@@ -381,6 +438,17 @@
       "login_count": 1,
       "trust_score": 100,
       "created_at": "2026-07-11T13:12:38.187Z"
+    },
+    {
+      "id": 4,
+      "farmer_id": "kk_uvfarms",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-12T04:27:05.831Z"
     }
   ],
   "admins": [],
@@ -411,7 +479,7 @@
   "immudb_ledger": [
     {
       "batch_id": "FB-2026-001",
-      "blockchain_hash": "0xdddf7e7574c21927a7d5c920a3a6ef91af7c00f1ef5f173aee35cf8d6629468b"
+      "blockchain_hash": "0x5f1575ce401fa2e08662eab89300112c731042e429cc9603738519bd1ee9d4ec"
     },
     {
       "batch_id": "FB-2026-002",

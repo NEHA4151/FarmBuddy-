@@ -434,30 +434,6 @@ export default function LogEventView() {
             <h2 className="text-sm font-extrabold text-stone-800 dark:text-stone-200 uppercase tracking-wider">
               Log Operations Event
             </h2>
-            <div className="flex bg-[#F8F6ED] dark:bg-zinc-900 p-1 rounded-xl">
-              <button
-                onClick={() => setFormTab('visual')}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
-                  formTab === 'visual'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-stone-500 dark:text-stone-400 hover:text-stone-900'
-                }`}
-              >
-                <Layers className="h-3.5 w-3.5" />
-                Visual Form
-              </button>
-              <button
-                onClick={() => setFormTab('json')}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
-                  formTab === 'json'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-stone-500 dark:text-stone-400 hover:text-stone-900'
-                }`}
-              >
-                <Code className="h-3.5 w-3.5" />
-                Developer JSON
-              </button>
-            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -494,7 +470,6 @@ export default function LogEventView() {
               </div>
             </div>
 
-            {formTab === 'visual' ? (
               /* VISUAL TAB FORM FIELDS */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-borders/40 dark:border-emerald-950/20 pt-4">
                 {eventType === 'Irrigation Logged' && (
@@ -648,21 +623,6 @@ export default function LogEventView() {
                   </>
                 )}
               </div>
-            ) : (
-              /* JSON TAB DEVELOPER CODE BLOCK */
-              <div className="space-y-1.5 border-t border-borders/40 dark:border-emerald-950/20 pt-4">
-                <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1">
-                  <Code className="h-4 w-4 text-primary" />
-                  Raw JSON Metadata Payload
-                </label>
-                <textarea
-                  value={jsonText}
-                  onChange={(e) => setJsonText(e.target.value)}
-                  rows={8}
-                  className="w-full bg-stone-50 dark:bg-zinc-900 border border-borders dark:border-emerald-950/40 rounded-xl px-4 py-3 text-xs text-stone-800 dark:text-stone-200 font-mono focus:outline-none"
-                />
-              </div>
-            )}
 
             <div className="flex justify-end gap-3 pt-4 border-t border-borders/40 dark:border-emerald-950/20">
               <button

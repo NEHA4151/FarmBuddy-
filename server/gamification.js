@@ -131,12 +131,12 @@ export function calculateGamificationState(batchDetails, labourAccounts = [], ai
     points += 10;
   }
 
-  // --- 2. Streak & Last Activity Calculations ---
   // Find last activity date
   let lastActivityDate = batchDetails.sowing_date || batchDetails.seedDate || null;
   if (logs.length > 0) {
     const sortedLogs = [...logs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    lastActivityDate = sortedLogs[0].timestamp.split('T')[0];
+    const ts = sortedLogs[0].timestamp;
+    lastActivityDate = (typeof ts === 'string' ? ts : (ts instanceof Date ? ts.toISOString() : String(ts))).split('T')[0];
   }
 
   // Calculate unique weeks of activity
