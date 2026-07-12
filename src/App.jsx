@@ -172,7 +172,7 @@ function AppContent() {
         {/* Persistent AI Farm Assistant Widget */}
         {user && <AIAssistant />}
       </div>
-      <RewardOverlay />
+      {user && <RewardOverlay />}
     </div>
   );
 }
