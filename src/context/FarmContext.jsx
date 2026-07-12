@@ -339,10 +339,11 @@ export const FarmProvider = ({ children }) => {
 
   const refreshLeaderboardRank = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/leaderboard`);
+      const loggedName = user?.name || 'John Doe';
+      const res = await fetch(`${API_BASE}/api/leaderboard?farmerName=${encodeURIComponent(loggedName)}`);
       if (res.ok) {
         const standings = await res.json();
-        const me = standings.find(f => f.name === 'John Doe');
+        const me = standings.find(f => f.name.toLowerCase() === loggedName.toLowerCase());
         if (me && me.rank) {
           if (currentRank && me.rank < currentRank) {
             confetti({

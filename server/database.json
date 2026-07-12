@@ -43,9 +43,9 @@
       "sowing_date": "2026-03-05",
       "expected_harvest": "2026-07-20",
       "status": "In Quality Check",
-      "trust_score": 75,
-      "blockchain_hash": "0xbcda5670039e788c5494ea8989c700fd5ae1f9b4cbe4a3d8d42d8a6e04c56634",
-      "total_points": 55,
+      "trust_score": 90,
+      "blockchain_hash": "0x64d3dc85e4d678755ae25207b5a2749a704d6ee5a39bb61cba043f9b9a1bfdf0",
+      "total_points": 60,
       "current_level": "Sprout",
       "earned_badges": [
         "First Batch Created",
@@ -55,14 +55,15 @@
         "Record Starter",
         "First Snapshot",
         "Workforce Manager",
-        "Harvest Hero"
+        "Harvest Hero",
+        "Smart Farmer"
       ],
       "unlocked_rewards": [
         "10% Seed & Fertilizer Discount"
       ],
       "activity_streak": 3,
       "last_activity_date": "2026-07-12",
-      "progress_percentage": 4
+      "progress_percentage": 9
     },
     {
       "batch_id": "FB-2026-003",
@@ -259,6 +260,14 @@
       "description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
       "timestamp": "2026-07-12T05:13:34.993Z",
       "hash": "0xe2efdc97936cbfba02d62c3f82e745624ba283148cffce003ebb464eac09bac8"
+    },
+    {
+      "id": 18,
+      "batch_id": "FB-2026-002",
+      "activity_type": "Fertilizer Application",
+      "description": "{\n  \"brand\": \"Organic BioGrow\",\n  \"quantityKg\": \"15\",\n  \"method\": \"Soil Drenching\"\n}",
+      "timestamp": "2026-07-12T05:14:28.167Z",
+      "hash": "0xa3b0caa0891d7a0d40f25ea027730a296f73c76ca8ac5148983b61b5110ce2ec"
     }
   ],
   "harvest_qa": [
@@ -435,6 +444,17 @@
       "event_status": "Success",
       "trust_score_impact": 2,
       "created_at": "2026-07-12T05:13:36.614Z"
+    },
+    {
+      "id": 11,
+      "batch_id": "FB-2026-002",
+      "farmer_id": "H_UVFARMS",
+      "event_type": "Fertilizer Application",
+      "event_title": "Fertilizer Application",
+      "event_description": "{\n  \"brand\": \"Organic BioGrow\",\n  \"quantityKg\": \"15\",\n  \"method\": \"Soil Drenching\"\n}",
+      "event_status": "Success",
+      "trust_score_impact": 2,
+      "created_at": "2026-07-12T05:14:29.527Z"
     }
   ],
   "farmers": [
@@ -517,6 +537,20 @@
       "wage": 16.5,
       "total_expense": 792,
       "remarks": "Watering & weeding orchard Section 4B."
+    },
+    {
+      "id": null,
+      "batch_id": "FB-2026-002",
+      "date": "2026-07-12",
+      "total_labour": 10,
+      "male": 0,
+      "female": 0,
+      "duration": null,
+      "duration_female": 0,
+      "wage": null,
+      "wage_female": 0,
+      "total_expense": null,
+      "remarks": ""
     }
   ],
   "immudb_ledger": [
@@ -526,7 +560,7 @@
     },
     {
       "batch_id": "FB-2026-002",
-      "blockchain_hash": "0xbcda5670039e788c5494ea8989c700fd5ae1f9b4cbe4a3d8d42d8a6e04c56634"
+      "blockchain_hash": "0x64d3dc85e4d678755ae25207b5a2749a704d6ee5a39bb61cba043f9b9a1bfdf0"
     },
     {
       "batch_id": "FB-2026-003",

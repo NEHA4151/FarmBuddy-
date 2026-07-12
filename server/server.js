@@ -851,6 +851,7 @@ app.get('/api/ai/history', async (req, res) => {
 
 // API route: Get Leaderboard among farmers
 app.get('/api/leaderboard', async (req, res) => {
+  const { farmerName } = req.query;
   try {
     const batches = await dbService.getAllBatches();
     const farmerStats = {};
@@ -866,7 +867,10 @@ app.get('/api/leaderboard', async (req, res) => {
     };
     
     batches.forEach(b => {
-      const name = b.farmer_name || 'John Doe';
+      let name = b.farmer_name;
+      if (!name || name === 'John Doe') {
+        name = farmerName || 'John Doe';
+      }
       if (!farmerStats[name]) {
         farmerStats[name] = {
           name: name,

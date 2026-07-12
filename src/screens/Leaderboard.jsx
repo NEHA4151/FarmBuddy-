@@ -24,7 +24,8 @@ export default function Leaderboard() {
   const fetchLeaderboard = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/leaderboard`);
+      const loggedName = user?.name || 'John Doe';
+      const res = await fetch(`${API_BASE}/api/leaderboard?farmerName=${encodeURIComponent(loggedName)}`);
       if (res.ok) {
         const leaderboardData = await res.json();
         setData(leaderboardData);
