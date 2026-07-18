@@ -699,6 +699,17 @@
       "login_count": 1,
       "trust_score": 100,
       "created_at": "2026-07-18T04:41:05.330Z"
+    },
+    {
+      "id": 9,
+      "farmer_id": "NK_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-18T05:47:43.265Z"
     }
   ],
   "admins": [],
@@ -726,18 +737,24 @@
       "remarks": "Watering & weeding orchard Section 4B."
     },
     {
-      "id": null,
-      "batch_id": "FB-2026-002",
-      "date": "2026-07-12",
-      "total_labour": 10,
-      "male": 0,
-      "female": 0,
-      "duration": null,
-      "duration_female": 0,
-      "wage": null,
-      "wage_female": 0,
-      "total_expense": null,
-      "remarks": ""
+      "id": 3,
+      "farmer_id": "NK_UVFARMS",
+      "date": "2026-07-18",
+      "worker_name": "Neha Khetan",
+      "gender": "Female",
+      "work_type": "Sowing",
+      "crop": "Organic Honeycrisp Apples",
+      "plot": "Plot B-North",
+      "hours_worked": 8,
+      "daily_wage": 10,
+      "bonus": 0,
+      "overtime": 0,
+      "advance": 0,
+      "payment_status": "PENDING",
+      "payment_mode": "CASH",
+      "total_amount": 80,
+      "notes": "Updated remark test",
+      "created_at": "2026-07-18T05:55:04.563Z"
     }
   ],
   "immudb_ledger": [
@@ -758,8 +775,57 @@
       "blockchain_hash": "0x5a6584650cfc22a12dd905588de2a56e3c4aaef44c717439b4f7e0563bafd175"
     }
   ],
-  "crop_cycles": [],
-  "credit_contacts": [],
-  "transactions": [],
-  "kcc_accounts": []
+  "crop_cycles": [
+    {
+      "id": 1,
+      "farmer_id": "NK_UVFARMS",
+      "crop_name": "Cherry tomatoes ",
+      "plot_identifier": null,
+      "start_date": "2026-07-18",
+      "end_date": null,
+      "status": "ACTIVE",
+      "created_at": "2026-07-18T05:51:54.137Z"
+    }
+  ],
+  "credit_contacts": [
+    {
+      "id": 1,
+      "farmer_id": "NK_UVFARMS",
+      "contact_name": "neha",
+      "contact_type": "INPUT_DEALER",
+      "phone_number": "1234567899",
+      "running_balance": 2555,
+      "updated_at": "2026-07-18T05:50:19.774Z"
+    }
+  ],
+  "transactions": [
+    {
+      "id": 1,
+      "farmer_id": "NK_UVFARMS",
+      "crop_cycle_id": null,
+      "credit_contact_id": null,
+      "transaction_type": "EXPENSE",
+      "category": "SEEDS",
+      "amount": 500,
+      "payment_mode": "CASH",
+      "transaction_date": "2026-07-18",
+      "notes": null,
+      "created_at": "2026-07-18T05:48:06.433Z"
+    },
+    {
+      "id": 2,
+      "farmer_id": "NK_UVFARMS",
+      "crop_cycle_id": null,
+      "credit_contact_id": null,
+      "transaction_type": "INCOME",
+      "category": "SEEDS",
+      "amount": 400,
+      "payment_mode": "CASH",
+      "transaction_date": "2026-07-18",
+      "notes": null,
+      "created_at": "2026-07-18T05:49:57.794Z"
+    }
+  ],
+  "kcc_accounts": [],
+  "subsidies": []
 }

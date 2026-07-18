@@ -8,6 +8,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const jsonDbPath = path.join(__dirname, 'database.json');
 
+// Helper to get next numeric ID for JSON database tables
+function getNextId(list) {
+  if (!list || !Array.isArray(list)) return 1;
+  const numericIds = list
+    .map(x => parseInt(x.id, 10))
+    .filter(id => !isNaN(id) && isFinite(id));
+  return numericIds.length > 0 ? Math.max(...numericIds) + 1 : 1;
+}
+
 // Helper to calculate SHA-256 hash from live database fields
 export function calculateBatchHash(batch) {
   const formatDate = (val) => {
@@ -770,7 +779,7 @@ export const dbService = {
       const db = readJsonDb();
       if (!db.reports) db.reports = [];
       const newReport = {
-        id: db.reports.length > 0 ? Math.max(...db.reports.map(r => r.id)) + 1 : 1,
+        id: getNextId(db.reports),
         name,
         type,
         content,
@@ -857,7 +866,7 @@ export const dbService = {
       const db = readJsonDb();
       if (!db.farmers) db.farmers = [];
       const newFarmer = {
-        id: db.farmers.length > 0 ? Math.max(...db.farmers.map(f => f.id)) + 1 : 1,
+        id: getNextId(db.farmers),
         farmer_id,
         name,
         email,
@@ -937,7 +946,7 @@ export const dbService = {
       const db = readJsonDb();
       if (!db.batch_events) db.batch_events = [];
       const newEvent = {
-        id: db.batch_events.length > 0 ? Math.max(...db.batch_events.map(e => e.id)) + 1 : 1,
+        id: getNextId(db.batch_events),
         batch_id,
         farmer_id,
         event_type,
@@ -1007,7 +1016,7 @@ export const dbService = {
       const db = readJsonDb();
       if (!db.labour_accounts) db.labour_accounts = [];
       const newEntry = {
-        id: db.labour_accounts.length > 0 ? Math.max(...db.labour_accounts.map(e => e.id)) + 1 : 1,
+        id: getNextId(db.labour_accounts),
         farmer_id,
         date,
         worker_name,
@@ -1141,7 +1150,7 @@ export const dbService = {
       const db = readJsonDb();
       if (!db.admins) db.admins = [];
       const newAdmin = {
-        id: db.admins.length > 0 ? Math.max(...db.admins.map(a => a.id)) + 1 : 1,
+        id: getNextId(db.admins),
         admin_id,
         name,
         email,
@@ -1178,7 +1187,7 @@ export const dbService = {
       const db = readJsonDb();
       if (!db.crop_cycles) db.crop_cycles = [];
       const newCycle = {
-        id: db.crop_cycles.length > 0 ? Math.max(...db.crop_cycles.map(c => c.id)) + 1 : 1,
+        id: getNextId(db.crop_cycles),
         farmer_id,
         crop_name,
         plot_identifier,
@@ -1250,7 +1259,7 @@ export const dbService = {
       const db = readJsonDb();
       if (!db.credit_contacts) db.credit_contacts = [];
       const newContact = {
-        id: db.credit_contacts.length > 0 ? Math.max(...db.credit_contacts.map(c => c.id)) + 1 : 1,
+        id: getNextId(db.credit_contacts),
         farmer_id,
         contact_name,
         contact_type,
@@ -1338,7 +1347,7 @@ export const dbService = {
       const db = readJsonDb();
       if (!db.transactions) db.transactions = [];
       const newTx = {
-        id: db.transactions.length > 0 ? Math.max(...db.transactions.map(t => t.id)) + 1 : 1,
+        id: getNextId(db.transactions),
         farmer_id,
         crop_cycle_id: crop_cycle_id ? Number(crop_cycle_id) : null,
         credit_contact_id: credit_contact_id ? Number(credit_contact_id) : null,
@@ -1522,7 +1531,7 @@ export const dbService = {
       const db = readJsonDb();
       if (!db.subsidies) db.subsidies = [];
       const newSubsidy = {
-        id: db.subsidies.length > 0 ? Math.max(...db.subsidies.map(s => s.id)) + 1 : 1,
+        id: getNextId(db.subsidies),
         farmer_id,
         scheme_name,
         amount: parseFloat(amount),
@@ -1626,7 +1635,7 @@ export const dbService = {
       if (idx !== -1) {
         db.kcc_accounts[idx] = { id: db.kcc_accounts[idx].id, ...newKcc };
       } else {
-        newKcc.id = db.kcc_accounts.length > 0 ? Math.max(...db.kcc_accounts.map(k => k.id)) + 1 : 1;
+        newKcc.id = getNextId(db.kcc_accounts);
         db.kcc_accounts.push(newKcc);
       }
       writeJsonDb(db);
