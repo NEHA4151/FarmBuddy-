@@ -296,6 +296,7 @@ export const FarmProvider = ({ children }) => {
   const [creditContacts, setCreditContacts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [kccAccounts, setKccAccounts] = useState([]);
+  const [subsidies, setSubsidies] = useState([]);
   const lastMoistureAlert = useRef(false);
   const lastTempAlert = useRef(false);
   const prevBatchesRef = useRef([]);
@@ -644,6 +645,11 @@ export const FarmProvider = ({ children }) => {
         const data = await resLabour.json();
         setLabourAccounts(data);
       }
+      const resSub = await fetch(`${API_BASE}/api/subsidies?farmerId=${fId}`);
+      if (resSub.ok) {
+        const data = await resSub.json();
+        setSubsidies(data);
+      }
     } catch (err) {
       console.warn("Could not fetch finance data:", err);
     }
@@ -778,6 +784,74 @@ export const FarmProvider = ({ children }) => {
       }
     } catch (err) {
       console.error("Error deleting transaction:", err);
+    }
+    return false;
+  };
+
+  const updateTransaction = async (id, txData) => {
+    const fId = user?.farmerId || 'FMR-0921';
+    try {
+      const res = await fetch(`${API_BASE}/api/transactions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ farmer_id: fId, ...txData })
+      });
+      if (res.ok) {
+        await refreshFinanceData();
+        return true;
+      }
+    } catch (err) {
+      console.error("Error updating transaction:", err);
+    }
+    return false;
+  };
+
+  const addSubsidy = async (subsidyData) => {
+    const fId = user?.farmerId || 'FMR-0921';
+    try {
+      const res = await fetch(`${API_BASE}/api/subsidies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ farmer_id: fId, ...subsidyData })
+      });
+      if (res.ok) {
+        await refreshFinanceData();
+        return true;
+      }
+    } catch (err) {
+      console.error("Error adding subsidy:", err);
+    }
+    return false;
+  };
+
+  const updateSubsidy = async (id, subsidyData) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/subsidies/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subsidyData)
+      });
+      if (res.ok) {
+        await refreshFinanceData();
+        return true;
+      }
+    } catch (err) {
+      console.error("Error updating subsidy:", err);
+    }
+    return false;
+  };
+
+  const deleteSubsidy = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/subsidies/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        await refreshFinanceData();
+        return true;
+      }
+    } catch (err) {
+      console.error("Error deleting subsidy:", err);
     }
     return false;
   };
@@ -1486,6 +1560,7 @@ export const FarmProvider = ({ children }) => {
       creditContacts,
       transactions,
       kccAccounts,
+      subsidies,
       refreshFinanceData,
       addCropCycle,
       updateCropCycle,
@@ -1494,8 +1569,12 @@ export const FarmProvider = ({ children }) => {
       updateCreditContact,
       deleteCreditContact,
       addTransaction,
+      updateTransaction,
       deleteTransaction,
       updateKcc,
+      addSubsidy,
+      updateSubsidy,
+      deleteSubsidy,
       floatingCoins,
       setFloatingCoins,
       floatingTexts,

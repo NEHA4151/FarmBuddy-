@@ -985,17 +985,18 @@ export const dbService = {
   },
 
   async createLabourAccount(entry) {
-    const { farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, advance, payment_status, payment_mode, notes } = entry;
+    const { farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, overtime, advance, payment_status, payment_mode, notes } = entry;
     const hours = parseFloat(hours_worked || 0);
     const wage = parseFloat(daily_wage || 0);
     const b = parseFloat(bonus || 0);
+    const ot = parseFloat(overtime || 0);
     const adv = parseFloat(advance || 0);
-    const total_amount = parseFloat(((hours * wage) + b - adv).toFixed(2));
+    const total_amount = parseFloat(((hours * wage) + b + ot - adv).toFixed(2));
 
     if (isMysql) {
       const [result] = await pool.query(
-        'INSERT INTO labour_accounts (farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, advance, payment_status, payment_mode, total_amount, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [farmer_id, date, worker_name, gender, work_type, crop, plot || null, hours, wage, b, adv, payment_status, payment_mode, total_amount, notes || null]
+        'INSERT INTO labour_accounts (farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, overtime, advance, payment_status, payment_mode, total_amount, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [farmer_id, date, worker_name, gender, work_type, crop, plot || null, hours, wage, b, ot, adv, payment_status, payment_mode, total_amount, notes || null]
       );
       return {
         id: result.insertId,
@@ -1017,6 +1018,7 @@ export const dbService = {
         hours_worked: hours,
         daily_wage: wage,
         bonus: b,
+        overtime: ot,
         advance: adv,
         payment_status,
         payment_mode,
@@ -1031,17 +1033,18 @@ export const dbService = {
   },
 
   async updateLabourAccount(id, entry) {
-    const { farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, advance, payment_status, payment_mode, notes } = entry;
+    const { farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, overtime, advance, payment_status, payment_mode, notes } = entry;
     const hours = parseFloat(hours_worked || 0);
     const wage = parseFloat(daily_wage || 0);
     const b = parseFloat(bonus || 0);
+    const ot = parseFloat(overtime || 0);
     const adv = parseFloat(advance || 0);
-    const total_amount = parseFloat(((hours * wage) + b - adv).toFixed(2));
+    const total_amount = parseFloat(((hours * wage) + b + ot - adv).toFixed(2));
 
     if (isMysql) {
       await pool.query(
-        'UPDATE labour_accounts SET date = ?, worker_name = ?, gender = ?, work_type = ?, crop = ?, plot = ?, hours_worked = ?, daily_wage = ?, bonus = ?, advance = ?, payment_status = ?, payment_mode = ?, total_amount = ?, notes = ? WHERE id = ?',
-        [date, worker_name, gender, work_type, crop, plot || null, hours, wage, b, adv, payment_status, payment_mode, total_amount, notes || null, id]
+        'UPDATE labour_accounts SET date = ?, worker_name = ?, gender = ?, work_type = ?, crop = ?, plot = ?, hours_worked = ?, daily_wage = ?, bonus = ?, overtime = ?, advance = ?, payment_status = ?, payment_mode = ?, total_amount = ?, notes = ? WHERE id = ?',
+        [date, worker_name, gender, work_type, crop, plot || null, hours, wage, b, ot, adv, payment_status, payment_mode, total_amount, notes || null, id]
       );
       return { id, ...entry, total_amount };
     } else {
@@ -1062,6 +1065,7 @@ export const dbService = {
           hours_worked: hours,
           daily_wage: wage,
           bonus: b,
+          overtime: ot,
           advance: adv,
           payment_status,
           payment_mode,
@@ -1163,11 +1167,11 @@ export const dbService = {
   },
 
   async createCropCycle(cycle) {
-    const { farmer_id, crop_name, plot_identifier, start_date, end_date, status } = cycle;
+    const { farmer_id, crop_name, plot_identifier, season, start_date, end_date, status } = cycle;
     if (isMysql) {
       const [result] = await pool.query(
-        'INSERT INTO crop_cycles (farmer_id, crop_name, plot_identifier, start_date, end_date, status) VALUES (?, ?, ?, ?, ?, ?)',
-        [farmer_id, crop_name, plot_identifier, start_date, end_date || null, status || 'ACTIVE']
+        'INSERT INTO crop_cycles (farmer_id, crop_name, plot_identifier, season, start_date, end_date, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [farmer_id, crop_name, plot_identifier, season || null, start_date, end_date || null, status || 'ACTIVE']
       );
       return { id: result.insertId, ...cycle };
     } else {
@@ -1178,6 +1182,7 @@ export const dbService = {
         farmer_id,
         crop_name,
         plot_identifier,
+        season: season || null,
         start_date,
         end_date: end_date || null,
         status: status || 'ACTIVE',
@@ -1190,18 +1195,18 @@ export const dbService = {
   },
 
   async updateCropCycle(id, cycle) {
-    const { crop_name, plot_identifier, start_date, end_date, status } = cycle;
+    const { crop_name, plot_identifier, season, start_date, end_date, status } = cycle;
     if (isMysql) {
       await pool.query(
-        'UPDATE crop_cycles SET crop_name = ?, plot_identifier = ?, start_date = ?, end_date = ?, status = ? WHERE id = ?',
-        [crop_name, plot_identifier, start_date, end_date || null, status, id]
+        'UPDATE crop_cycles SET crop_name = ?, plot_identifier = ?, season = ?, start_date = ?, end_date = ?, status = ? WHERE id = ?',
+        [crop_name, plot_identifier, season || null, start_date, end_date || null, status, id]
       );
       return { id, ...cycle };
     } else {
       const db = readJsonDb();
       const idx = (db.crop_cycles || []).findIndex(c => c.id === Number(id));
       if (idx !== -1) {
-        db.crop_cycles[idx] = { ...db.crop_cycles[idx], crop_name, plot_identifier, start_date, end_date, status };
+        db.crop_cycles[idx] = { ...db.crop_cycles[idx], crop_name, plot_identifier, season, start_date, end_date, status };
         writeJsonDb(db);
         return db.crop_cycles[idx];
       }
@@ -1407,6 +1412,174 @@ export const dbService = {
     }
   },
 
+  async updateTransaction(id, tx) {
+    const { farmer_id, crop_cycle_id, credit_contact_id, transaction_type, category, amount, payment_mode, transaction_date, notes } = tx;
+    if (isMysql) {
+      const conn = await pool.getConnection();
+      try {
+        await conn.beginTransaction();
+        const [rows] = await conn.query('SELECT * FROM transactions WHERE id = ?', [id]);
+        if (rows.length === 0) {
+          await conn.rollback();
+          return null;
+        }
+        const oldTx = rows[0];
+
+        // 1. Revert old balance impact
+        if (oldTx.payment_mode === 'UDHAAR' && oldTx.credit_contact_id) {
+          const oldImpact = oldTx.transaction_type === 'EXPENSE' ? -oldTx.amount : oldTx.amount;
+          await conn.query(
+            'UPDATE credit_contacts SET running_balance = running_balance + ? WHERE id = ?',
+            [oldImpact, oldTx.credit_contact_id]
+          );
+        }
+
+        // 2. Apply new balance impact
+        if (payment_mode === 'UDHAAR' && credit_contact_id) {
+          const newImpact = transaction_type === 'EXPENSE' ? amount : -amount;
+          await conn.query(
+            'UPDATE credit_contacts SET running_balance = running_balance + ? WHERE id = ?',
+            [newImpact, credit_contact_id]
+          );
+        }
+
+        await conn.query(
+          'UPDATE transactions SET crop_cycle_id = ?, credit_contact_id = ?, transaction_type = ?, category = ?, amount = ?, payment_mode = ?, transaction_date = ?, notes = ? WHERE id = ?',
+          [crop_cycle_id || null, credit_contact_id || null, transaction_type, category, amount, payment_mode, transaction_date, notes || null, id]
+        );
+
+        await conn.commit();
+        return { id, ...tx };
+      } catch (err) {
+        await conn.rollback();
+        throw err;
+      } finally {
+        conn.release();
+      }
+    } else {
+      const db = readJsonDb();
+      if (!db.transactions) db.transactions = [];
+      const txIdx = db.transactions.findIndex(t => t.id === Number(id));
+      if (txIdx !== -1) {
+        const oldTx = db.transactions[txIdx];
+
+        // 1. Revert old balance
+        if (oldTx.payment_mode === 'UDHAAR' && oldTx.credit_contact_id) {
+          const contact = (db.credit_contacts || []).find(c => c.id === Number(oldTx.credit_contact_id));
+          if (contact) {
+            const oldImpact = oldTx.transaction_type === 'EXPENSE' ? -oldTx.amount : oldTx.amount;
+            contact.running_balance = parseFloat((contact.running_balance + oldImpact).toFixed(2));
+          }
+        }
+
+        // 2. Apply new balance
+        if (payment_mode === 'UDHAAR' && credit_contact_id) {
+          const contact = (db.credit_contacts || []).find(c => c.id === Number(credit_contact_id));
+          if (contact) {
+            const newImpact = transaction_type === 'EXPENSE' ? parseFloat(amount) : -parseFloat(amount);
+            contact.running_balance = parseFloat((contact.running_balance + newImpact).toFixed(2));
+          }
+        }
+
+        db.transactions[txIdx] = {
+          ...oldTx,
+          crop_cycle_id: crop_cycle_id ? Number(crop_cycle_id) : null,
+          credit_contact_id: credit_contact_id ? Number(credit_contact_id) : null,
+          transaction_type,
+          category,
+          amount: parseFloat(amount),
+          payment_mode,
+          transaction_date,
+          notes: notes || null
+        };
+        writeJsonDb(db);
+        return db.transactions[txIdx];
+      }
+      return null;
+    }
+  },
+
+  // Subsidies CRUD helpers
+  async getAllSubsidies(farmer_id) {
+    if (isMysql) {
+      const [rows] = await pool.query('SELECT * FROM subsidies WHERE farmer_id = ? ORDER BY id DESC', [farmer_id]);
+      return rows;
+    } else {
+      const db = readJsonDb();
+      return (db.subsidies || []).filter(s => s.farmer_id === farmer_id);
+    }
+  },
+
+  async createSubsidy(subsidy) {
+    const { farmer_id, scheme_name, amount, status, date_received } = subsidy;
+    if (isMysql) {
+      const [result] = await pool.query(
+        'INSERT INTO subsidies (farmer_id, scheme_name, amount, status, date_received) VALUES (?, ?, ?, ?, ?)',
+        [farmer_id, scheme_name, amount, status, date_received || null]
+      );
+      return { id: result.insertId, ...subsidy };
+    } else {
+      const db = readJsonDb();
+      if (!db.subsidies) db.subsidies = [];
+      const newSubsidy = {
+        id: db.subsidies.length > 0 ? Math.max(...db.subsidies.map(s => s.id)) + 1 : 1,
+        farmer_id,
+        scheme_name,
+        amount: parseFloat(amount),
+        status,
+        date_received: date_received || null,
+        created_at: new Date().toISOString()
+      };
+      db.subsidies.push(newSubsidy);
+      writeJsonDb(db);
+      return newSubsidy;
+    }
+  },
+
+  async updateSubsidy(id, subsidy) {
+    const { scheme_name, amount, status, date_received } = subsidy;
+    if (isMysql) {
+      await pool.query(
+        'UPDATE subsidies SET scheme_name = ?, amount = ?, status = ?, date_received = ? WHERE id = ?',
+        [scheme_name, amount, status, date_received || null, id]
+      );
+      return { id, ...subsidy };
+    } else {
+      const db = readJsonDb();
+      if (!db.subsidies) db.subsidies = [];
+      const idx = db.subsidies.findIndex(s => s.id === Number(id));
+      if (idx !== -1) {
+        db.subsidies[idx] = {
+          ...db.subsidies[idx],
+          scheme_name,
+          amount: parseFloat(amount),
+          status,
+          date_received: date_received || null
+        };
+        writeJsonDb(db);
+        return db.subsidies[idx];
+      }
+      return null;
+    }
+  },
+
+  async deleteSubsidy(id) {
+    if (isMysql) {
+      const [result] = await pool.query('DELETE FROM subsidies WHERE id = ?', [id]);
+      return result.affectedRows > 0;
+    } else {
+      const db = readJsonDb();
+      if (!db.subsidies) return false;
+      const initialLength = db.subsidies.length;
+      db.subsidies = db.subsidies.filter(s => s.id !== Number(id));
+      if (db.subsidies.length < initialLength) {
+        writeJsonDb(db);
+        return true;
+      }
+      return false;
+    }
+  },
+
   async getKccAccounts(farmer_id) {
     if (isMysql) {
       const [rows] = await pool.query('SELECT * FROM kcc_accounts WHERE farmer_id = ?', [farmer_id]);
@@ -1418,19 +1591,19 @@ export const dbService = {
   },
 
   async createOrUpdateKccAccount(kcc) {
-    const { farmer_id, bank_name, sanctioned_limit, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline } = kcc;
+    const { farmer_id, bank_name, sanctioned_limit, emi, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline, due_date } = kcc;
     if (isMysql) {
       const [existing] = await pool.query('SELECT * FROM kcc_accounts WHERE farmer_id = ?', [farmer_id]);
       if (existing.length > 0) {
         await pool.query(
-          'UPDATE kcc_accounts SET bank_name = ?, sanctioned_limit = ?, current_outstanding = ?, base_interest_rate = ?, subvention_interest_rate = ?, subvention_deadline = ? WHERE farmer_id = ?',
-          [bank_name, sanctioned_limit, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline, farmer_id]
+          'UPDATE kcc_accounts SET bank_name = ?, sanctioned_limit = ?, emi = ?, current_outstanding = ?, base_interest_rate = ?, subvention_interest_rate = ?, subvention_deadline = ?, due_date = ? WHERE farmer_id = ?',
+          [bank_name, sanctioned_limit, emi || 0.00, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline, due_date || null, farmer_id]
         );
         return { id: existing[0].id, ...kcc };
       } else {
         const [result] = await pool.query(
-          'INSERT INTO kcc_accounts (farmer_id, bank_name, sanctioned_limit, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [farmer_id, bank_name, sanctioned_limit, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline]
+          'INSERT INTO kcc_accounts (farmer_id, bank_name, sanctioned_limit, emi, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [farmer_id, bank_name, sanctioned_limit, emi || 0.00, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline, due_date || null]
         );
         return { id: result.insertId, ...kcc };
       }
@@ -1442,10 +1615,12 @@ export const dbService = {
         farmer_id,
         bank_name,
         sanctioned_limit: parseFloat(sanctioned_limit),
+        emi: parseFloat(emi || 0.00),
         current_outstanding: parseFloat(current_outstanding),
         base_interest_rate: parseFloat(base_interest_rate),
         subvention_interest_rate: parseFloat(subvention_interest_rate),
         subvention_deadline,
+        due_date: due_date || null,
         updated_at: new Date().toISOString()
       };
       if (idx !== -1) {

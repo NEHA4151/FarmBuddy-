@@ -172,6 +172,34 @@ app.get('/api/status', (req, res) => {
               INDEX idx_farmer_kcc (farmer_id)
             )
           `);
+
+          // Create subsidies table
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS subsidies (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              farmer_id VARCHAR(50) NOT NULL,
+              scheme_name VARCHAR(150) NOT NULL,
+              amount DECIMAL(12, 2) NOT NULL,
+              status VARCHAR(20) NOT NULL,
+              date_received DATE DEFAULT NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+          `);
+
+          // Run ALTER TABLE migrations to preserve existing data safely
+          try {
+            await pool.query('ALTER TABLE labour_accounts ADD COLUMN overtime DECIMAL(10,2) DEFAULT 0.00 AFTER bonus');
+          } catch (e) {}
+          try {
+            await pool.query('ALTER TABLE crop_cycles ADD COLUMN season VARCHAR(50) DEFAULT NULL AFTER plot_identifier');
+          } catch (e) {}
+          try {
+            await pool.query('ALTER TABLE kcc_accounts ADD COLUMN emi DECIMAL(12,2) DEFAULT 0.00 AFTER sanctioned_limit');
+          } catch (e) {}
+          try {
+            await pool.query('ALTER TABLE kcc_accounts ADD COLUMN due_date DATE DEFAULT NULL AFTER subvention_deadline');
+          } catch (e) {}
+
         } catch (e) {
           console.error('Error creating finance tables on startup:', e);
         }
@@ -212,6 +240,10 @@ app.get('/api/status', (req, res) => {
         }
         if (!db.kcc_accounts) {
           db.kcc_accounts = [];
+          modified = true;
+        }
+        if (!db.subsidies) {
+          db.subsidies = [];
           modified = true;
         }
         
@@ -1156,9 +1188,18 @@ app.get('/api/labour', async (req, res) => {
 });
 
 app.post('/api/labour', async (req, res) => {
-  const { farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, advance, payment_status, payment_mode, notes } = req.body;
+  const { farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, overtime, advance, payment_status, payment_mode, notes } = req.body;
   if (!farmer_id || !date || !worker_name || !gender || !work_type || !crop || hours_worked === undefined || daily_wage === undefined || !payment_status || !payment_mode) {
     return res.status(400).json({ error: 'Missing required labour fields' });
+  }
+  if (parseFloat(hours_worked) <= 0) {
+    return res.status(400).json({ error: 'Duration (hours worked) must be greater than 0' });
+  }
+  if (parseFloat(daily_wage) < 0) {
+    return res.status(400).json({ error: 'Daily wage must be greater than or equal to 0' });
+  }
+  if (overtime !== undefined && parseFloat(overtime) < 0) {
+    return res.status(400).json({ error: 'Overtime must be greater than or equal to 0' });
   }
   try {
     const record = await dbService.createLabourAccount({
@@ -1171,8 +1212,9 @@ app.post('/api/labour', async (req, res) => {
       plot,
       hours_worked,
       daily_wage,
-      bonus,
-      advance,
+      bonus: bonus || 0,
+      overtime: overtime || 0,
+      advance: advance || 0,
       payment_status,
       payment_mode,
       notes
@@ -1186,9 +1228,18 @@ app.post('/api/labour', async (req, res) => {
 
 app.put('/api/labour/:id', async (req, res) => {
   const { id } = req.params;
-  const { farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, advance, payment_status, payment_mode, notes } = req.body;
+  const { farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, overtime, advance, payment_status, payment_mode, notes } = req.body;
   if (!date || !worker_name || !gender || !work_type || !crop || hours_worked === undefined || daily_wage === undefined || !payment_status || !payment_mode) {
     return res.status(400).json({ error: 'Missing required fields for update' });
+  }
+  if (parseFloat(hours_worked) <= 0) {
+    return res.status(400).json({ error: 'Duration (hours worked) must be greater than 0' });
+  }
+  if (parseFloat(daily_wage) < 0) {
+    return res.status(400).json({ error: 'Daily wage must be greater than or equal to 0' });
+  }
+  if (overtime !== undefined && parseFloat(overtime) < 0) {
+    return res.status(400).json({ error: 'Overtime must be greater than or equal to 0' });
   }
   try {
     const record = await dbService.updateLabourAccount(id, {
@@ -1201,8 +1252,9 @@ app.put('/api/labour/:id', async (req, res) => {
       plot,
       hours_worked,
       daily_wage,
-      bonus,
-      advance,
+      bonus: bonus || 0,
+      overtime: overtime || 0,
+      advance: advance || 0,
       payment_status,
       payment_mode,
       notes
@@ -1246,12 +1298,40 @@ app.get('/api/crop-cycles', async (req, res) => {
 });
 
 app.post('/api/crop-cycles', async (req, res) => {
-  const { farmer_id, crop_name, plot_identifier, start_date, end_date, status } = req.body;
+  const { farmer_id, crop_name, plot_identifier, season, start_date, end_date, status } = req.body;
   if (!farmer_id || !crop_name || !start_date) {
     return res.status(400).json({ error: 'Missing required crop cycle fields' });
   }
+  
+  // Prevent duplicate crop cycles for the same plot and season
+  if (plot_identifier && season) {
+    try {
+      let isDuplicate = false;
+      if (isMysql) {
+        const [rows] = await pool.query(
+          'SELECT 1 FROM crop_cycles WHERE farmer_id = ? AND plot_identifier = ? AND season = ? LIMIT 1',
+          [farmer_id, plot_identifier, season]
+        );
+        isDuplicate = rows.length > 0;
+      } else {
+        const dbPath = path.join(__dirname, 'database.json');
+        if (fs.existsSync(dbPath)) {
+          const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+          isDuplicate = (db.crop_cycles || []).some(
+            c => c.farmer_id === farmer_id && c.plot_identifier === plot_identifier && c.season === season
+          );
+        }
+      }
+      if (isDuplicate) {
+        return res.status(400).json({ error: `A crop cycle already exists for Plot "${plot_identifier}" during Season "${season}".` });
+      }
+    } catch (e) {
+      console.error('Error validating crop cycle uniqueness:', e);
+    }
+  }
+
   try {
-    const cycle = await dbService.createCropCycle({ farmer_id, crop_name, plot_identifier, start_date, end_date, status });
+    const cycle = await dbService.createCropCycle({ farmer_id, crop_name, plot_identifier, season, start_date, end_date, status });
     res.status(201).json(cycle);
   } catch (err) {
     console.error('Error creating crop cycle:', err);
@@ -1261,9 +1341,9 @@ app.post('/api/crop-cycles', async (req, res) => {
 
 app.put('/api/crop-cycles/:id', async (req, res) => {
   const { id } = req.params;
-  const { crop_name, plot_identifier, start_date, end_date, status } = req.body;
+  const { crop_name, plot_identifier, season, start_date, end_date, status } = req.body;
   try {
-    const updated = await dbService.updateCropCycle(id, { crop_name, plot_identifier, start_date, end_date, status });
+    const updated = await dbService.updateCropCycle(id, { crop_name, plot_identifier, season, start_date, end_date, status });
     if (!updated) return res.status(404).json({ error: 'Crop cycle not found' });
     res.json(updated);
   } catch (err) {
@@ -1352,12 +1432,34 @@ app.post('/api/transactions', async (req, res) => {
   if (!farmer_id || !transaction_type || !category || !amount || !payment_mode || !transaction_date) {
     return res.status(400).json({ error: 'Missing required transaction fields' });
   }
+  if (parseFloat(amount) <= 0) {
+    return res.status(400).json({ error: 'Transaction amount must be greater than 0' });
+  }
   try {
     const tx = await dbService.createTransaction({ farmer_id, crop_cycle_id, credit_contact_id, transaction_type, category, amount, payment_mode, transaction_date, notes });
     res.status(201).json(tx);
   } catch (err) {
     console.error('Error creating transaction:', err);
     res.status(500).json({ error: 'Failed to create transaction' });
+  }
+});
+
+app.put('/api/transactions/:id', async (req, res) => {
+  const { id } = req.params;
+  const { farmer_id, crop_cycle_id, credit_contact_id, transaction_type, category, amount, payment_mode, transaction_date, notes } = req.body;
+  if (!farmer_id || !transaction_type || !category || !amount || !payment_mode || !transaction_date) {
+    return res.status(400).json({ error: 'Missing required fields for update' });
+  }
+  if (parseFloat(amount) <= 0) {
+    return res.status(400).json({ error: 'Transaction amount must be greater than 0' });
+  }
+  try {
+    const tx = await dbService.updateTransaction(id, { farmer_id, crop_cycle_id, credit_contact_id, transaction_type, category, amount, payment_mode, transaction_date, notes });
+    if (!tx) return res.status(404).json({ error: 'Transaction not found' });
+    res.json(tx);
+  } catch (err) {
+    console.error('Error updating transaction:', err);
+    res.status(500).json({ error: 'Failed to update transaction' });
   }
 });
 
@@ -1370,6 +1472,66 @@ app.delete('/api/transactions/:id', async (req, res) => {
   } catch (err) {
     console.error('Error deleting transaction:', err);
     res.status(500).json({ error: 'Failed to delete transaction' });
+  }
+});
+
+// Subsidies API
+app.get('/api/subsidies', async (req, res) => {
+  const farmerId = req.query.farmerId || 'FMR-0921';
+  try {
+    const subsidies = await dbService.getAllSubsidies(farmerId);
+    res.json(subsidies);
+  } catch (err) {
+    console.error('Error fetching subsidies:', err);
+    res.status(500).json({ error: 'Failed to fetch subsidies' });
+  }
+});
+
+app.post('/api/subsidies', async (req, res) => {
+  const { farmer_id, scheme_name, amount, status, date_received } = req.body;
+  if (!farmer_id || !scheme_name || amount === undefined || !status) {
+    return res.status(400).json({ error: 'Missing required subsidy fields' });
+  }
+  if (parseFloat(amount) < 0) {
+    return res.status(400).json({ error: 'Amount must be greater than or equal to 0' });
+  }
+  try {
+    const subsidy = await dbService.createSubsidy({ farmer_id, scheme_name, amount, status, date_received });
+    res.status(201).json(subsidy);
+  } catch (err) {
+    console.error('Error creating subsidy:', err);
+    res.status(500).json({ error: 'Failed to create subsidy' });
+  }
+});
+
+app.put('/api/subsidies/:id', async (req, res) => {
+  const { id } = req.params;
+  const { scheme_name, amount, status, date_received } = req.body;
+  if (!scheme_name || amount === undefined || !status) {
+    return res.status(400).json({ error: 'Missing required fields for update' });
+  }
+  if (parseFloat(amount) < 0) {
+    return res.status(400).json({ error: 'Amount must be greater than or equal to 0' });
+  }
+  try {
+    const subsidy = await dbService.updateSubsidy(id, { scheme_name, amount, status, date_received });
+    if (!subsidy) return res.status(404).json({ error: 'Subsidy not found' });
+    res.json(subsidy);
+  } catch (err) {
+    console.error('Error updating subsidy:', err);
+    res.status(500).json({ error: 'Failed to update subsidy' });
+  }
+});
+
+app.delete('/api/subsidies/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const success = await dbService.deleteSubsidy(id);
+    if (!success) return res.status(404).json({ error: 'Subsidy not found' });
+    res.json({ message: 'Subsidy deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting subsidy:', err);
+    res.status(500).json({ error: 'Failed to delete subsidy' });
   }
 });
 
@@ -1386,12 +1548,12 @@ app.get('/api/kcc-accounts', async (req, res) => {
 });
 
 app.post('/api/kcc-accounts', async (req, res) => {
-  const { farmer_id, bank_name, sanctioned_limit, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline } = req.body;
+  const { farmer_id, bank_name, sanctioned_limit, emi, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline, due_date } = req.body;
   if (!farmer_id || !bank_name || sanctioned_limit === undefined || !subvention_deadline) {
     return res.status(400).json({ error: 'Missing required KCC fields' });
   }
   try {
-    const kcc = await dbService.createOrUpdateKccAccount({ farmer_id, bank_name, sanctioned_limit, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline });
+    const kcc = await dbService.createOrUpdateKccAccount({ farmer_id, bank_name, sanctioned_limit, emi, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline, due_date });
     res.json(kcc);
   } catch (err) {
     console.error('Error updating KCC account:', err);

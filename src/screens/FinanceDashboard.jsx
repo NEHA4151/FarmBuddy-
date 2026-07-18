@@ -29,7 +29,14 @@ import {
   Cell,
   Tooltip,
   ResponsiveContainer,
-  Legend
+  Legend,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  LineChart,
+  Line
 } from 'recharts';
 
 export default function FinanceDashboard() {
@@ -49,6 +56,11 @@ export default function FinanceDashboard() {
     addLabourAccount,
     updateLabourAccount,
     deleteLabourAccount,
+    subsidies,
+    updateTransaction,
+    addSubsidy,
+    updateSubsidy,
+    deleteSubsidy,
     addNotification
   } = useFarm();
 
@@ -56,6 +68,7 @@ export default function FinanceDashboard() {
 
   // Form states - Transactions
   const [showTxModal, setShowTxModal] = useState(false);
+  const [editingTxId, setEditingTxId] = useState(null);
   const [txType, setTxType] = useState('EXPENSE');
   const [txCategory, setTxCategory] = useState('SEEDS');
   const [txAmount, setTxAmount] = useState('');
@@ -75,7 +88,16 @@ export default function FinanceDashboard() {
   // Form states - Crop Cycles
   const [showCycleModal, setShowCycleModal] = useState(false);
   const [cycleCropName, setCycleCropName] = useState('');
+  const formatCurrency = (val) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(parseFloat(val || 0));
+  };
+
   const [cyclePlot, setCyclePlot] = useState('');
+  const [cycleSeason, setCycleSeason] = useState('Kharif');
   const [cycleStart, setCycleStart] = useState(new Date().toISOString().split('T')[0]);
   const [cycleEnd, setCycleEnd] = useState('');
 
@@ -84,7 +106,17 @@ export default function FinanceDashboard() {
   const [kccBank, setKccBank] = useState('');
   const [kccLimit, setKccLimit] = useState('');
   const [kccOutstanding, setKccOutstanding] = useState('');
+  const [kccEmi, setKccEmi] = useState('');
   const [kccDeadline, setKccDeadline] = useState(new Date().toISOString().split('T')[0]);
+  const [kccDueDate, setKccDueDate] = useState('');
+
+  // Form states - Subsidies
+  const [showSubsidyModal, setShowSubsidyModal] = useState(false);
+  const [editingSubsidyId, setEditingSubsidyId] = useState(null);
+  const [subsidyScheme, setSubsidyScheme] = useState('');
+  const [subsidyAmount, setSubsidyAmount] = useState('');
+  const [subsidyStatus, setSubsidyStatus] = useState('PENDING');
+  const [subsidyDate, setSubsidyDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Form states - Labour Records
   const [showLabourModal, setShowLabourModal] = useState(false);
@@ -98,6 +130,7 @@ export default function FinanceDashboard() {
   const [labourHours, setLabourHours] = useState('');
   const [labourWage, setLabourWage] = useState('');
   const [labourBonus, setLabourBonus] = useState('');
+  const [labourOvertime, setLabourOvertime] = useState('');
   const [labourAdvance, setLabourAdvance] = useState('');
   const [labourStatus, setLabourStatus] = useState('PENDING');
   const [labourMode, setLabourMode] = useState('CASH');
@@ -116,15 +149,25 @@ export default function FinanceDashboard() {
   const [txFilterType, setTxFilterType] = useState('ALL');
   const [txFilterCategory, setTxFilterCategory] = useState('ALL');
 
+  // Reports Filters
+  const [reportStartDate, setReportStartDate] = useState('');
+  const [reportEndDate, setReportEndDate] = useState('');
+  const [reportCrop, setReportCrop] = useState('ALL');
+  const [reportWorker, setReportWorker] = useState('ALL');
+  const [reportCategory, setReportCategory] = useState('ALL');
+  const [reportPaymentStatus, setReportPaymentStatus] = useState('ALL');
+
   // Load KCC details fallback
   const kccInfo = useMemo(() => {
     return kccAccounts[0] || {
       bank_name: 'State Bank of India',
       sanctioned_limit: 150000,
+      emi: 2500,
       current_outstanding: 45000,
       base_interest_rate: 7.00,
       subvention_interest_rate: 4.00,
-      subvention_deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      subvention_deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     };
   }, [kccAccounts]);
 
@@ -146,36 +189,46 @@ export default function FinanceDashboard() {
       }
     });
 
+    // Add subsidies received
+    const subReceived = subsidies.filter(s => s.status === 'RECEIVED').reduce((sum, s) => sum + parseFloat(s.amount || 0), 0);
+    const totalInflow = income + subReceived;
+
     let totalLabourExpense = 0;
     labourAccounts.forEach(l => {
       totalLabourExpense += parseFloat(l.total_amount || 0);
     });
 
-    // Add labor accounts as outflow to net calculation
     const totalOutflow = expense + totalLabourExpense;
 
     return {
-      totalIncome: income,
+      totalIncome: totalInflow,
       totalExpense: expense,
       totalLabourCost: totalLabourExpense,
-      netProfit: income - totalOutflow,
-      totalSubsidy: subsidy
+      netProfit: totalInflow - totalOutflow,
+      totalSubsidy: subsidy + subReceived
     };
-  }, [transactions, labourAccounts]);
+  }, [transactions, labourAccounts, subsidies]);
 
   // Calculations for crop cycle profitability
   const cropCycleProfitability = useMemo(() => {
     const cycleMap = {};
     
-    // Initialize active crop cycles
+    // Initialize crop cycles
     cropCycles.forEach(c => {
       cycleMap[c.id] = {
         id: c.id,
         cropName: c.crop_name,
         plot: c.plot_identifier,
-        status: c.status,
-        income: 0,
-        expense: 0
+        season: c.season || 'General',
+        revenue: 0,
+        labourExpense: 0,
+        seedExpense: 0,
+        fertilizerExpense: 0,
+        transportExpense: 0,
+        otherExpenses: 0,
+        totalExpense: 0,
+        netProfit: 0,
+        profitPercentage: 0
       };
     });
 
@@ -183,10 +236,20 @@ export default function FinanceDashboard() {
     transactions.forEach(t => {
       if (t.crop_cycle_id && cycleMap[t.crop_cycle_id]) {
         const amt = parseFloat(t.amount || 0);
+        const item = cycleMap[t.crop_cycle_id];
         if (t.transaction_type === 'INCOME') {
-          cycleMap[t.crop_cycle_id].income += amt;
+          item.revenue += amt;
         } else {
-          cycleMap[t.crop_cycle_id].expense += amt;
+          if (t.category === 'SEEDS') {
+            item.seedExpense += amt;
+          } else if (t.category === 'FERTILIZER') {
+            item.fertilizerExpense += amt;
+          } else if (t.category === 'TRANSPORT') {
+            item.transportExpense += amt;
+          } else {
+            item.otherExpenses += amt;
+          }
+          item.totalExpense += amt;
         }
       }
     });
@@ -198,8 +261,16 @@ export default function FinanceDashboard() {
         (c.plot_identifier && l.plot && c.plot_identifier.toLowerCase().includes(l.plot.toLowerCase()))
       );
       if (cycle && cycleMap[cycle.id]) {
-        cycleMap[cycle.id].expense += parseFloat(l.total_amount || 0);
+        const amt = parseFloat(l.total_amount || 0);
+        cycleMap[cycle.id].labourExpense += amt;
+        cycleMap[cycle.id].totalExpense += amt;
       }
+    });
+
+    // Post-calculations
+    Object.values(cycleMap).forEach(item => {
+      item.netProfit = item.revenue - item.totalExpense;
+      item.profitPercentage = item.totalExpense > 0 ? parseFloat(((item.netProfit / item.totalExpense) * 100).toFixed(1)) : 0;
     });
 
     return Object.values(cycleMap);
@@ -224,6 +295,91 @@ export default function FinanceDashboard() {
     }));
   }, [transactions, stats.totalLabourCost]);
 
+  // Group monthly cash flow (Income vs Expense & Net Trend)
+  const monthlyCashFlowData = useMemo(() => {
+    const monthlyData = {};
+    
+    // Process transactions
+    transactions.forEach(t => {
+      const date = new Date(t.transaction_date);
+      if (isNaN(date.getTime())) return;
+      const monthStr = date.toLocaleString('default', { month: 'short', year: '2-digit' });
+      
+      if (!monthlyData[monthStr]) {
+        monthlyData[monthStr] = { month: monthStr, Income: 0, Expense: 0 };
+      }
+      
+      const amt = parseFloat(t.amount || 0);
+      if (t.transaction_type === 'INCOME') {
+        monthlyData[monthStr].Income += amt;
+      } else {
+        monthlyData[monthStr].Expense += amt;
+      }
+    });
+
+    // Process labour records
+    labourAccounts.forEach(l => {
+      const date = new Date(l.date);
+      if (isNaN(date.getTime())) return;
+      const monthStr = date.toLocaleString('default', { month: 'short', year: '2-digit' });
+      
+      if (!monthlyData[monthStr]) {
+        monthlyData[monthStr] = { month: monthStr, Income: 0, Expense: 0 };
+      }
+      
+      monthlyData[monthStr].Expense += parseFloat(l.total_amount || 0);
+    });
+
+    // Process subsidies received
+    subsidies.forEach(s => {
+      if (s.status !== 'RECEIVED' || !s.date_received) return;
+      const date = new Date(s.date_received);
+      if (isNaN(date.getTime())) return;
+      const monthStr = date.toLocaleString('default', { month: 'short', year: '2-digit' });
+      
+      if (!monthlyData[monthStr]) {
+        monthlyData[monthStr] = { month: monthStr, Income: 0, Expense: 0 };
+      }
+      monthlyData[monthStr].Income += parseFloat(s.amount || 0);
+    });
+
+    // Convert to sorted array
+    return Object.values(monthlyData).sort((a, b) => {
+      const parseDate = (mStr) => {
+        const parts = mStr.split(' ');
+        const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(parts[0]);
+        const y = parseInt(parts[1], 10);
+        return new Date(2000 + y, m, 1);
+      };
+      return parseDate(a.month) - parseDate(b.month);
+    });
+  }, [transactions, labourAccounts, subsidies]);
+
+  // Group labour costs by month for trend
+  const monthlyLabourCostData = useMemo(() => {
+    const monthlyData = {};
+    labourAccounts.forEach(l => {
+      const date = new Date(l.date);
+      if (isNaN(date.getTime())) return;
+      const monthStr = date.toLocaleString('default', { month: 'short', year: '2-digit' });
+      
+      if (!monthlyData[monthStr]) {
+        monthlyData[monthStr] = { month: monthStr, Cost: 0 };
+      }
+      monthlyData[monthStr].Cost += parseFloat(l.total_amount || 0);
+    });
+
+    return Object.values(monthlyData).sort((a, b) => {
+      const parseDate = (mStr) => {
+        const parts = mStr.split(' ');
+        const m = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(parts[0]);
+        const y = parseInt(parts[1], 10);
+        return new Date(2000 + y, m, 1);
+      };
+      return parseDate(a.month) - parseDate(b.month);
+    });
+  }, [labourAccounts]);
+
   const COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#6b7280'];
 
   // Subvention Deadline Check
@@ -239,7 +395,10 @@ export default function FinanceDashboard() {
   // Handle transaction submissions
   const handleTxSubmit = async (e) => {
     e.preventDefault();
-    if (!txAmount || parseFloat(txAmount) <= 0 || !txDate) return;
+    if (!txAmount || parseFloat(txAmount) <= 0 || !txDate) {
+      addNotification("Validation Error", "Amount must be greater than 0, and date is required.", "error");
+      return;
+    }
 
     const payload = {
       transaction_type: txType,
@@ -252,16 +411,41 @@ export default function FinanceDashboard() {
       notes: txNotes
     };
 
-    const success = await addTransaction(payload);
+    let success = false;
+    if (editingTxId) {
+      success = await updateTransaction(editingTxId, payload);
+      if (success) {
+        addNotification("Transaction Updated", "The transaction has been updated successfully.", "success");
+      }
+    } else {
+      success = await addTransaction(payload);
+      if (success) {
+        addNotification("Transaction Logged", `Successfully logged ${txType.toLowerCase()} of ${formatCurrency(txAmount)}.`, "success");
+      }
+    }
+
     if (success) {
-      addNotification("Transaction Logged", `Successfully logged ${txType.toLowerCase()} of ₹${txAmount}.`, "success");
       setShowTxModal(false);
+      setEditingTxId(null);
       // Reset form
       setTxAmount('');
       setTxNotes('');
       setTxCycleId('');
       setTxContactId('');
     }
+  };
+
+  const triggerTxEdit = (tx) => {
+    setEditingTxId(tx.id);
+    setTxType(tx.transaction_type);
+    setTxCategory(tx.category);
+    setTxAmount(tx.amount.toString());
+    setTxMode(tx.payment_mode);
+    setTxDate(new Date(tx.transaction_date).toISOString().split('T')[0]);
+    setTxCycleId(tx.crop_cycle_id || '');
+    setTxContactId(tx.credit_contact_id || '');
+    setTxNotes(tx.notes || '');
+    setShowTxModal(true);
   };
 
   // Handle credit contact submission
@@ -291,9 +475,19 @@ export default function FinanceDashboard() {
     e.preventDefault();
     if (!cycleCropName || !cycleStart) return;
 
+    // Prevent duplicate crop cycles for the same plot and season
+    const isDuplicate = cropCycles.some(
+      c => c.plot_identifier && c.plot_identifier.toLowerCase() === (cyclePlot || '').toLowerCase() && c.season && c.season.toLowerCase() === cycleSeason.toLowerCase()
+    );
+    if (isDuplicate) {
+      addNotification("Duplicate Cycle", `A crop cycle already exists for Plot "${cyclePlot}" during Season "${cycleSeason}".`, "error");
+      return;
+    }
+
     const payload = {
       crop_name: cycleCropName,
       plot_identifier: cyclePlot || null,
+      season: cycleSeason,
       start_date: cycleStart,
       end_date: cycleEnd || null,
       status: 'ACTIVE'
@@ -317,8 +511,10 @@ export default function FinanceDashboard() {
     const payload = {
       bank_name: kccBank,
       sanctioned_limit: parseFloat(kccLimit),
+      emi: parseFloat(kccEmi || 0),
       current_outstanding: parseFloat(kccOutstanding || 0),
       subvention_deadline: kccDeadline,
+      due_date: kccDueDate || null,
       base_interest_rate: 7.00,
       subvention_interest_rate: 4.00
     };
@@ -333,7 +529,31 @@ export default function FinanceDashboard() {
   // Handle Labour Record submission (Create & Edit)
   const handleLabourSubmit = async (e) => {
     e.preventDefault();
-    if (!labourName || !labourHours || !labourWage || !labourCrop) return;
+    if (!labourName || !labourHours || !labourWage || !labourCrop) {
+      addNotification("Validation Error", "All fields with asterisks are mandatory.", "error");
+      return;
+    }
+
+    if (parseFloat(labourHours) <= 0) {
+      addNotification("Validation Error", "Duration must be greater than 0", "error");
+      return;
+    }
+    if (parseFloat(labourWage) < 0) {
+      addNotification("Validation Error", "Wage rate cannot be negative", "error");
+      return;
+    }
+    if (labourOvertime !== '' && parseFloat(labourOvertime) < 0) {
+      addNotification("Validation Error", "Overtime cannot be negative", "error");
+      return;
+    }
+    if (labourBonus !== '' && parseFloat(labourBonus) < 0) {
+      addNotification("Validation Error", "Bonus cannot be negative", "error");
+      return;
+    }
+    if (labourAdvance !== '' && parseFloat(labourAdvance) < 0) {
+      addNotification("Validation Error", "Advance cannot be negative", "error");
+      return;
+    }
 
     const payload = {
       date: labourDate,
@@ -345,6 +565,7 @@ export default function FinanceDashboard() {
       hours_worked: parseFloat(labourHours),
       daily_wage: parseFloat(labourWage),
       bonus: parseFloat(labourBonus || 0),
+      overtime: parseFloat(labourOvertime || 0),
       advance: parseFloat(labourAdvance || 0),
       payment_status: labourStatus,
       payment_mode: labourMode,
@@ -372,6 +593,7 @@ export default function FinanceDashboard() {
       setLabourHours('');
       setLabourWage('');
       setLabourBonus('');
+      setLabourOvertime('');
       setLabourAdvance('');
       setLabourNotes('');
       setLabourPlot('');
@@ -389,13 +611,132 @@ export default function FinanceDashboard() {
     setLabourPlot(record.plot || '');
     setLabourHours(record.hours_worked);
     setLabourWage(record.daily_wage);
-    setLabourBonus(record.bonus);
-    setLabourAdvance(record.advance);
+    setLabourBonus(record.bonus || '');
+    setLabourOvertime(record.overtime || '');
+    setLabourAdvance(record.advance || '');
     setLabourStatus(record.payment_status);
     setLabourMode(record.payment_mode);
     setLabourNotes(record.notes || '');
     setShowLabourModal(true);
   };
+
+  // Handle subsidy form submission
+  const handleSubsidySubmit = async (e) => {
+    e.preventDefault();
+    if (!subsidyScheme || !subsidyAmount) {
+      addNotification("Validation Error", "Scheme Name and Amount are mandatory.", "error");
+      return;
+    }
+
+    if (parseFloat(subsidyAmount) <= 0) {
+      addNotification("Validation Error", "Amount must be greater than 0", "error");
+      return;
+    }
+
+    const payload = {
+      scheme_name: subsidyScheme,
+      amount: parseFloat(subsidyAmount),
+      status: subsidyStatus,
+      date_received: subsidyStatus === 'RECEIVED' ? subsidyDate : null
+    };
+
+    let success = false;
+    if (editingSubsidyId) {
+      success = await updateSubsidy(editingSubsidyId, payload);
+      if (success) {
+        addNotification("Subsidy Updated", `Successfully updated scheme ${subsidyScheme}.`, "success");
+      }
+    } else {
+      success = await addSubsidy(payload);
+      if (success) {
+        addNotification("Subsidy Logged", `Successfully logged scheme ${subsidyScheme}.`, "success");
+      }
+    }
+
+    if (success) {
+      setShowSubsidyModal(false);
+      setEditingSubsidyId(null);
+      setSubsidyScheme('');
+      setSubsidyAmount('');
+      setSubsidyStatus('PENDING');
+    }
+  };
+
+  // Filtered transactions for reports
+  const filteredReportTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      // Date range filter
+      if (reportStartDate && t.transaction_date < reportStartDate) return false;
+      if (reportEndDate && t.transaction_date > reportEndDate) return false;
+      
+      // Crop filter (need to check crop_name of crop_cycle_id)
+      if (reportCrop !== 'ALL') {
+        const cycle = cropCycles.find(c => c.id === t.crop_cycle_id);
+        if (!cycle || cycle.crop_name !== reportCrop) return false;
+      }
+
+      // Category filter
+      if (reportCategory !== 'ALL' && t.category !== reportCategory) return false;
+
+      // Status filter
+      if (reportPaymentStatus !== 'ALL') {
+        const isPaid = t.payment_mode !== 'UDHAAR';
+        if (reportPaymentStatus === 'PAID' && !isPaid) return false;
+        if (reportPaymentStatus === 'PENDING' && isPaid) return false;
+      }
+
+      // Worker filter (transactions don't have worker names, so exclude if filtering by worker)
+      if (reportWorker !== 'ALL') return false;
+
+      return true;
+    });
+  }, [transactions, cropCycles, reportStartDate, reportEndDate, reportCrop, reportCategory, reportPaymentStatus, reportWorker]);
+
+  // Filtered labour accounts for reports
+  const filteredReportLabour = useMemo(() => {
+    return labourAccounts.filter(l => {
+      // Date range filter
+      if (reportStartDate && l.date < reportStartDate) return false;
+      if (reportEndDate && l.date > reportEndDate) return false;
+
+      // Crop filter
+      if (reportCrop !== 'ALL' && l.crop !== reportCrop) return false;
+
+      // Worker filter
+      if (reportWorker !== 'ALL' && l.worker_name !== reportWorker) return false;
+
+      // Category filter (Labour is under LABOR category)
+      if (reportCategory !== 'ALL' && reportCategory !== 'LABOR') return false;
+
+      // Status filter
+      if (reportPaymentStatus !== 'ALL' && l.payment_status !== reportPaymentStatus) return false;
+
+      return true;
+    });
+  }, [labourAccounts, reportStartDate, reportEndDate, reportCrop, reportWorker, reportCategory, reportPaymentStatus]);
+
+  // Filtered stats for reports printing/preview
+  const filteredReportStats = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    filteredReportTransactions.forEach(t => {
+      const amt = parseFloat(t.amount || 0);
+      if (t.transaction_type === 'INCOME') income += amt;
+      else expense += amt;
+    });
+
+    let labor = 0;
+    filteredReportLabour.forEach(l => {
+      labor += parseFloat(l.total_amount || 0);
+    });
+
+    return {
+      inflow: income,
+      expense: expense,
+      labor: labor,
+      net: income - (expense + labor)
+    };
+  }, [filteredReportTransactions, filteredReportLabour]);
 
   // Export transactions/labour records combined to CSV
   const exportToCSV = () => {
@@ -404,7 +745,7 @@ export default function FinanceDashboard() {
     const rows = [];
     
     // Add transactions
-    transactions.forEach(t => {
+    filteredReportTransactions.forEach(t => {
       rows.push([
         'Ledger Transaction',
         t.id,
@@ -417,7 +758,7 @@ export default function FinanceDashboard() {
     });
 
     // Add labor records
-    labourAccounts.forEach(l => {
+    filteredReportLabour.forEach(l => {
       rows.push([
         'Labour Record',
         l.id,
@@ -514,7 +855,7 @@ export default function FinanceDashboard() {
           <div>
             <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest block">Net Profit Margin</span>
             <span className={`text-xl font-black block mt-0.5 ${stats.netProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
-              ₹{stats.netProfit.toLocaleString('en-IN')}
+              {formatCurrency(stats.netProfit)}
             </span>
           </div>
         </div>
@@ -527,7 +868,7 @@ export default function FinanceDashboard() {
           <div>
             <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest block">Total Inflow</span>
             <span className="text-xl font-black text-stone-800 dark:text-stone-100 block mt-0.5">
-              ₹{stats.totalIncome.toLocaleString('en-IN')}
+              {formatCurrency(stats.totalIncome)}
             </span>
           </div>
         </div>
@@ -540,7 +881,7 @@ export default function FinanceDashboard() {
           <div>
             <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest block">Total Outflow</span>
             <span className="text-xl font-black text-stone-800 dark:text-stone-100 block mt-0.5">
-              ₹{(stats.totalExpense + stats.totalLabourCost).toLocaleString('en-IN')}
+              {formatCurrency(stats.totalExpense + stats.totalLabourCost)}
             </span>
           </div>
         </div>
@@ -553,7 +894,7 @@ export default function FinanceDashboard() {
           <div>
             <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest block">Labour Overhead</span>
             <span className="text-xl font-black text-stone-800 dark:text-stone-100 block mt-0.5">
-              ₹{stats.totalLabourCost.toLocaleString('en-IN')}
+              {formatCurrency(stats.totalLabourCost)}
             </span>
           </div>
         </div>
@@ -642,18 +983,17 @@ export default function FinanceDashboard() {
               ) : (
                 <div className="divide-y divide-stone-100 dark:divide-stone-850">
                   {cropCycleProfitability.map(c => {
-                    const margin = c.income - c.expense;
                     return (
                       <div key={c.id} className="py-4 flex items-center justify-between first:pt-0 last:pb-0">
                         <div>
                           <span className="font-extrabold text-sm text-stone-800 dark:text-stone-100">{c.cropName}</span>
-                          <span className="text-[10px] text-stone-500 block mt-0.5">Plot: {c.plot || 'General'} | Status: {c.status}</span>
+                          <span className="text-[10px] text-stone-500 block mt-0.5">Plot: {c.plot || 'General'} | Season: {c.season}</span>
                         </div>
                         <div className="text-right">
-                          <span className={`font-black text-sm block mt-0.5 ${margin >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
-                            {margin >= 0 ? '+' : '-'}₹{Math.abs(margin).toLocaleString('en-IN')}
+                          <span className={`font-black text-sm block mt-0.5 ${c.netProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                            {c.netProfit >= 0 ? '+' : '-'}{formatCurrency(Math.abs(c.netProfit))} ({c.profitPercentage}%)
                           </span>
-                          <span className="text-[10px] text-stone-450 block">Inflow: ₹{c.income} | Expenses/Labour: ₹{c.expense}</span>
+                          <span className="text-[10px] text-stone-450 block">Revenue: {formatCurrency(c.revenue)} | Expenses: {formatCurrency(c.totalExpense)}</span>
                         </div>
                       </div>
                     );
@@ -702,7 +1042,7 @@ export default function FinanceDashboard() {
               <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
                 <span className="text-[10px] text-stone-400 block tracking-widest font-bold uppercase">Subsidy Revenue Received</span>
                 <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 block mt-1">
-                  ₹{stats.totalSubsidy.toLocaleString('en-IN')}
+                  {formatCurrency(stats.totalSubsidy)}
                 </span>
                 <span className="text-[10px] text-stone-500 block mt-2">
                   ✓ Formatted as direct non-taxable agriculture income.
@@ -710,6 +1050,116 @@ export default function FinanceDashboard() {
               </div>
             </div>
 
+          </div>
+
+          {/* Live Charts Analytics Row */}
+          <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            {/* Chart 1: Cash Flow (Income vs Expense) */}
+            <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-4">
+              <h3 className="font-extrabold text-sm text-stone-800 dark:text-stone-100">Monthly Cash Flow (Income vs Expense)</h3>
+              {monthlyCashFlowData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 text-stone-400">
+                  <TrendingUp className="h-8 w-8 opacity-40 mb-2" />
+                  <span className="text-xs">No transaction records logged.</span>
+                </div>
+              ) : (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyCashFlowData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                      <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                      <YAxis tickFormatter={(val) => `₹${val}`} tick={{ fontSize: 10 }} />
+                      <Tooltip formatter={(val) => formatCurrency(val)} />
+                      <Legend wrapperStyle={{ fontSize: 10 }} />
+                      <Bar dataKey="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Expense" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            {/* Chart 2: Expense Distribution (Pie Chart) */}
+            <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-4">
+              <h3 className="font-extrabold text-sm text-stone-800 dark:text-stone-100">Expense Category Distribution</h3>
+              {chartDataByCategory.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 text-stone-400">
+                  <PieIcon className="h-8 w-8 opacity-40 mb-2" />
+                  <span className="text-xs">No expenses logged.</span>
+                </div>
+              ) : (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartDataByCategory}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {chartDataByCategory.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(val) => formatCurrency(val)} />
+                      <Legend wrapperStyle={{ fontSize: 10 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            {/* Chart 3: Crop-wise Profit (Bar Chart) */}
+            <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-4">
+              <h3 className="font-extrabold text-sm text-stone-800 dark:text-stone-100">Crop Profitability Performance</h3>
+              {cropCycleProfitability.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 text-stone-400">
+                  <Layers className="h-8 w-8 opacity-40 mb-2" />
+                  <span className="text-xs">No crop cycles to track.</span>
+                </div>
+              ) : (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={cropCycleProfitability}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                      <XAxis dataKey="cropName" tick={{ fontSize: 10 }} />
+                      <YAxis tickFormatter={(val) => `₹${val}`} tick={{ fontSize: 10 }} />
+                      <Tooltip formatter={(val) => formatCurrency(val)} />
+                      <Legend wrapperStyle={{ fontSize: 10 }} />
+                      <Bar dataKey="netProfit" name="Net Profit" fill="#10b981" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="totalExpense" name="Expenses" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            {/* Chart 4: Labour Cost Trend (Line Chart) */}
+            <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-4">
+              <h3 className="font-extrabold text-sm text-stone-800 dark:text-stone-100">Labour Overhead Cost Trend</h3>
+              {monthlyLabourCostData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-64 text-stone-400">
+                  <Users className="h-8 w-8 opacity-40 mb-2" />
+                  <span className="text-xs">No labour costs recorded.</span>
+                </div>
+              ) : (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={monthlyLabourCostData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                      <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                      <YAxis tickFormatter={(val) => `₹${val}`} tick={{ fontSize: 10 }} />
+                      <Tooltip formatter={(val) => formatCurrency(val)} />
+                      <Legend wrapperStyle={{ fontSize: 10 }} />
+                      <Line type="monotone" dataKey="Cost" name="Labour Cost" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 8 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
           </div>
 
         </div>
@@ -769,8 +1219,14 @@ export default function FinanceDashboard() {
           </div>
 
           {/* Labour Records Table */}
-          {filteredLabourAccounts.length === 0 ? (
-            <div className="text-center py-10 text-stone-400 text-xs">
+          {labourAccounts.length === 0 ? (
+            <div className="text-center py-12 text-stone-450 dark:text-stone-550 border border-dashed border-stone-200 dark:border-stone-850 rounded-2xl p-6">
+              <Users className="h-10 w-10 mx-auto opacity-40 mb-3 text-stone-400" />
+              <p className="font-extrabold text-sm text-stone-700 dark:text-stone-300">No labour records available.</p>
+              <p className="text-xs text-stone-400 mt-1">Click Add Labour Record to create your first labour record.</p>
+            </div>
+          ) : filteredLabourAccounts.length === 0 ? (
+            <div className="text-center py-10 text-stone-400 text-xs border border-stone-150 dark:border-stone-800 rounded-2xl p-6 bg-stone-50/30">
               No matching labour records found.
             </div>
           ) : (
@@ -787,6 +1243,7 @@ export default function FinanceDashboard() {
                       <th className="p-3 text-right">Hours</th>
                       <th className="p-3 text-right">Wage</th>
                       <th className="p-3 text-right">Bonus</th>
+                      <th className="p-3 text-right">Overtime</th>
                       <th className="p-3 text-right">Advance</th>
                       <th className="p-3">Status / Mode</th>
                       <th className="p-3 text-right">Total Amount</th>
@@ -805,9 +1262,10 @@ export default function FinanceDashboard() {
                           <span className="text-[10px] text-stone-450 block">{l.plot || 'General'}</span>
                         </td>
                         <td className="p-3 text-right">{l.hours_worked} hrs</td>
-                        <td className="p-3 text-right">₹{l.daily_wage}</td>
-                        <td className="p-3 text-right text-emerald-600">+₹{l.bonus || 0}</td>
-                        <td className="p-3 text-right text-rose-500">-₹{l.advance || 0}</td>
+                        <td className="p-3 text-right">{formatCurrency(l.daily_wage)}</td>
+                        <td className="p-3 text-right text-emerald-600">+{formatCurrency(l.bonus || 0)}</td>
+                        <td className="p-3 text-right text-emerald-500">+{formatCurrency(l.overtime || 0)}</td>
+                        <td className="p-3 text-right text-rose-500">-{formatCurrency(l.advance || 0)}</td>
                         <td className="p-3">
                           <span className={`inline-block px-2 py-0.5 text-[10px] font-black uppercase rounded ${
                             l.payment_status === 'PAID' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'
@@ -817,7 +1275,7 @@ export default function FinanceDashboard() {
                           <span className="text-[10px] text-stone-400 block mt-0.5">{l.payment_mode}</span>
                         </td>
                         <td className="p-3 text-right font-black text-stone-800 dark:text-stone-100">
-                          ₹{parseFloat(l.total_amount).toLocaleString('en-IN')}
+                          {formatCurrency(l.total_amount)}
                         </td>
                         <td className="p-3 text-center space-x-1.5 whitespace-nowrap">
                           <button
@@ -827,9 +1285,14 @@ export default function FinanceDashboard() {
                             <Edit2 className="h-3.5 w-3.5" />
                           </button>
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               if (confirm(`Are you sure you want to delete labor record for ${l.worker_name}?`)) {
-                                deleteLabourAccount(l.id);
+                                const success = await deleteLabourAccount(l.id);
+                                if (success) {
+                                  addNotification("Record Deleted", "Labour record has been deleted successfully.", "success");
+                                } else {
+                                  addNotification("Error", "Failed to delete labour record.", "error");
+                                }
                               }
                             }}
                             className="p-1.5 text-stone-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all inline-flex"
@@ -963,8 +1426,14 @@ export default function FinanceDashboard() {
               </div>
 
               {/* Transactions list */}
-              {filteredTransactions.length === 0 ? (
-                <div className="text-center py-12 text-stone-400 text-xs">
+              {transactions.length === 0 ? (
+                <div className="text-center py-12 text-stone-450 dark:text-stone-555 border border-dashed border-stone-200 dark:border-stone-850 rounded-2xl p-6">
+                  <IndianRupee className="h-10 w-10 mx-auto opacity-40 mb-3 text-stone-400" />
+                  <p className="font-extrabold text-sm text-stone-700 dark:text-stone-300">No transactions logged yet.</p>
+                  <p className="text-xs text-stone-400 mt-1">Click Log Transaction under overview or log button to start bookkeeping.</p>
+                </div>
+              ) : filteredTransactions.length === 0 ? (
+                <div className="text-center py-10 text-stone-450 dark:text-stone-550 border border-stone-150 dark:border-stone-800 rounded-2xl p-6 bg-stone-50/30">
                   No matching ledger entries found.
                 </div>
               ) : (
@@ -986,13 +1455,28 @@ export default function FinanceDashboard() {
                         {t.notes && <p className="text-xs text-stone-600 dark:text-stone-300">{t.notes}</p>}
                         <span className="text-[9px] text-stone-450 block">{new Date(t.transaction_date).toLocaleDateString()}</span>
                       </div>
-                      <div className="text-right flex items-center gap-4">
-                        <span className={`font-black text-sm ${t.transaction_type === 'INCOME' ? 'text-emerald-600' : 'text-rose-500'}`}>
-                          {t.transaction_type === 'INCOME' ? '+' : '-'}₹{parseFloat(t.amount).toLocaleString('en-IN')}
+                      <div className="text-right flex items-center gap-2">
+                        <span className={`font-black text-sm mr-2 ${t.transaction_type === 'INCOME' ? 'text-emerald-600' : 'text-rose-500'}`}>
+                          {t.transaction_type === 'INCOME' ? '+' : '-'}{formatCurrency(t.amount)}
                         </span>
                         <button
-                          onClick={() => deleteTransaction(t.id)}
-                          className="p-1.5 text-stone-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
+                          onClick={() => triggerTxEdit(t)}
+                          className="p-1.5 text-stone-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all inline-flex"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (confirm("Are you sure you want to delete this transaction record?")) {
+                              const success = await deleteTransaction(t.id);
+                              if (success) {
+                                addNotification("Success", "Transaction deleted successfully.", "success");
+                              } else {
+                                addNotification("Error", "Failed to delete transaction.", "error");
+                              }
+                            }
+                          }}
+                          className="p-1.5 text-stone-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all inline-flex"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -1023,63 +1507,86 @@ export default function FinanceDashboard() {
           </div>
 
           {cropCycles.length === 0 ? (
-            <div className="text-center py-12 text-stone-400">
-              No crop cycles mapped. Map cycles to link expenses/revenues to specific plots.
+            <div className="text-center py-12 text-stone-450 dark:text-stone-550 border border-dashed border-stone-200 dark:border-stone-850 rounded-2xl p-6">
+              <Layers className="h-10 w-10 mx-auto opacity-40 mb-3 text-stone-400" />
+              <p className="font-extrabold text-sm text-stone-700 dark:text-stone-300">No crop cycles active.</p>
+              <p className="text-xs text-stone-400 mt-1">Start a crop cycle to monitor costs.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {cropCycles.map(c => {
-                const txs = transactions.filter(t => t.crop_cycle_id === c.id);
-                let income = 0;
-                let expense = 0;
-                txs.forEach(t => {
-                  const amt = parseFloat(t.amount || 0);
-                  if (t.transaction_type === 'INCOME') income += amt;
-                  else expense += amt;
-                });
-                // Add labor expenses mapped to crop/plot
-                labourAccounts.forEach(l => {
-                  if ((c.crop_name && c.crop_name.toLowerCase().includes(l.crop.toLowerCase())) ||
-                      (c.plot_identifier && l.plot && c.plot_identifier.toLowerCase().includes(l.plot.toLowerCase()))) {
-                    expense += parseFloat(l.total_amount || 0);
-                  }
-                });
-
+              {cropCycleProfitability.map(c => {
                 return (
                   <div key={c.id} className="p-6 bg-stone-50 dark:bg-stone-900 border border-stone-100 dark:border-stone-850 rounded-3xl space-y-4 relative">
                     <button
-                      onClick={() => deleteCropCycle(c.id)}
-                      className="absolute right-4 top-4 p-1.5 text-stone-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
+                      onClick={async () => {
+                        if (confirm(`Are you sure you want to delete crop cycle for ${c.cropName}?`)) {
+                          const success = await deleteCropCycle(c.id);
+                          if (success) {
+                            addNotification("Success", "Crop Cycle deleted.", "success");
+                          } else {
+                            addNotification("Error", "Failed to delete crop cycle.", "error");
+                          }
+                        }
+                      }}
+                      className="absolute right-4 top-4 p-1.5 text-stone-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all inline-flex"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                     <div>
-                      <h3 className="font-extrabold text-base text-stone-800 dark:text-stone-100">{c.crop_name}</h3>
-                      <span className="text-xs text-stone-555 block mt-0.5">Plot Identifier: {c.plot_identifier || 'General'}</span>
+                      <h3 className="font-extrabold text-base text-stone-800 dark:text-stone-100">{c.cropName}</h3>
+                      <div className="flex gap-2 mt-1">
+                        <span className="text-[10px] text-stone-500 font-semibold bg-stone-200/50 dark:bg-stone-800 px-2 py-0.5 rounded">Plot: {c.plot || 'General'}</span>
+                        <span className="text-[10px] text-stone-500 font-semibold bg-stone-200/50 dark:bg-stone-800 px-2 py-0.5 rounded">Season: {c.season}</span>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 border-t border-b border-stone-200/40 dark:border-stone-800 py-3">
+                    {/* Cost Breakdown Grid */}
+                    <div className="text-[10px] font-bold space-y-1.5 border-t border-stone-200/40 dark:border-stone-800 pt-3">
+                      <span className="text-[9px] uppercase tracking-wider text-stone-400 block mb-1">Expense Breakdown</span>
+                      <div className="flex justify-between">
+                        <span className="text-stone-450">Labour Wages</span>
+                        <span className="text-stone-700 dark:text-stone-300">{formatCurrency(c.labourExpense)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-450">Seeds Expense</span>
+                        <span className="text-stone-700 dark:text-stone-300">{formatCurrency(c.seedExpense)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-450">Fertilizer Expense</span>
+                        <span className="text-stone-700 dark:text-stone-300">{formatCurrency(c.fertilizerExpense)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-450">Transport / Logistics</span>
+                        <span className="text-stone-700 dark:text-stone-300">{formatCurrency(c.transportExpense)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-stone-450">Other Expenses</span>
+                        <span className="text-stone-700 dark:text-stone-300">{formatCurrency(c.otherExpenses)}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 border-t border-b border-stone-200/40 dark:border-stone-800 py-3 text-xs">
                       <div>
-                        <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Revenue</span>
-                        <span className="text-sm font-black text-emerald-600 block mt-0.5">₹{income.toLocaleString('en-IN')}</span>
+                        <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">Total Revenue</span>
+                        <span className="text-sm font-black text-emerald-600 block mt-0.5">{formatCurrency(c.revenue)}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Expenses / Wages</span>
-                        <span className="text-sm font-black text-rose-500 block mt-0.5">₹{expense.toLocaleString('en-IN')}</span>
+                        <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">Total Expenses</span>
+                        <span className="text-sm font-black text-rose-500 block mt-0.5">{formatCurrency(c.totalExpense)}</span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] text-stone-450 block">Net Margin</span>
-                        <span className={`text-base font-black ${income - expense >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                          ₹{(income - expense).toLocaleString('en-IN')}
+                        <span className="text-[10px] text-stone-450 block font-semibold">Net Profit Margin</span>
+                        <span className={`text-base font-black ${c.netProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                          {c.netProfit >= 0 ? '+' : '-'}{formatCurrency(Math.abs(c.netProfit))}
                         </span>
                       </div>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
-                        c.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-stone-200 text-stone-600'
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase ${
+                        c.netProfit >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-500'
                       }`}>
-                        {c.status}
+                        {c.profitPercentage}% Profit
                       </span>
                     </div>
                   </div>
@@ -1104,6 +1611,8 @@ export default function FinanceDashboard() {
                     setKccLimit(kccInfo.sanctioned_limit || '');
                     setKccOutstanding(kccInfo.current_outstanding || '');
                     setKccDeadline(kccInfo.subvention_deadline || '');
+                    setKccEmi(kccInfo.emi || '');
+                    setKccDueDate(kccInfo.due_date || '');
                     setShowKccModal(true);
                   }}
                   className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all"
@@ -1116,15 +1625,28 @@ export default function FinanceDashboard() {
                 <div className="flex justify-between items-center">
                   <div>
                     <span className="font-extrabold text-sm">{kccInfo.bank_name}</span>
-                    <span className="text-[10px] text-stone-550 block mt-0.5">Base Rate: {kccInfo.base_interest_rate}% | Subvention Rate: {kccInfo.subvention_interest_rate}%</span>
+                    <span className="text-[10px] text-stone-550 block mt-0.5">Base Interest: {kccInfo.base_interest_rate}% | Subvention Rate: {kccInfo.subvention_interest_rate}%</span>
                   </div>
                   <span className="text-xs font-black text-amber-600">Active Facility</span>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="grid grid-cols-2 gap-4 border-t border-b border-stone-200/40 dark:border-stone-800 py-3 text-xs">
+                  <div>
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">Repayment EMI</span>
+                    <span className="text-sm font-black text-stone-800 dark:text-stone-200 block mt-0.5">{formatCurrency(kccInfo.emi || 0)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider block">EMI Due Date</span>
+                    <span className="text-sm font-black text-stone-800 dark:text-stone-200 block mt-0.5">
+                      {kccInfo.due_date ? new Date(kccInfo.due_date).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-2">
                   <div className="flex justify-between text-xs font-bold text-stone-500">
                     <span>Limit Usage</span>
-                    <span>₹{parseFloat(kccInfo.current_outstanding || 0).toLocaleString('en-IN')} / ₹{parseFloat(kccInfo.sanctioned_limit || 0).toLocaleString('en-IN')}</span>
+                    <span>{formatCurrency(kccInfo.current_outstanding || 0)} / {formatCurrency(kccInfo.sanctioned_limit || 0)}</span>
                   </div>
                   <div className="w-full bg-stone-200 dark:bg-stone-800 h-2.5 rounded-full overflow-hidden">
                     <div
@@ -1134,6 +1656,98 @@ export default function FinanceDashboard() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Subsidies Tracker block */}
+            <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-extrabold">Govt Subsidies & Benefits Tracker</h2>
+                  <p className="text-xs text-stone-555 mt-0.5">Track your DBT subsidies, pending applications, and benefits received.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingSubsidyId(null);
+                    setSubsidyScheme('');
+                    setSubsidyAmount('');
+                    setSubsidyStatus('PENDING');
+                    setSubsidyDate(new Date().toISOString().split('T')[0]);
+                    setShowSubsidyModal(true);
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all flex items-center gap-1.5"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Subsidy Record
+                </button>
+              </div>
+
+              {subsidies.length === 0 ? (
+                <div className="text-center py-10 text-stone-450 dark:text-stone-550 border border-dashed border-stone-200 dark:border-stone-850 rounded-2xl p-6">
+                  <Sparkles className="h-8 w-8 mx-auto opacity-45 mb-2 text-stone-400" />
+                  <p className="font-extrabold text-sm text-stone-700 dark:text-stone-300">No subsidies recorded yet.</p>
+                  <p className="text-xs text-stone-400 mt-1">Track DBT schemes, fertilizer subsidies, PM-Kisan benefits, etc.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-stone-150 dark:border-stone-800">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-stone-50 dark:bg-stone-900/60 border-b border-stone-150 dark:border-stone-800 text-stone-400 dark:text-stone-555 font-bold">
+                        <th className="p-3">Scheme / Crop Benefit</th>
+                        <th className="p-3 text-right">Amount</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3">Date Received</th>
+                        <th className="p-3 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100 dark:divide-stone-850 font-medium">
+                      {subsidies.map(s => (
+                        <tr key={s.id} className="hover:bg-stone-50/50 dark:hover:bg-stone-900/30 transition-colors">
+                          <td className="p-3 font-extrabold">{s.scheme_name}</td>
+                          <td className="p-3 text-right font-black text-stone-855 dark:text-stone-100">{formatCurrency(s.amount)}</td>
+                          <td className="p-3">
+                            <span className={`inline-block px-2 py-0.5 text-[10px] font-black uppercase rounded ${
+                              s.status === 'RECEIVED' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'
+                            }`}>
+                              {s.status}
+                            </span>
+                          </td>
+                          <td className="p-3">{s.date_received ? new Date(s.date_received).toLocaleDateString() : 'Pending Approval'}</td>
+                          <td className="p-3 text-center space-x-1.5 whitespace-nowrap">
+                            <button
+                              onClick={() => {
+                                setEditingSubsidyId(s.id);
+                                setSubsidyScheme(s.scheme_name);
+                                setSubsidyAmount(s.amount.toString());
+                                setSubsidyStatus(s.status);
+                                setSubsidyDate(s.date_received ? new Date(s.date_received).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+                                setShowSubsidyModal(true);
+                              }}
+                              className="p-1.5 text-stone-500 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all inline-flex"
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (confirm(`Are you sure you want to delete the subsidy record for ${s.scheme_name}?`)) {
+                                  const success = await deleteSubsidy(s.id);
+                                  if (success) {
+                                    addNotification("Subsidy Deleted", "Subsidy record has been deleted successfully.", "success");
+                                  } else {
+                                    addNotification("Error", "Failed to delete subsidy record.", "error");
+                                  }
+                                }
+                              }}
+                              className="p-1.5 text-stone-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all inline-flex"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1155,65 +1769,187 @@ export default function FinanceDashboard() {
 
       {/* VIEW: REPORTS & CHARTS */}
       {activeTab === 'reports' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 print:hidden">
-          
-          <div className="lg:col-span-2 bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-6">
-            <h2 className="text-lg font-extrabold">Expenses By Category & Labour Overhead</h2>
-            
-            {chartDataByCategory.length === 0 ? (
-              <div className="text-center py-20 text-stone-400 text-xs">
-                No outflows recorded yet to plot expense breakdown.
+        <div className="space-y-6 print:hidden">
+          {/* Reports Filter Toolbar */}
+          <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-4">
+            <h3 className="font-extrabold text-sm text-stone-850 dark:text-stone-100">Audit & Statement Report Filters</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-1">Start Date</label>
+                <input
+                  type="date"
+                  value={reportStartDate}
+                  onChange={(e) => setReportStartDate(e.target.value)}
+                  className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-2 py-2 text-xs font-semibold"
+                />
               </div>
-            ) : (
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={chartDataByCategory}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {chartDataByCategory.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => `₹${value.toLocaleString('en-IN')}`} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
 
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-4">
-              <h3 className="font-extrabold text-sm">Download Center</h3>
-              <p className="text-xs text-stone-550">
-                Download formats configured for micro-finance KYC checks and KCC subvention audits.
-              </p>
-              <div className="space-y-2">
-                <button
-                  onClick={exportToCSV}
-                  className="w-full py-3 rounded-2xl bg-stone-50 hover:bg-stone-100 dark:bg-stone-900 dark:hover:bg-stone-850 text-stone-700 dark:text-stone-200 border border-stone-150 dark:border-stone-800 transition-all font-bold text-xs flex items-center justify-center gap-2"
-                >
-                  <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-                  Excel Combined Sheet
-                </button>
-                <button
-                  onClick={() => window.print()}
-                  className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all font-bold text-xs flex items-center justify-center gap-2"
-                >
-                  <Printer className="h-4 w-4" />
-                  PDF Audit Statement
-                </button>
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-1">End Date</label>
+                <input
+                  type="date"
+                  value={reportEndDate}
+                  onChange={(e) => setReportEndDate(e.target.value)}
+                  className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-2 py-2 text-xs font-semibold"
+                />
               </div>
+
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-1">Crop Name</label>
+                <select
+                  value={reportCrop}
+                  onChange={(e) => setReportCrop(e.target.value)}
+                  className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-2 py-2 text-xs font-bold"
+                >
+                  <option value="ALL">All Crops</option>
+                  {Array.from(new Set(cropCycles.map(c => c.crop_name))).map(crop => (
+                    <option key={crop} value={crop}>{crop}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-1">Worker Name</label>
+                <select
+                  value={reportWorker}
+                  onChange={(e) => setReportWorker(e.target.value)}
+                  className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-2 py-2 text-xs font-bold"
+                >
+                  <option value="ALL">All Workers</option>
+                  {Array.from(new Set(labourAccounts.map(l => l.worker_name))).map(worker => (
+                    <option key={worker} value={worker}>{worker}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-1">Category</label>
+                <select
+                  value={reportCategory}
+                  onChange={(e) => setReportCategory(e.target.value)}
+                  className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-2 py-2 text-xs font-bold"
+                >
+                  <option value="ALL">All Categories</option>
+                  <option value="SEEDS">Seeds</option>
+                  <option value="FERTILIZER">Fertilizer</option>
+                  <option value="LABOR">Labor</option>
+                  <option value="SALES">Sales</option>
+                  <option value="SUBSIDY_DBT">DBT Subsidy</option>
+                  <option value="LOGISTICS">Logistics/Transport</option>
+                  <option value="OTHERS">Others</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-stone-400 mb-1">Payment Status</label>
+                <select
+                  value={reportPaymentStatus}
+                  onChange={(e) => setReportPaymentStatus(e.target.value)}
+                  className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-2 py-2 text-xs font-bold"
+                >
+                  <option value="ALL">All Statuses</option>
+                  <option value="PAID">Paid</option>
+                  <option value="PENDING">Pending (Udhaar)</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => {
+                  setReportStartDate('');
+                  setReportEndDate('');
+                  setReportCrop('ALL');
+                  setReportWorker('ALL');
+                  setReportCategory('ALL');
+                  setReportPaymentStatus('ALL');
+                }}
+                className="px-3.5 py-1.5 text-xs font-bold border border-stone-200 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-850 rounded-xl transition-all"
+              >
+                Clear Filters
+              </button>
             </div>
           </div>
 
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-6">
+              <h2 className="text-lg font-extrabold">Filtered Expense Category Distribution</h2>
+              
+              {chartDataByCategory.length === 0 ? (
+                <div className="text-center py-20 text-stone-400 text-xs">
+                  No outflows recorded to plot expense breakdown.
+                </div>
+              ) : (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartDataByCategory}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {chartDataByCategory.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => formatCurrency(value)} />
+                      <Legend wrapperStyle={{ fontSize: 10 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-4">
+                <h3 className="font-extrabold text-sm">Download Filtered Report</h3>
+                <p className="text-xs text-stone-555">
+                  Download statements formatted specifically according to your active filters.
+                </p>
+                <div className="space-y-2 text-xs font-bold space-y-1.5 p-3 rounded-2xl bg-stone-50 dark:bg-stone-900 border border-stone-100 dark:border-stone-850">
+                  <div className="flex justify-between">
+                    <span className="text-stone-450">Inflow Total</span>
+                    <span className="text-emerald-600">{formatCurrency(filteredReportStats.inflow)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-450">Outflow (General)</span>
+                    <span className="text-rose-500">{formatCurrency(filteredReportStats.expense)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-450">Labour Cost</span>
+                    <span className="text-rose-500">{formatCurrency(filteredReportStats.labor)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-stone-200/50 dark:border-stone-800 pt-1.5 text-sm">
+                    <span className="text-stone-800 dark:text-stone-200 font-extrabold">Net Profit</span>
+                    <span className={`font-black ${filteredReportStats.net >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                      {formatCurrency(filteredReportStats.net)}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 pt-2">
+                  <button
+                    onClick={exportToCSV}
+                    className="w-full py-3 rounded-2xl bg-stone-50 hover:bg-stone-100 dark:bg-stone-900 dark:hover:bg-stone-850 text-stone-700 dark:text-stone-200 border border-stone-150 dark:border-stone-800 transition-all font-bold text-xs flex items-center justify-center gap-2"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+                    Excel Sheet (Filtered)
+                  </button>
+                  <button
+                    onClick={() => window.print()}
+                    className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all font-bold text-xs flex items-center justify-center gap-2"
+                  >
+                    <Printer className="h-4 w-4" />
+                    PDF Statement (Filtered)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1226,47 +1962,85 @@ export default function FinanceDashboard() {
 
         <div className="grid grid-cols-4 gap-4 border-b border-stone-300 pb-4 text-xs">
           <div>
-            <strong>Inflow Flow:</strong> ₹{stats.totalIncome.toLocaleString()}
+            <strong>Total Inflow:</strong> {formatCurrency(filteredReportStats.inflow)}
           </div>
           <div>
-            <strong>General Expenses:</strong> ₹{stats.totalExpense.toLocaleString()}
+            <strong>General Expenses:</strong> {formatCurrency(filteredReportStats.expense)}
           </div>
           <div>
-            <strong>Labour Wages Cost:</strong> ₹{stats.totalLabourCost.toLocaleString()}
+            <strong>Labour Cost:</strong> {formatCurrency(filteredReportStats.labor)}
           </div>
           <div>
-            <strong>Net Margin Balance:</strong> ₹{stats.netProfit.toLocaleString()}
+            <strong>Net Profit Margin:</strong> {formatCurrency(filteredReportStats.net)}
           </div>
         </div>
 
         <div className="space-y-4">
           <h2 className="text-sm font-bold border-b border-stone-800 pb-1">Detailed Labour Records Audit</h2>
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-stone-400">
-                <th className="py-2">Date</th>
-                <th className="py-2">Worker</th>
-                <th className="py-2">Job / Crop</th>
-                <th className="py-2">Plot</th>
-                <th className="py-2">Rate / Hours</th>
-                <th className="py-2">Advance / Bonus</th>
-                <th className="py-2 text-right">Total Owed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {labourAccounts.map(l => (
-                <tr key={l.id} className="border-b border-stone-200">
-                  <td className="py-2">{new Date(l.date).toLocaleDateString()}</td>
-                  <td className="py-2 font-bold">{l.worker_name} ({l.gender})</td>
-                  <td className="py-2">{l.work_type} • {l.crop}</td>
-                  <td className="py-2">{l.plot || 'General'}</td>
-                  <td className="py-2">₹{l.daily_wage}/hr • {l.hours_worked} hrs</td>
-                  <td className="py-2">A: ₹{l.advance || 0} / B: ₹{l.bonus || 0}</td>
-                  <td className="py-2 text-right font-bold">₹{parseFloat(l.total_amount).toLocaleString()}</td>
+          {filteredReportLabour.length === 0 ? (
+            <p className="text-xs text-stone-500">No labour records match the selected report filters.</p>
+          ) : (
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-stone-400">
+                  <th className="py-2">Date</th>
+                  <th className="py-2">Worker</th>
+                  <th className="py-2">Job / Crop</th>
+                  <th className="py-2">Plot</th>
+                  <th className="py-2">Rate / Hours</th>
+                  <th className="py-2">Advance / Bonus / Overtime</th>
+                  <th className="py-2 text-right">Total Owed</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredReportLabour.map(l => (
+                  <tr key={l.id} className="border-b border-stone-200">
+                    <td className="py-2">{new Date(l.date).toLocaleDateString()}</td>
+                    <td className="py-2 font-bold">{l.worker_name} ({l.gender})</td>
+                    <td className="py-2">{l.work_type} • {l.crop}</td>
+                    <td className="py-2">{l.plot || 'General'}</td>
+                    <td className="py-2">{formatCurrency(l.daily_wage)}/hr • {l.hours_worked} hrs</td>
+                    <td className="py-2">Adv: {formatCurrency(l.advance)} / Bon: {formatCurrency(l.bonus)} / OT: {formatCurrency(l.overtime)}</td>
+                    <td className="py-2 text-right font-bold">{formatCurrency(l.total_amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        <div className="space-y-4 pt-4">
+          <h2 className="text-sm font-bold border-b border-stone-800 pb-1">Detailed Financial Transactions Audit</h2>
+          {filteredReportTransactions.length === 0 ? (
+            <p className="text-xs text-stone-500">No financial transactions match the selected report filters.</p>
+          ) : (
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-stone-400">
+                  <th className="py-2">Date</th>
+                  <th className="py-2">Type</th>
+                  <th className="py-2">Category</th>
+                  <th className="py-2">Payment Mode</th>
+                  <th className="py-2">Remarks / Notes</th>
+                  <th className="py-2 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredReportTransactions.map(t => (
+                  <tr key={t.id} className="border-b border-stone-200">
+                    <td className="py-2">{new Date(t.transaction_date).toLocaleDateString()}</td>
+                    <td className="py-2 font-bold">{t.transaction_type}</td>
+                    <td className="py-2 capitalize">{t.category.toLowerCase().replace('_', ' ')}</td>
+                    <td className="py-2">{t.payment_mode}</td>
+                    <td className="py-2">{t.notes || '-'}</td>
+                    <td className={`py-2 text-right font-bold ${t.transaction_type === 'INCOME' ? 'text-emerald-600' : 'text-rose-500'}`}>
+                      {t.transaction_type === 'INCOME' ? '+' : '-'}{formatCurrency(t.amount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
@@ -1385,7 +2159,7 @@ export default function FinanceDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Hourly Wage (₹)</label>
                   <input
@@ -1403,6 +2177,16 @@ export default function FinanceDashboard() {
                     type="number"
                     value={labourBonus}
                     onChange={(e) => setLabourBonus(e.target.value)}
+                    placeholder="0"
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Overtime (₹)</label>
+                  <input
+                    type="number"
+                    value={labourOvertime}
+                    onChange={(e) => setLabourOvertime(e.target.value)}
                     placeholder="0"
                     className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5"
                   />
@@ -1449,7 +2233,7 @@ export default function FinanceDashboard() {
               <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl flex justify-between items-center text-xs">
                 <span className="font-bold text-stone-550">Estimated Total Amount:</span>
                 <span className="font-extrabold text-sm text-emerald-600">
-                  ₹{Math.max(0, (parseFloat(labourHours || 0) * parseFloat(labourWage || 0)) + parseFloat(labourBonus || 0) - parseFloat(labourAdvance || 0)).toLocaleString('en-IN')}
+                  {formatCurrency((parseFloat(labourHours || 0) * parseFloat(labourWage || 0)) + parseFloat(labourBonus || 0) + parseFloat(labourOvertime || 0) - parseFloat(labourAdvance || 0))}
                 </span>
               </div>
 
@@ -1725,6 +2509,20 @@ export default function FinanceDashboard() {
                 </div>
 
                 <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Season</label>
+                  <select
+                    value={cycleSeason}
+                    onChange={(e) => setCycleSeason(e.target.value)}
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold"
+                  >
+                    <option value="Kharif">Kharif</option>
+                    <option value="Rabi">Rabi</option>
+                    <option value="Zaid">Zaid</option>
+                    <option value="General">General / Whole Year</option>
+                  </select>
+                </div>
+
+                <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">End Date (Optional)</label>
                   <input
                     type="date"
@@ -1795,6 +2593,29 @@ export default function FinanceDashboard() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Repayment EMI (₹)</label>
+                  <input
+                    type="number"
+                    value={kccEmi}
+                    onChange={(e) => setKccEmi(e.target.value)}
+                    placeholder="e.g. 2500"
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">EMI Due Date</label>
+                  <input
+                    type="date"
+                    value={kccDueDate}
+                    onChange={(e) => setKccDueDate(e.target.value)}
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Subvention Deadline Date</label>
                 <input
@@ -1811,6 +2632,85 @@ export default function FinanceDashboard() {
                 className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all"
               >
                 Save Configuration
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ADD / EDIT SUBSIDY */}
+      {showSubsidyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm print:hidden">
+          <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-stone-800 w-full max-w-md rounded-3xl p-6 space-y-4 shadow-xl">
+            <div className="flex justify-between items-center border-b border-stone-100 dark:border-stone-800 pb-3">
+              <h3 className="font-extrabold text-base text-stone-800 dark:text-stone-100">
+                {editingSubsidyId ? 'Edit Subsidy Record' : 'Add Subsidy Record'}
+              </h3>
+              <button
+                onClick={() => { setShowSubsidyModal(false); setEditingSubsidyId(null); }}
+                className="text-stone-400 hover:text-stone-600"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleSubsidySubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Scheme Name / Benefit</label>
+                <input
+                  type="text"
+                  required
+                  value={subsidyScheme}
+                  onChange={(e) => setSubsidyScheme(e.target.value)}
+                  placeholder="e.g. PM-KISAN Samman Nidhi"
+                  className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Amount (₹)</label>
+                  <input
+                    type="number"
+                    required
+                    value={subsidyAmount}
+                    onChange={(e) => setSubsidyAmount(e.target.value)}
+                    placeholder="e.g. 6000"
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Status</label>
+                  <select
+                    value={subsidyStatus}
+                    onChange={(e) => setSubsidyStatus(e.target.value)}
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold"
+                  >
+                    <option value="RECEIVED">Received</option>
+                    <option value="PENDING">Pending</option>
+                  </select>
+                </div>
+              </div>
+
+              {subsidyStatus === 'RECEIVED' && (
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Date Received</label>
+                  <input
+                    type="date"
+                    required
+                    value={subsidyDate}
+                    onChange={(e) => setSubsidyDate(e.target.value)}
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold"
+                  />
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all"
+              >
+                {editingSubsidyId ? 'Save Changes' : 'Log Subsidy Benefit'}
               </button>
             </form>
           </div>

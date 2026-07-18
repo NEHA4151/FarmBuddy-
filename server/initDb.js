@@ -378,6 +378,7 @@ export async function initDb(shouldDrop = false) {
           hours_worked DECIMAL(5,2) NOT NULL,
           daily_wage DECIMAL(10,2) NOT NULL,
           bonus DECIMAL(10,2) DEFAULT 0.00,
+          overtime DECIMAL(10,2) DEFAULT 0.00,
           advance DECIMAL(10,2) DEFAULT 0.00,
           payment_status VARCHAR(20) NOT NULL,
           payment_mode VARCHAR(20) NOT NULL,
@@ -393,6 +394,7 @@ export async function initDb(shouldDrop = false) {
           farmer_id VARCHAR(50) NOT NULL,
           crop_name VARCHAR(100) NOT NULL,
           plot_identifier VARCHAR(50) DEFAULT NULL,
+          season VARCHAR(50) DEFAULT NULL,
           start_date DATE NOT NULL,
           end_date DATE DEFAULT NULL,
           status VARCHAR(20) DEFAULT 'ACTIVE',
@@ -439,12 +441,26 @@ export async function initDb(shouldDrop = false) {
           farmer_id VARCHAR(50) NOT NULL,
           bank_name VARCHAR(100) NOT NULL,
           sanctioned_limit DECIMAL(12, 2) NOT NULL,
+          emi DECIMAL(12, 2) DEFAULT 0.00,
           current_outstanding DECIMAL(12, 2) DEFAULT 0.00,
           base_interest_rate DECIMAL(4, 2) DEFAULT 7.00,
           subvention_interest_rate DECIMAL(4, 2) DEFAULT 4.00,
           subvention_deadline DATE NOT NULL,
+          due_date DATE DEFAULT NULL,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           INDEX idx_farmer_kcc (farmer_id)
+        )
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS subsidies (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          farmer_id VARCHAR(50) NOT NULL,
+          scheme_name VARCHAR(150) NOT NULL,
+          amount DECIMAL(12, 2) NOT NULL,
+          status VARCHAR(20) NOT NULL,
+          date_received DATE DEFAULT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
