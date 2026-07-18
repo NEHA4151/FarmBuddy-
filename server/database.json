@@ -721,6 +721,17 @@
       "login_count": 1,
       "trust_score": 100,
       "created_at": "2026-07-18T06:02:00.844Z"
+    },
+    {
+      "id": 11,
+      "farmer_id": "NNKK_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-18T06:06:05.715Z"
     }
   ],
   "admins": [],
@@ -766,6 +777,26 @@
       "total_amount": 80,
       "notes": "Updated remark test",
       "created_at": "2026-07-18T05:55:04.563Z"
+    },
+    {
+      "id": null,
+      "farmer_id": "NNKK_UVFARMS",
+      "date": "2026-07-18",
+      "worker_name": "700",
+      "gender": "Male",
+      "work_type": "Sowing",
+      "crop": "Premium Arabica Coffee",
+      "plot": null,
+      "hours_worked": 7,
+      "daily_wage": 80,
+      "bonus": 0,
+      "overtime": 0,
+      "advance": 0,
+      "payment_status": "PENDING",
+      "payment_mode": "CASH",
+      "total_amount": 560,
+      "notes": null,
+      "created_at": "2026-07-18T06:06:38.950Z"
     }
   ],
   "immudb_ledger": [

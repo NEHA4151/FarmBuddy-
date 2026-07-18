@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useFarm } from '../context/FarmContext';
 import {
   TrendingUp,
@@ -73,6 +73,14 @@ export default function FinanceDashboard() {
   }, [batches, currentBatchId]);
 
   const activeCrop = activeBatch ? activeBatch.cropType : '';
+
+  useEffect(() => {
+    if (activeCrop) {
+      setCycleCropName(activeCrop);
+      setLabourCrop(activeCrop);
+      setReportCrop(activeCrop);
+    }
+  }, [activeCrop]);
 
   // Form states - Transactions
   const [showTxModal, setShowTxModal] = useState(false);
@@ -399,6 +407,20 @@ export default function FinanceDashboard() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   }, [kccInfo]);
+
+  const openTxModal = (type) => {
+    setTxType(type);
+    setEditingTxId(null);
+    setTxAmount('');
+    setTxNotes('');
+    setTxContactId('');
+    // Automatically pre-fill the Linked Crop Cycle to match activeCrop
+    const matchingCycle = cropCycles.find(c => c.crop_name.toLowerCase() === activeCrop.toLowerCase());
+    setTxCycleId(matchingCycle ? String(matchingCycle.id) : '');
+    // Select category defaults
+    setTxCategory(type === 'INCOME' ? 'SALES' : 'SEEDS');
+    setShowTxModal(true);
+  };
 
   // Handle transaction submissions
   const handleTxSubmit = async (e) => {
@@ -940,21 +962,26 @@ export default function FinanceDashboard() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <button
-                  onClick={() => { setTxType('EXPENSE'); setShowTxModal(true); }}
+                  onClick={() => openTxModal('EXPENSE')}
                   className="px-4 py-3 rounded-2xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-950/30 text-rose-600 dark:text-rose-450 hover:bg-rose-100/60 dark:hover:bg-rose-950/30 transition-all font-bold text-xs flex items-center justify-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
                   Log Expense
                 </button>
                 <button
-                  onClick={() => { setTxType('INCOME'); setShowTxModal(true); }}
+                  onClick={() => openTxModal('INCOME')}
                   className="px-4 py-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-950/30 text-emerald-600 dark:text-emerald-450 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/30 transition-all font-bold text-xs flex items-center justify-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
                   Log Income
                 </button>
                 <button
-                  onClick={() => { setEditingLabourId(null); setShowLabourModal(true); }}
+                  onClick={() => {
+                    setEditingLabourId(null);
+                    setLabourCrop(activeCrop);
+                    setLabourPlot(activeBatch && activeBatch.location ? activeBatch.location.split(',')[0] : '');
+                    setShowLabourModal(true);
+                  }}
                   className="px-4 py-3 rounded-2xl bg-violet-50 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-950/30 text-violet-600 dark:text-violet-450 hover:bg-violet-100/60 dark:hover:bg-violet-950/30 transition-all font-bold text-xs flex items-center justify-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
@@ -975,7 +1002,11 @@ export default function FinanceDashboard() {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-extrabold">Crop Cycle Net Profit</h2>
                 <button
-                  onClick={() => setShowCycleModal(true)}
+                  onClick={() => {
+                    setCycleCropName(activeCrop);
+                    setCyclePlot(activeBatch && activeBatch.location ? activeBatch.location.split(',')[0] : '');
+                    setShowCycleModal(true);
+                  }}
                   className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all flex items-center gap-1.5"
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -1185,7 +1216,12 @@ export default function FinanceDashboard() {
               </p>
             </div>
             <button
-              onClick={() => { setEditingLabourId(null); setShowLabourModal(true); }}
+              onClick={() => {
+                setEditingLabourId(null);
+                setLabourCrop(activeCrop);
+                setLabourPlot(activeBatch && activeBatch.location ? activeBatch.location.split(',')[0] : '');
+                setShowLabourModal(true);
+              }}
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
             >
               <Plus className="h-4 w-4" />
@@ -1867,7 +1903,7 @@ export default function FinanceDashboard() {
                 onClick={() => {
                   setReportStartDate('');
                   setReportEndDate('');
-                  setReportCrop('ALL');
+                  setReportCrop(activeCrop || 'ALL');
                   setReportWorker('ALL');
                   setReportCategory('ALL');
                   setReportPaymentStatus('ALL');
