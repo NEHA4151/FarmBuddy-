@@ -292,6 +292,10 @@ export const FarmProvider = ({ children }) => {
   const [scheduledActivities, setScheduledActivities] = useState(initialScheduledActivities);
   const [reports, setReports] = useState([]);
   const [labourAccounts, setLabourAccounts] = useState([]);
+  const [cropCycles, setCropCycles] = useState([]);
+  const [creditContacts, setCreditContacts] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [kccAccounts, setKccAccounts] = useState([]);
   const lastMoistureAlert = useRef(false);
   const lastTempAlert = useRef(false);
   const prevBatchesRef = useRef([]);
@@ -611,6 +615,191 @@ export const FarmProvider = ({ children }) => {
   useEffect(() => {
     refreshBatches();
   }, []);
+
+  const refreshFinanceData = async () => {
+    const fId = user?.farmerId || 'FMR-0921';
+    try {
+      const resCc = await fetch(`${API_BASE}/api/crop-cycles?farmerId=${fId}`);
+      if (resCc.ok) {
+        const data = await resCc.json();
+        setCropCycles(data);
+      }
+      const resCcContacts = await fetch(`${API_BASE}/api/credit-contacts?farmerId=${fId}`);
+      if (resCcContacts.ok) {
+        const data = await resCcContacts.json();
+        setCreditContacts(data);
+      }
+      const resTx = await fetch(`${API_BASE}/api/transactions?farmerId=${fId}`);
+      if (resTx.ok) {
+        const data = await resTx.json();
+        setTransactions(data);
+      }
+      const resKcc = await fetch(`${API_BASE}/api/kcc-accounts?farmerId=${fId}`);
+      if (resKcc.ok) {
+        const data = await resKcc.json();
+        setKccAccounts(data);
+      }
+    } catch (err) {
+      console.warn("Could not fetch finance data:", err);
+    }
+  };
+
+  const addCropCycle = async (cycleData) => {
+    const fId = user?.farmerId || 'FMR-0921';
+    try {
+      const res = await fetch(`${API_BASE}/api/crop-cycles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ farmer_id: fId, ...cycleData })
+      });
+      if (res.ok) {
+        await refreshFinanceData();
+        return true;
+      }
+    } catch (err) {
+      console.error("Error adding crop cycle:", err);
+    }
+    return false;
+  };
+
+  const updateCropCycle = async (id, cycleData) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/crop-cycles/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cycleData)
+      });
+      if (res.ok) {
+        await refreshFinanceData();
+        return true;
+      }
+    } catch (err) {
+      console.error("Error updating crop cycle:", err);
+    }
+    return false;
+  };
+
+  const deleteCropCycle = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/crop-cycles/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        await refreshFinanceData();
+        return true;
+      }
+    } catch (err) {
+      console.error("Error deleting crop cycle:", err);
+    }
+    return false;
+  };
+
+  const addCreditContact = async (contactData) => {
+    const fId = user?.farmerId || 'FMR-0921';
+    try {
+      const res = await fetch(`${API_BASE}/api/credit-contacts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ farmer_id: fId, ...contactData })
+      });
+      if (res.ok) {
+        await refreshFinanceData();
+        return true;
+      }
+    } catch (err) {
+      console.error("Error adding credit contact:", err);
+    }
+    return false;
+  };
+
+  const updateCreditContact = async (id, contactData) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/credit-contacts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contactData)
+      });
+      if (res.ok) {
+        await refreshFinanceData();
+        return true;
+      }
+    } catch (err) {
+      console.error("Error updating credit contact:", err);
+    }
+    return false;
+  };
+
+  const deleteCreditContact = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/credit-contacts/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        await refreshFinanceData();
+        return true;
+      }
+    } catch (err) {
+      console.error("Error deleting credit contact:", err);
+    }
+    return false;
+  };
+
+  const addTransaction = async (txData) => {
+    const fId = user?.farmerId || 'FMR-0921';
+    try {
+      const res = await fetch(`${API_BASE}/api/transactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ farmer_id: fId, ...txData })
+      });
+      if (res.ok) {
+        await refreshFinanceData();
+        return true;
+      }
+    } catch (err) {
+      console.error("Error adding transaction:", err);
+    }
+    return false;
+  };
+
+  const deleteTransaction = async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/transactions/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        await refreshFinanceData();
+        return true;
+      }
+    } catch (err) {
+      console.error("Error deleting transaction:", err);
+    }
+    return false;
+  };
+
+  const updateKcc = async (kccData) => {
+    const fId = user?.farmerId || 'FMR-0921';
+    try {
+      const res = await fetch(`${API_BASE}/api/kcc-accounts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ farmer_id: fId, ...kccData })
+      });
+      if (res.ok) {
+        await refreshFinanceData();
+        return true;
+      }
+    } catch (err) {
+      console.error("Error updating KCC account:", err);
+    }
+    return false;
+  };
+
+  useEffect(() => {
+    if (user) {
+      refreshFinanceData();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (currentBatchId) {
@@ -1361,6 +1550,20 @@ export const FarmProvider = ({ children }) => {
       addLabourAccount,
       updateLabourAccount,
       deleteLabourAccount,
+      cropCycles,
+      creditContacts,
+      transactions,
+      kccAccounts,
+      refreshFinanceData,
+      addCropCycle,
+      updateCropCycle,
+      deleteCropCycle,
+      addCreditContact,
+      updateCreditContact,
+      deleteCreditContact,
+      addTransaction,
+      deleteTransaction,
+      updateKcc,
       floatingCoins,
       setFloatingCoins,
       floatingTexts,

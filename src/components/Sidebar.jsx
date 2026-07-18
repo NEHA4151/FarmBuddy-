@@ -21,7 +21,8 @@ import {
   X,
   Calendar,
   QrCode,
-  Users
+  Users,
+  IndianRupee
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -210,6 +211,10 @@ export default function Sidebar() {
           <button onClick={() => handleNav('leaderboard')} className={getLinkClass('leaderboard')}>
             <Award className="h-4 w-4" />
             Leaderboard
+          </button>
+          <button onClick={() => handleNav('finance-dashboard')} className={getLinkClass('finance-dashboard')}>
+            <IndianRupee className="h-4 w-4" />
+            Finance & Accounting
           </button>
         </div>
       </div>

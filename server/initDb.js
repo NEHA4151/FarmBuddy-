@@ -182,6 +182,10 @@ export async function initDb(shouldDrop = false) {
       // 1. Drop existing tables if requested
       if (shouldDrop) {
         console.log('Dropping existing tables...');
+        await pool.query('DROP TABLE IF EXISTS transactions');
+        await pool.query('DROP TABLE IF EXISTS crop_cycles');
+        await pool.query('DROP TABLE IF EXISTS credit_contacts');
+        await pool.query('DROP TABLE IF EXISTS kcc_accounts');
         await pool.query('DROP TABLE IF EXISTS voice_logs');
         await pool.query('DROP TABLE IF EXISTS ai_chat_history');
         await pool.query('DROP TABLE IF EXISTS verification_logs');
@@ -375,6 +379,67 @@ export async function initDb(shouldDrop = false) {
           remarks TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (batch_id) REFERENCES batch_overview(batch_id) ON DELETE CASCADE
+        )
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS crop_cycles (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          farmer_id VARCHAR(50) NOT NULL,
+          crop_name VARCHAR(100) NOT NULL,
+          plot_identifier VARCHAR(50) DEFAULT NULL,
+          start_date DATE NOT NULL,
+          end_date DATE DEFAULT NULL,
+          status VARCHAR(20) DEFAULT 'ACTIVE',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_farmer_crop (farmer_id, status)
+        )
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS credit_contacts (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          farmer_id VARCHAR(50) NOT NULL,
+          contact_name VARCHAR(150) NOT NULL,
+          contact_type VARCHAR(20) NOT NULL,
+          phone_number VARCHAR(15) DEFAULT NULL,
+          running_balance DECIMAL(12, 2) DEFAULT 0.00,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          UNIQUE KEY uq_farmer_contact (farmer_id, contact_name)
+        )
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS transactions (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          farmer_id VARCHAR(50) NOT NULL,
+          crop_cycle_id INT DEFAULT NULL,
+          credit_contact_id INT DEFAULT NULL,
+          transaction_type VARCHAR(10) NOT NULL,
+          category VARCHAR(20) NOT NULL,
+          amount DECIMAL(12, 2) NOT NULL,
+          payment_mode VARCHAR(10) NOT NULL,
+          transaction_date DATE NOT NULL,
+          notes TEXT DEFAULT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (crop_cycle_id) REFERENCES crop_cycles(id) ON DELETE SET NULL,
+          FOREIGN KEY (credit_contact_id) REFERENCES credit_contacts(id) ON DELETE SET NULL,
+          INDEX idx_farmer_ledger (farmer_id, transaction_date)
+        )
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS kcc_accounts (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          farmer_id VARCHAR(50) NOT NULL,
+          bank_name VARCHAR(100) NOT NULL,
+          sanctioned_limit DECIMAL(12, 2) NOT NULL,
+          current_outstanding DECIMAL(12, 2) DEFAULT 0.00,
+          base_interest_rate DECIMAL(4, 2) DEFAULT 7.00,
+          subvention_interest_rate DECIMAL(4, 2) DEFAULT 4.00,
+          subvention_deadline DATE NOT NULL,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_farmer_kcc (farmer_id)
         )
       `);
 

@@ -1128,6 +1128,314 @@ export const dbService = {
     }
   },
 
+  // --- FINANCE MODULE HELPERS ---
+  async getAllCropCycles(farmer_id) {
+    if (isMysql) {
+      const [rows] = await pool.query('SELECT * FROM crop_cycles WHERE farmer_id = ? ORDER BY id DESC', [farmer_id]);
+      return rows;
+    } else {
+      const db = readJsonDb();
+      return (db.crop_cycles || []).filter(c => c.farmer_id === farmer_id);
+    }
+  },
+
+  async createCropCycle(cycle) {
+    const { farmer_id, crop_name, plot_identifier, start_date, end_date, status } = cycle;
+    if (isMysql) {
+      const [result] = await pool.query(
+        'INSERT INTO crop_cycles (farmer_id, crop_name, plot_identifier, start_date, end_date, status) VALUES (?, ?, ?, ?, ?, ?)',
+        [farmer_id, crop_name, plot_identifier, start_date, end_date || null, status || 'ACTIVE']
+      );
+      return { id: result.insertId, ...cycle };
+    } else {
+      const db = readJsonDb();
+      if (!db.crop_cycles) db.crop_cycles = [];
+      const newCycle = {
+        id: db.crop_cycles.length > 0 ? Math.max(...db.crop_cycles.map(c => c.id)) + 1 : 1,
+        farmer_id,
+        crop_name,
+        plot_identifier,
+        start_date,
+        end_date: end_date || null,
+        status: status || 'ACTIVE',
+        created_at: new Date().toISOString()
+      };
+      db.crop_cycles.push(newCycle);
+      writeJsonDb(db);
+      return newCycle;
+    }
+  },
+
+  async updateCropCycle(id, cycle) {
+    const { crop_name, plot_identifier, start_date, end_date, status } = cycle;
+    if (isMysql) {
+      await pool.query(
+        'UPDATE crop_cycles SET crop_name = ?, plot_identifier = ?, start_date = ?, end_date = ?, status = ? WHERE id = ?',
+        [crop_name, plot_identifier, start_date, end_date || null, status, id]
+      );
+      return { id, ...cycle };
+    } else {
+      const db = readJsonDb();
+      const idx = (db.crop_cycles || []).findIndex(c => c.id === Number(id));
+      if (idx !== -1) {
+        db.crop_cycles[idx] = { ...db.crop_cycles[idx], crop_name, plot_identifier, start_date, end_date, status };
+        writeJsonDb(db);
+        return db.crop_cycles[idx];
+      }
+      return null;
+    }
+  },
+
+  async deleteCropCycle(id) {
+    if (isMysql) {
+      const [result] = await pool.query('DELETE FROM crop_cycles WHERE id = ?', [id]);
+      return result.affectedRows > 0;
+    } else {
+      const db = readJsonDb();
+      const initialLength = (db.crop_cycles || []).length;
+      db.crop_cycles = (db.crop_cycles || []).filter(c => c.id !== Number(id));
+      db.transactions = (db.transactions || []).map(t => t.crop_cycle_id === Number(id) ? { ...t, crop_cycle_id: null } : t);
+      writeJsonDb(db);
+      return db.crop_cycles.length < initialLength;
+    }
+  },
+
+  async getAllCreditContacts(farmer_id) {
+    if (isMysql) {
+      const [rows] = await pool.query('SELECT * FROM credit_contacts WHERE farmer_id = ? ORDER BY contact_name ASC', [farmer_id]);
+      return rows;
+    } else {
+      const db = readJsonDb();
+      return (db.credit_contacts || []).filter(c => c.farmer_id === farmer_id);
+    }
+  },
+
+  async createCreditContact(contact) {
+    const { farmer_id, contact_name, contact_type, phone_number, running_balance } = contact;
+    if (isMysql) {
+      const [result] = await pool.query(
+        'INSERT INTO credit_contacts (farmer_id, contact_name, contact_type, phone_number, running_balance) VALUES (?, ?, ?, ?, ?)',
+        [farmer_id, contact_name, contact_type, phone_number || null, running_balance || 0.00]
+      );
+      return { id: result.insertId, ...contact };
+    } else {
+      const db = readJsonDb();
+      if (!db.credit_contacts) db.credit_contacts = [];
+      const newContact = {
+        id: db.credit_contacts.length > 0 ? Math.max(...db.credit_contacts.map(c => c.id)) + 1 : 1,
+        farmer_id,
+        contact_name,
+        contact_type,
+        phone_number: phone_number || null,
+        running_balance: parseFloat(running_balance || 0.00),
+        updated_at: new Date().toISOString()
+      };
+      db.credit_contacts.push(newContact);
+      writeJsonDb(db);
+      return newContact;
+    }
+  },
+
+  async updateCreditContact(id, contact) {
+    const { contact_name, contact_type, phone_number, running_balance } = contact;
+    if (isMysql) {
+      await pool.query(
+        'UPDATE credit_contacts SET contact_name = ?, contact_type = ?, phone_number = ?, running_balance = ? WHERE id = ?',
+        [contact_name, contact_type, phone_number || null, running_balance, id]
+      );
+      return { id, ...contact };
+    } else {
+      const db = readJsonDb();
+      const idx = (db.credit_contacts || []).findIndex(c => c.id === Number(id));
+      if (idx !== -1) {
+        db.credit_contacts[idx] = { ...db.credit_contacts[idx], contact_name, contact_type, phone_number, running_balance: parseFloat(running_balance) };
+        writeJsonDb(db);
+        return db.credit_contacts[idx];
+      }
+      return null;
+    }
+  },
+
+  async deleteCreditContact(id) {
+    if (isMysql) {
+      const [result] = await pool.query('DELETE FROM credit_contacts WHERE id = ?', [id]);
+      return result.affectedRows > 0;
+    } else {
+      const db = readJsonDb();
+      const initialLength = (db.credit_contacts || []).length;
+      db.credit_contacts = (db.credit_contacts || []).filter(c => c.id !== Number(id));
+      db.transactions = (db.transactions || []).map(t => t.credit_contact_id === Number(id) ? { ...t, credit_contact_id: null } : t);
+      writeJsonDb(db);
+      return db.credit_contacts.length < initialLength;
+    }
+  },
+
+  async getAllTransactions(farmer_id) {
+    if (isMysql) {
+      const [rows] = await pool.query('SELECT * FROM transactions WHERE farmer_id = ? ORDER BY transaction_date DESC, id DESC', [farmer_id]);
+      return rows;
+    } else {
+      const db = readJsonDb();
+      return (db.transactions || []).filter(t => t.farmer_id === farmer_id);
+    }
+  },
+
+  async createTransaction(tx) {
+    const { farmer_id, crop_cycle_id, credit_contact_id, transaction_type, category, amount, payment_mode, transaction_date, notes } = tx;
+    if (isMysql) {
+      const conn = await pool.getConnection();
+      try {
+        await conn.beginTransaction();
+        const [result] = await conn.query(
+          'INSERT INTO transactions (farmer_id, crop_cycle_id, credit_contact_id, transaction_type, category, amount, payment_mode, transaction_date, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [farmer_id, crop_cycle_id || null, credit_contact_id || null, transaction_type, category, amount, payment_mode, transaction_date, notes || null]
+        );
+        
+        if (payment_mode === 'UDHAAR' && credit_contact_id) {
+          const balanceImpact = transaction_type === 'EXPENSE' ? amount : -amount;
+          await conn.query(
+            'UPDATE credit_contacts SET running_balance = running_balance + ? WHERE id = ?',
+            [balanceImpact, credit_contact_id]
+          );
+        }
+        await conn.commit();
+        return { id: result.insertId, ...tx };
+      } catch (err) {
+        await conn.rollback();
+        throw err;
+      } finally {
+        conn.release();
+      }
+    } else {
+      const db = readJsonDb();
+      if (!db.transactions) db.transactions = [];
+      const newTx = {
+        id: db.transactions.length > 0 ? Math.max(...db.transactions.map(t => t.id)) + 1 : 1,
+        farmer_id,
+        crop_cycle_id: crop_cycle_id ? Number(crop_cycle_id) : null,
+        credit_contact_id: credit_contact_id ? Number(credit_contact_id) : null,
+        transaction_type,
+        category,
+        amount: parseFloat(amount),
+        payment_mode,
+        transaction_date,
+        notes: notes || null,
+        created_at: new Date().toISOString()
+      };
+      db.transactions.push(newTx);
+      
+      if (payment_mode === 'UDHAAR' && credit_contact_id) {
+        const contact = (db.credit_contacts || []).find(c => c.id === Number(credit_contact_id));
+        if (contact) {
+          const balanceImpact = transaction_type === 'EXPENSE' ? parseFloat(amount) : -parseFloat(amount);
+          contact.running_balance = parseFloat((contact.running_balance + balanceImpact).toFixed(2));
+        }
+      }
+      writeJsonDb(db);
+      return newTx;
+    }
+  },
+
+  async deleteTransaction(id) {
+    if (isMysql) {
+      const conn = await pool.getConnection();
+      try {
+        await conn.beginTransaction();
+        const [rows] = await conn.query('SELECT * FROM transactions WHERE id = ?', [id]);
+        if (rows.length === 0) {
+          await conn.rollback();
+          return false;
+        }
+        const tx = rows[0];
+        
+        if (tx.payment_mode === 'UDHAAR' && tx.credit_contact_id) {
+          const balanceImpact = tx.transaction_type === 'EXPENSE' ? -tx.amount : tx.amount;
+          await conn.query(
+            'UPDATE credit_contacts SET running_balance = running_balance + ? WHERE id = ?',
+            [balanceImpact, tx.credit_contact_id]
+          );
+        }
+        
+        await conn.query('DELETE FROM transactions WHERE id = ?', [id]);
+        await conn.commit();
+        return true;
+      } catch (err) {
+        await conn.rollback();
+        throw err;
+      } finally {
+        conn.release();
+      }
+    } else {
+      const db = readJsonDb();
+      const txIdx = (db.transactions || []).findIndex(t => t.id === Number(id));
+      if (txIdx === -1) return false;
+      const tx = db.transactions[txIdx];
+      
+      if (tx.payment_mode === 'UDHAAR' && tx.credit_contact_id) {
+        const contact = (db.credit_contacts || []).find(c => c.id === Number(tx.credit_contact_id));
+        if (contact) {
+          const balanceImpact = tx.transaction_type === 'EXPENSE' ? -tx.amount : tx.amount;
+          contact.running_balance = parseFloat((contact.running_balance + balanceImpact).toFixed(2));
+        }
+      }
+      db.transactions.splice(txIdx, 1);
+      writeJsonDb(db);
+      return true;
+    }
+  },
+
+  async getKccAccounts(farmer_id) {
+    if (isMysql) {
+      const [rows] = await pool.query('SELECT * FROM kcc_accounts WHERE farmer_id = ?', [farmer_id]);
+      return rows;
+    } else {
+      const db = readJsonDb();
+      return (db.kcc_accounts || []).filter(k => k.farmer_id === farmer_id);
+    }
+  },
+
+  async createOrUpdateKccAccount(kcc) {
+    const { farmer_id, bank_name, sanctioned_limit, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline } = kcc;
+    if (isMysql) {
+      const [existing] = await pool.query('SELECT * FROM kcc_accounts WHERE farmer_id = ?', [farmer_id]);
+      if (existing.length > 0) {
+        await pool.query(
+          'UPDATE kcc_accounts SET bank_name = ?, sanctioned_limit = ?, current_outstanding = ?, base_interest_rate = ?, subvention_interest_rate = ?, subvention_deadline = ? WHERE farmer_id = ?',
+          [bank_name, sanctioned_limit, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline, farmer_id]
+        );
+        return { id: existing[0].id, ...kcc };
+      } else {
+        const [result] = await pool.query(
+          'INSERT INTO kcc_accounts (farmer_id, bank_name, sanctioned_limit, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [farmer_id, bank_name, sanctioned_limit, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline]
+        );
+        return { id: result.insertId, ...kcc };
+      }
+    } else {
+      const db = readJsonDb();
+      if (!db.kcc_accounts) db.kcc_accounts = [];
+      const idx = db.kcc_accounts.findIndex(k => k.farmer_id === farmer_id);
+      const newKcc = {
+        farmer_id,
+        bank_name,
+        sanctioned_limit: parseFloat(sanctioned_limit),
+        current_outstanding: parseFloat(current_outstanding),
+        base_interest_rate: parseFloat(base_interest_rate),
+        subvention_interest_rate: parseFloat(subvention_interest_rate),
+        subvention_deadline,
+        updated_at: new Date().toISOString()
+      };
+      if (idx !== -1) {
+        db.kcc_accounts[idx] = { id: db.kcc_accounts[idx].id, ...newKcc };
+      } else {
+        newKcc.id = db.kcc_accounts.length > 0 ? Math.max(...db.kcc_accounts.map(k => k.id)) + 1 : 1;
+        db.kcc_accounts.push(newKcc);
+      }
+      writeJsonDb(db);
+      return newKcc;
+    }
+  },
+
   async getLatestTelemetry() {
     let temperature = null;
     let soilMoisture = null;

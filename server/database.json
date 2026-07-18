@@ -93,6 +93,37 @@
       "activity_streak": 2,
       "last_activity_date": "2026-06-05",
       "progress_percentage": 24
+    },
+    {
+      "batch_id": "FB-2026-004",
+      "crop_name": "Heirloom Vine Tomatoes",
+      "crop_image": "https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=800&q=80",
+      "farm_name": "Green Valley Organic Farm",
+      "farm_location": "Section 4B, Green Valley Organic Farm",
+      "cultivation_type": "Silty Clay Loam",
+      "sowing_date": "2026-07-12",
+      "expected_harvest": "2026-10-12",
+      "status": "Growing",
+      "trust_score": 90,
+      "blockchain_hash": "0x5a6584650cfc22a12dd905588de2a56e3c4aaef44c717439b4f7e0563bafd175",
+      "farmer_id": "YO_UVFARMS",
+      "farmer_name": "Farmer",
+      "total_points": 45,
+      "current_level": "Seedling",
+      "earned_badges": [
+        "First Batch Created",
+        "First Activity Logged",
+        "First Crop Image Uploaded",
+        "First Batch",
+        "Record Starter",
+        "First Snapshot",
+        "Nutrition Master",
+        "Smart Farmer"
+      ],
+      "unlocked_rewards": [],
+      "activity_streak": 1,
+      "last_activity_date": "2026-07-12",
+      "progress_percentage": 90
     }
   ],
   "pre_cultivation": [
@@ -122,6 +153,15 @@
       "seed_provenance": "Kona Estate Selection",
       "buffer_zone_check": "Passed",
       "batch_id": "FB-2026-003"
+    },
+    {
+      "id": 4,
+      "soil_test_status": "Passed",
+      "heavy_metal_status": "Passed",
+      "water_quality": "Passed",
+      "seed_provenance": "Certified Rootstock",
+      "buffer_zone_check": "Passed",
+      "batch_id": "FB-2026-004"
     }
   ],
   "cultivation_logs": [
@@ -276,6 +316,38 @@
       "description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
       "timestamp": "2026-07-12T05:17:31.875Z",
       "hash": "0x8429eba804791c3498aa246a82d93bc03d7e1600f6737cf6c956d6e04162035d"
+    },
+    {
+      "id": 20,
+      "batch_id": "FB-2026-004",
+      "activity_type": "Batch Created",
+      "description": "Batch created: Heirloom Vine Tomatoes in Section 4B, Green Valley Organic Farm.",
+      "timestamp": "2026-07-12T07:13:01.352Z",
+      "hash": "0xdb76f5ae47d702fb00cebcc807ba65d462cc8000d5fede9cc00f2f841fd18434"
+    },
+    {
+      "id": 21,
+      "batch_id": "FB-2026-004",
+      "activity_type": "Irrigation Logged",
+      "description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
+      "timestamp": "2026-07-12T07:13:09.655Z",
+      "hash": "0x90a637a048b279132135c8c9cb9e9670de42b79832111148a5fbda630f02fb77"
+    },
+    {
+      "id": 22,
+      "batch_id": "FB-2026-004",
+      "activity_type": "Fertilizer Application",
+      "description": "{\n  \"brand\": \"Organic BioGrow\",\n  \"quantityKg\": \"15\",\n  \"method\": \"Soil Drenching\"\n}",
+      "timestamp": "2026-07-12T07:13:22.125Z",
+      "hash": "0x323e3965751c723b99b684fa196e390e634331b168588c2781462b8c69ac4044"
+    },
+    {
+      "id": 23,
+      "batch_id": "FB-2026-004",
+      "activity_type": "Fertilizer Application",
+      "description": "{\n  \"brand\": \"Organic BioGrow\",\n  \"quantityKg\": \"15\",\n  \"method\": \"Soil Drenching\"\n}",
+      "timestamp": "2026-07-12T07:13:34.267Z",
+      "hash": "0x5301502f5176e47f492013d90b39a9a53fbd7c87bb6c5a8539c2184beec6b078"
     }
   ],
   "harvest_qa": [
@@ -308,6 +380,16 @@
       "residue_free": true,
       "quality_notes": "Moisture level 10.5%. Cherry quality score AA Premium.",
       "batch_id": "FB-2026-003"
+    },
+    {
+      "id": 4,
+      "harvest_date": null,
+      "total_yield": "Pending",
+      "marketable_yield": "Pending",
+      "qa_status": "Pending",
+      "residue_free": true,
+      "quality_notes": "Greenhouse Zone C. Injected liquid worm castings fertilizer. Organic pest barriers active.",
+      "batch_id": "FB-2026-004"
     }
   ],
   "transit_retail": [
@@ -337,6 +419,15 @@
       "retail_handover": "Specialty Roasters Corp, NY",
       "delivery_status": "Delivered",
       "batch_id": "FB-2026-003"
+    },
+    {
+      "id": 4,
+      "pre_cooling_status": "Pending",
+      "dispatch_date": null,
+      "transport_status": "Pending",
+      "retail_handover": "Pending",
+      "delivery_status": "In Fields",
+      "batch_id": "FB-2026-004"
     }
   ],
   "verification_logs": [],
@@ -474,6 +565,50 @@
       "event_status": "Success",
       "trust_score_impact": 2,
       "created_at": "2026-07-12T05:17:33.238Z"
+    },
+    {
+      "id": 13,
+      "batch_id": "FB-2026-004",
+      "farmer_id": "YO_UVFARMS",
+      "event_type": "Batch Created",
+      "event_title": "Crop Batch Initialized",
+      "event_description": "Batch FB-2026-004 (Heirloom Vine Tomatoes) successfully initialized on the ledger.",
+      "event_status": "Success",
+      "trust_score_impact": 0,
+      "created_at": "2026-07-12T07:13:02.660Z"
+    },
+    {
+      "id": 14,
+      "batch_id": "FB-2026-004",
+      "farmer_id": "YO_UVFARMS",
+      "event_type": "Irrigation Logged",
+      "event_title": "Irrigation Logged",
+      "event_description": "{\n  \"source\": \"Main Irrigation Well\",\n  \"volumeLitres\": \"450\",\n  \"soilMoisturePost\": \"49%\"\n}",
+      "event_status": "Success",
+      "trust_score_impact": 2,
+      "created_at": "2026-07-12T07:13:11.050Z"
+    },
+    {
+      "id": 15,
+      "batch_id": "FB-2026-004",
+      "farmer_id": "YO_UVFARMS",
+      "event_type": "Fertilizer Application",
+      "event_title": "Fertilizer Application",
+      "event_description": "{\n  \"brand\": \"Organic BioGrow\",\n  \"quantityKg\": \"15\",\n  \"method\": \"Soil Drenching\"\n}",
+      "event_status": "Success",
+      "trust_score_impact": 2,
+      "created_at": "2026-07-12T07:13:23.514Z"
+    },
+    {
+      "id": 16,
+      "batch_id": "FB-2026-004",
+      "farmer_id": "YO_UVFARMS",
+      "event_type": "Fertilizer Application",
+      "event_title": "Fertilizer Application",
+      "event_description": "{\n  \"brand\": \"Organic BioGrow\",\n  \"quantityKg\": \"15\",\n  \"method\": \"Soil Drenching\"\n}",
+      "event_status": "Success",
+      "trust_score_impact": 2,
+      "created_at": "2026-07-12T07:13:36.015Z"
     }
   ],
   "farmers": [
@@ -528,7 +663,7 @@
       "email": null,
       "password_hash": null,
       "is_registered": false,
-      "login_count": 1,
+      "login_count": 2,
       "trust_score": 100,
       "created_at": "2026-07-12T05:12:59.424Z"
     },
@@ -542,6 +677,17 @@
       "login_count": 1,
       "trust_score": 100,
       "created_at": "2026-07-12T05:16:53.105Z"
+    },
+    {
+      "id": 7,
+      "farmer_id": "YO_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-12T07:12:30.052Z"
     }
   ],
   "admins": [],
@@ -595,6 +741,14 @@
     {
       "batch_id": "FB-2026-003",
       "blockchain_hash": "0xc6899a7037ab95fab04cc1d7bd5fd1f96e18faf46a49f8b8c1316139595aeff6"
+    },
+    {
+      "batch_id": "FB-2026-004",
+      "blockchain_hash": "0x5a6584650cfc22a12dd905588de2a56e3c4aaef44c717439b4f7e0563bafd175"
     }
-  ]
+  ],
+  "crop_cycles": [],
+  "credit_contacts": [],
+  "transactions": [],
+  "kcc_accounts": []
 }

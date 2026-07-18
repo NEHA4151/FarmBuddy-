@@ -25,6 +25,7 @@ import ExportView from './screens/ExportView';
 import LabourAccountsView from './screens/LabourAccountsView';
 import Leaderboard from './screens/Leaderboard';
 import RewardOverlay from './components/RewardOverlay';
+import FinanceDashboard from './screens/FinanceDashboard';
 
 function AppContent() {
   const { currentView, setCurrentView, currentBatchId, setCurrentBatchId, user, sidebarOpen, setSidebarOpen } = useFarm();
@@ -136,6 +137,8 @@ function AppContent() {
         return <LabourAccountsView />;
       case 'leaderboard':
         return <Leaderboard />;
+      case 'finance-dashboard':
+        return <FinanceDashboard />;
       default:
         return <LoginPage />;
     }

@@ -79,6 +79,69 @@ app.get('/api/status', (req, res) => {
         try {
           await pool.query('ALTER TABLE batch_overview ADD COLUMN farmer_name VARCHAR(100) DEFAULT "John Doe"');
         } catch (e) {}
+        
+        try {
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS crop_cycles (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              farmer_id VARCHAR(50) NOT NULL,
+              crop_name VARCHAR(100) NOT NULL,
+              plot_identifier VARCHAR(50) DEFAULT NULL,
+              start_date DATE NOT NULL,
+              end_date DATE DEFAULT NULL,
+              status VARCHAR(20) DEFAULT 'ACTIVE',
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              INDEX idx_farmer_crop (farmer_id, status)
+            )
+          `);
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS credit_contacts (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              farmer_id VARCHAR(50) NOT NULL,
+              contact_name VARCHAR(150) NOT NULL,
+              contact_type VARCHAR(20) NOT NULL,
+              phone_number VARCHAR(15) DEFAULT NULL,
+              running_balance DECIMAL(12, 2) DEFAULT 0.00,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              UNIQUE KEY uq_farmer_contact (farmer_id, contact_name)
+            )
+          `);
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS transactions (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              farmer_id VARCHAR(50) NOT NULL,
+              crop_cycle_id INT DEFAULT NULL,
+              credit_contact_id INT DEFAULT NULL,
+              transaction_type VARCHAR(10) NOT NULL,
+              category VARCHAR(20) NOT NULL,
+              amount DECIMAL(12, 2) NOT NULL,
+              payment_mode VARCHAR(10) NOT NULL,
+              transaction_date DATE NOT NULL,
+              notes TEXT DEFAULT NULL,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (crop_cycle_id) REFERENCES crop_cycles(id) ON DELETE SET NULL,
+              FOREIGN KEY (credit_contact_id) REFERENCES credit_contacts(id) ON DELETE SET NULL,
+              INDEX idx_farmer_ledger (farmer_id, transaction_date)
+            )
+          `);
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS kcc_accounts (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              farmer_id VARCHAR(50) NOT NULL,
+              bank_name VARCHAR(100) NOT NULL,
+              sanctioned_limit DECIMAL(12, 2) NOT NULL,
+              current_outstanding DECIMAL(12, 2) DEFAULT 0.00,
+              base_interest_rate DECIMAL(4, 2) DEFAULT 7.00,
+              subvention_interest_rate DECIMAL(4, 2) DEFAULT 4.00,
+              subvention_deadline DATE NOT NULL,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              INDEX idx_farmer_kcc (farmer_id)
+            )
+          `);
+        } catch (e) {
+          console.error('Error creating finance tables on startup:', e);
+        }
+
         console.log('MySQL schema is verified and active.');
       }
     } catch (err) {
@@ -98,6 +161,23 @@ app.get('/api/status', (req, res) => {
         
         if (!db.batch_events) {
           db.batch_events = [];
+          modified = true;
+        }
+
+        if (!db.crop_cycles) {
+          db.crop_cycles = [];
+          modified = true;
+        }
+        if (!db.credit_contacts) {
+          db.credit_contacts = [];
+          modified = true;
+        }
+        if (!db.transactions) {
+          db.transactions = [];
+          modified = true;
+        }
+        if (!db.kcc_accounts) {
+          db.kcc_accounts = [];
           modified = true;
         }
         
@@ -1145,6 +1225,174 @@ app.delete('/api/labour/:id', async (req, res) => {
   } catch (err) {
     console.error('Error deleting labour account:', err);
     res.status(500).json({ error: 'Failed to delete labour account' });
+  }
+});
+
+// --- FINANCE MODULE ENDPOINTS ---
+
+// Crop Cycles
+app.get('/api/crop-cycles', async (req, res) => {
+  const farmerId = req.query.farmerId || 'FMR-0921';
+  try {
+    const cycles = await dbService.getAllCropCycles(farmerId);
+    res.json(cycles);
+  } catch (err) {
+    console.error('Error fetching crop cycles:', err);
+    res.status(500).json({ error: 'Failed to fetch crop cycles' });
+  }
+});
+
+app.post('/api/crop-cycles', async (req, res) => {
+  const { farmer_id, crop_name, plot_identifier, start_date, end_date, status } = req.body;
+  if (!farmer_id || !crop_name || !start_date) {
+    return res.status(400).json({ error: 'Missing required crop cycle fields' });
+  }
+  try {
+    const cycle = await dbService.createCropCycle({ farmer_id, crop_name, plot_identifier, start_date, end_date, status });
+    res.status(201).json(cycle);
+  } catch (err) {
+    console.error('Error creating crop cycle:', err);
+    res.status(500).json({ error: 'Failed to create crop cycle' });
+  }
+});
+
+app.put('/api/crop-cycles/:id', async (req, res) => {
+  const { id } = req.params;
+  const { crop_name, plot_identifier, start_date, end_date, status } = req.body;
+  try {
+    const updated = await dbService.updateCropCycle(id, { crop_name, plot_identifier, start_date, end_date, status });
+    if (!updated) return res.status(404).json({ error: 'Crop cycle not found' });
+    res.json(updated);
+  } catch (err) {
+    console.error('Error updating crop cycle:', err);
+    res.status(500).json({ error: 'Failed to update crop cycle' });
+  }
+});
+
+app.delete('/api/crop-cycles/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const success = await dbService.deleteCropCycle(id);
+    if (!success) return res.status(404).json({ error: 'Crop cycle not found' });
+    res.json({ message: 'Crop cycle deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting crop cycle:', err);
+    res.status(500).json({ error: 'Failed to delete crop cycle' });
+  }
+});
+
+// Credit Contacts
+app.get('/api/credit-contacts', async (req, res) => {
+  const farmerId = req.query.farmerId || 'FMR-0921';
+  try {
+    const contacts = await dbService.getAllCreditContacts(farmerId);
+    res.json(contacts);
+  } catch (err) {
+    console.error('Error fetching credit contacts:', err);
+    res.status(500).json({ error: 'Failed to fetch credit contacts' });
+  }
+});
+
+app.post('/api/credit-contacts', async (req, res) => {
+  const { farmer_id, contact_name, contact_type, phone_number, running_balance } = req.body;
+  if (!farmer_id || !contact_name || !contact_type) {
+    return res.status(400).json({ error: 'Missing required credit contact fields' });
+  }
+  try {
+    const contact = await dbService.createCreditContact({ farmer_id, contact_name, contact_type, phone_number, running_balance });
+    res.status(201).json(contact);
+  } catch (err) {
+    console.error('Error creating credit contact:', err);
+    res.status(500).json({ error: 'Failed to create credit contact' });
+  }
+});
+
+app.put('/api/credit-contacts/:id', async (req, res) => {
+  const { id } = req.params;
+  const { contact_name, contact_type, phone_number, running_balance } = req.body;
+  try {
+    const updated = await dbService.updateCreditContact(id, { contact_name, contact_type, phone_number, running_balance });
+    if (!updated) return res.status(404).json({ error: 'Credit contact not found' });
+    res.json(updated);
+  } catch (err) {
+    console.error('Error updating credit contact:', err);
+    res.status(500).json({ error: 'Failed to update credit contact' });
+  }
+});
+
+app.delete('/api/credit-contacts/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const success = await dbService.deleteCreditContact(id);
+    if (!success) return res.status(404).json({ error: 'Credit contact not found' });
+    res.json({ message: 'Credit contact deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting credit contact:', err);
+    res.status(500).json({ error: 'Failed to delete credit contact' });
+  }
+});
+
+// Transactions
+app.get('/api/transactions', async (req, res) => {
+  const farmerId = req.query.farmerId || 'FMR-0921';
+  try {
+    const txs = await dbService.getAllTransactions(farmerId);
+    res.json(txs);
+  } catch (err) {
+    console.error('Error fetching transactions:', err);
+    res.status(500).json({ error: 'Failed to fetch transactions' });
+  }
+});
+
+app.post('/api/transactions', async (req, res) => {
+  const { farmer_id, crop_cycle_id, credit_contact_id, transaction_type, category, amount, payment_mode, transaction_date, notes } = req.body;
+  if (!farmer_id || !transaction_type || !category || !amount || !payment_mode || !transaction_date) {
+    return res.status(400).json({ error: 'Missing required transaction fields' });
+  }
+  try {
+    const tx = await dbService.createTransaction({ farmer_id, crop_cycle_id, credit_contact_id, transaction_type, category, amount, payment_mode, transaction_date, notes });
+    res.status(201).json(tx);
+  } catch (err) {
+    console.error('Error creating transaction:', err);
+    res.status(500).json({ error: 'Failed to create transaction' });
+  }
+});
+
+app.delete('/api/transactions/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const success = await dbService.deleteTransaction(id);
+    if (!success) return res.status(404).json({ error: 'Transaction not found' });
+    res.json({ message: 'Transaction deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting transaction:', err);
+    res.status(500).json({ error: 'Failed to delete transaction' });
+  }
+});
+
+// KCC Accounts
+app.get('/api/kcc-accounts', async (req, res) => {
+  const farmerId = req.query.farmerId || 'FMR-0921';
+  try {
+    const kcc = await dbService.getKccAccounts(farmerId);
+    res.json(kcc);
+  } catch (err) {
+    console.error('Error fetching KCC accounts:', err);
+    res.status(500).json({ error: 'Failed to fetch KCC accounts' });
+  }
+});
+
+app.post('/api/kcc-accounts', async (req, res) => {
+  const { farmer_id, bank_name, sanctioned_limit, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline } = req.body;
+  if (!farmer_id || !bank_name || sanctioned_limit === undefined || !subvention_deadline) {
+    return res.status(400).json({ error: 'Missing required KCC fields' });
+  }
+  try {
+    const kcc = await dbService.createOrUpdateKccAccount({ farmer_id, bank_name, sanctioned_limit, current_outstanding, base_interest_rate, subvention_interest_rate, subvention_deadline });
+    res.json(kcc);
+  } catch (err) {
+    console.error('Error updating KCC account:', err);
+    res.status(500).json({ error: 'Failed to update KCC account' });
   }
 });
 
