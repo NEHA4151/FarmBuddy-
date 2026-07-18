@@ -134,7 +134,6 @@ function AppContent() {
       case 'workflow-export':
         return <ExportView />;
       case 'workflow-labour':
-      case 'finance-dashboard':
         return <FinanceDashboard />;
       case 'leaderboard':
         return <Leaderboard />;

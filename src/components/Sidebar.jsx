@@ -146,7 +146,7 @@ export default function Sidebar() {
                 </button>
                 <button onClick={() => handleNav('workflow-labour')} className={getLinkClass('workflow-labour')}>
                   <Users className="h-4 w-4" />
-                  7. Labour Accounts
+                  7. Finance & Labour
                 </button>
                 <button onClick={() => handleNav('workflow-export')} className={getLinkClass('workflow-export')}>
                   <Download className="h-4 w-4" />
@@ -211,10 +211,6 @@ export default function Sidebar() {
           <button onClick={() => handleNav('leaderboard')} className={getLinkClass('leaderboard')}>
             <Award className="h-4 w-4" />
             Leaderboard
-          </button>
-          <button onClick={() => handleNav('finance-dashboard')} className={getLinkClass('finance-dashboard')}>
-            <IndianRupee className="h-4 w-4" />
-            Finance & Accounting
           </button>
         </div>
       </div>
