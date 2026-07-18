@@ -732,6 +732,17 @@
       "login_count": 1,
       "trust_score": 100,
       "created_at": "2026-07-18T06:06:05.715Z"
+    },
+    {
+      "id": 12,
+      "farmer_id": "RK_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-18T06:11:28.711Z"
     }
   ],
   "admins": [],
@@ -866,6 +877,19 @@
       "transaction_date": "2026-07-18",
       "notes": null,
       "created_at": "2026-07-18T05:49:57.794Z"
+    },
+    {
+      "id": 3,
+      "farmer_id": "RK_UVFARMS",
+      "crop_cycle_id": null,
+      "credit_contact_id": null,
+      "transaction_type": "INCOME",
+      "category": "SALES",
+      "amount": 500,
+      "payment_mode": "CASH",
+      "transaction_date": "2026-07-18",
+      "notes": null,
+      "created_at": "2026-07-18T06:11:46.025Z"
     }
   ],
   "kcc_accounts": [],
