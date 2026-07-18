@@ -146,7 +146,7 @@ export default function Sidebar() {
                 </button>
                 <button onClick={() => handleNav('workflow-labour')} className={getLinkClass('workflow-labour')}>
                   <Users className="h-4 w-4" />
-                  7. Finance & Labour
+                  7. Finance & Accounting
                 </button>
                 <button onClick={() => handleNav('workflow-export')} className={getLinkClass('workflow-export')}>
                   <Download className="h-4 w-4" />

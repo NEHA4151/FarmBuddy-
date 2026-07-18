@@ -822,7 +822,7 @@ export default function FinanceDashboard() {
       {/* Title & Stats Export Toolbar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-stone-200/45 dark:border-emerald-950/20 pb-6 print:hidden">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Finance & Labour</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">Finance & Accounting</h1>
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
             Complete management of farm labor operations, crop-wise profitability margins, and credit accounting.
           </p>
