@@ -134,11 +134,10 @@ function AppContent() {
       case 'workflow-export':
         return <ExportView />;
       case 'workflow-labour':
-        return <LabourAccountsView />;
-      case 'leaderboard':
-        return <Leaderboard />;
       case 'finance-dashboard':
         return <FinanceDashboard />;
+      case 'leaderboard':
+        return <Leaderboard />;
       default:
         return <LoginPage />;
     }

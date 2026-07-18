@@ -639,6 +639,11 @@ export const FarmProvider = ({ children }) => {
         const data = await resKcc.json();
         setKccAccounts(data);
       }
+      const resLabour = await fetch(`${API_BASE}/api/labour?farmerId=${fId}`);
+      if (resLabour.ok) {
+        const data = await resLabour.json();
+        setLabourAccounts(data);
+      }
     } catch (err) {
       console.warn("Could not fetch finance data:", err);
     }
@@ -801,131 +806,58 @@ export const FarmProvider = ({ children }) => {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (currentBatchId) {
-      fetchLabourAccounts(currentBatchId);
-    } else {
-      setLabourAccounts([]);
-    }
-  }, [currentBatchId]);
-
   const addLabourAccount = async (entry) => {
-    const activeBatchId = currentBatchId;
-    if (!activeBatchId) return;
-
+    const fId = user?.farmerId || 'FMR-0921';
     try {
-      const res = await fetch(`${API_BASE}/api/batches/${activeBatchId}/labour`, {
+      const res = await fetch(`${API_BASE}/api/labour`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...entry, batch_id: activeBatchId })
+        body: JSON.stringify({ ...entry, farmer_id: fId })
       });
       if (res.ok) {
-        const newRecord = await res.json();
-        setLabourAccounts(prev => {
-          const updated = [newRecord, ...prev];
-          localStorage.setItem(`farmbuddy_labour_accounts_${activeBatchId}`, JSON.stringify(updated));
-          return updated;
-        });
+        await refreshFinanceData();
         addNotification("Labour Account Added", "A new labour account record has been saved successfully.", "success");
-      } else {
-        throw new Error('Failed to save to API');
+        return true;
       }
     } catch (err) {
-      console.warn("Backend API error, adding locally instead:", err.message);
-      const newRecord = {
-        id: Date.now(),
-        batch_id: activeBatchId,
-        ...entry,
-        total_labour: parseInt(entry.total_labour, 10),
-        male: parseInt(entry.male || 0, 10),
-        female: parseInt(entry.female || 0, 10),
-        duration: parseFloat(entry.duration),
-        wage: parseFloat(entry.wage),
-        total_expense: parseFloat(entry.total_expense)
-      };
-      setLabourAccounts(prev => {
-        const updated = [newRecord, ...prev];
-        localStorage.setItem(`farmbuddy_labour_accounts_${activeBatchId}`, JSON.stringify(updated));
-        return updated;
-      });
-      addNotification("Labour Account Added (Local)", "Saved record to local storage backup.", "info");
+      console.error("Error adding labour account:", err);
     }
+    return false;
   };
 
   const updateLabourAccount = async (id, entry) => {
-    const activeBatchId = currentBatchId;
-    if (!activeBatchId) return;
-
+    const fId = user?.farmerId || 'FMR-0921';
     try {
       const res = await fetch(`${API_BASE}/api/labour/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...entry, batch_id: activeBatchId })
+        body: JSON.stringify({ ...entry, farmer_id: fId })
       });
       if (res.ok) {
-        const updatedRecord = await res.json();
-        setLabourAccounts(prev => {
-          const updated = prev.map(item => item.id === Number(id) || item.id === id ? updatedRecord : item);
-          localStorage.setItem(`farmbuddy_labour_accounts_${activeBatchId}`, JSON.stringify(updated));
-          return updated;
-        });
+        await refreshFinanceData();
         addNotification("Labour Account Updated", "The labour account record has been updated.", "success");
-      } else {
-        throw new Error('Failed to update on API');
+        return true;
       }
     } catch (err) {
-      console.warn("Backend API error, updating locally instead:", err.message);
-      setLabourAccounts(prev => {
-        const updated = prev.map(item => {
-          if (item.id === Number(id) || item.id === id) {
-            return {
-              id: item.id,
-              batch_id: activeBatchId,
-              ...entry,
-              total_labour: parseInt(entry.total_labour, 10),
-              male: parseInt(entry.male || 0, 10),
-              female: parseInt(entry.female || 0, 10),
-              duration: parseFloat(entry.duration),
-              wage: parseFloat(entry.wage),
-              total_expense: parseFloat(entry.total_expense)
-            };
-          }
-          return item;
-        });
-        localStorage.setItem(`farmbuddy_labour_accounts_${activeBatchId}`, JSON.stringify(updated));
-        return updated;
-      });
-      addNotification("Labour Account Updated (Local)", "Updated record in local storage backup.", "info");
+      console.error("Error updating labour account:", err);
     }
+    return false;
   };
 
   const deleteLabourAccount = async (id) => {
-    const activeBatchId = currentBatchId;
-    if (!activeBatchId) return;
-
     try {
       const res = await fetch(`${API_BASE}/api/labour/${id}`, {
         method: 'DELETE'
       });
       if (res.ok) {
-        setLabourAccounts(prev => {
-          const updated = prev.filter(item => item.id !== Number(id) && item.id !== id);
-          localStorage.setItem(`farmbuddy_labour_accounts_${activeBatchId}`, JSON.stringify(updated));
-          return updated;
-        });
+        await refreshFinanceData();
         addNotification("Labour Account Deleted", "The record has been permanently deleted.", "success");
-      } else {
-        throw new Error('Failed to delete on API');
+        return true;
       }
     } catch (err) {
-      console.warn("Backend API error, deleting locally instead:", err.message);
-      setLabourAccounts(prev => {
-        const updated = prev.filter(item => item.id !== Number(id) && item.id !== id);
-        localStorage.setItem(`farmbuddy_labour_accounts_${activeBatchId}`, JSON.stringify(updated));
-        return updated;
-      });
-      addNotification("Labour Account Deleted (Local)", "Deleted record from local storage backup.", "info");
+      console.error("Error deleting labour account:", err);
     }
+    return false;
   };
 
   // Fetch complete details from backend

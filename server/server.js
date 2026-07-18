@@ -48,6 +48,40 @@ app.get('/api/status', (req, res) => {
         await initDb(false); // Do not drop, just create IF NOT EXISTS and seed
         console.log('MySQL database schema initialization and seeding completed.');
       } else {
+        // Check if labour_accounts needs update
+        try {
+          await pool.query('SELECT worker_name FROM labour_accounts LIMIT 1');
+        } catch (e) {
+          console.log('Recreating labour_accounts to match new schema...');
+          await pool.query('DROP TABLE IF EXISTS labour_accounts');
+        }
+
+        try {
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS labour_accounts (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              farmer_id VARCHAR(50) NOT NULL,
+              date DATE NOT NULL,
+              worker_name VARCHAR(100) NOT NULL,
+              gender VARCHAR(10) NOT NULL,
+              work_type VARCHAR(100) NOT NULL,
+              crop VARCHAR(100) NOT NULL,
+              plot VARCHAR(50) DEFAULT NULL,
+              hours_worked DECIMAL(5,2) NOT NULL,
+              daily_wage DECIMAL(10,2) NOT NULL,
+              bonus DECIMAL(10,2) DEFAULT 0.00,
+              advance DECIMAL(10,2) DEFAULT 0.00,
+              payment_status VARCHAR(20) NOT NULL,
+              payment_mode VARCHAR(20) NOT NULL,
+              total_amount DECIMAL(12,2) NOT NULL,
+              notes TEXT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+          `);
+        } catch (e) {
+          console.error('Error creating labour_accounts table:', e);
+        }
+
         // Run safety alters just in case columns need to be added
         try {
           await pool.query('ALTER TABLE labour_accounts ADD COLUMN duration_female DECIMAL(5,2) NOT NULL DEFAULT 0.00 AFTER duration');
@@ -1107,92 +1141,75 @@ app.get('/api/telemetry', async (req, res) => {
 });
 
 // API routes: Labour Accounts
-app.get('/api/batches/:batch_id/labour', async (req, res) => {
-  const { batch_id } = req.params;
+app.get('/api/labour', async (req, res) => {
+  const { farmerId } = req.query;
+  if (!farmerId) {
+    return res.status(400).json({ error: 'Missing farmerId parameter' });
+  }
   try {
-    const records = await dbService.getAllLabourAccounts(batch_id);
+    const records = await dbService.getAllLabourAccounts(farmerId);
     res.json(records);
   } catch (err) {
-    console.error(`Error fetching labour accounts for batch ${batch_id}:`, err);
+    console.error(`Error fetching labour accounts for farmer ${farmerId}:`, err);
     res.status(500).json({ error: 'Failed to fetch labour accounts' });
   }
 });
 
-app.post('/api/batches/:batch_id/labour', async (req, res) => {
-  const { batch_id } = req.params;
-  const { date, total_labour, male, female, duration, duration_female, wage, wage_female, total_expense, remarks } = req.body;
-  if (!date || total_labour === undefined || duration === undefined || wage === undefined) {
-    return res.status(400).json({ error: 'Missing required labour entry fields' });
+app.post('/api/labour', async (req, res) => {
+  const { farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, advance, payment_status, payment_mode, notes } = req.body;
+  if (!farmer_id || !date || !worker_name || !gender || !work_type || !crop || hours_worked === undefined || daily_wage === undefined || !payment_status || !payment_mode) {
+    return res.status(400).json({ error: 'Missing required labour fields' });
   }
   try {
-    const calculatedExpense = total_expense || (() => {
-      const m = parseInt(male || 0, 10);
-      const f = parseInt(female || 0, 10);
-      const dm = parseFloat(duration);
-      const df = parseFloat(duration_female || duration);
-      const wm = parseFloat(wage);
-      const wf = parseFloat(wage_female || wage);
-      if (m > 0 || f > 0) {
-        return (m * wm * dm) + (f * wf * df);
-      }
-      return total_labour * wm * dm;
-    })();
-
     const record = await dbService.createLabourAccount({
-      batch_id,
+      farmer_id,
       date,
-      total_labour,
-      male: male || 0,
-      female: female || 0,
-      duration,
-      duration_female: duration_female || duration,
-      wage,
-      wage_female: wage_female || wage,
-      total_expense: calculatedExpense,
-      remarks: remarks || ''
+      worker_name,
+      gender,
+      work_type,
+      crop,
+      plot,
+      hours_worked,
+      daily_wage,
+      bonus,
+      advance,
+      payment_status,
+      payment_mode,
+      notes
     });
-    await updateBatchGamificationState(batch_id);
     res.status(201).json(record);
   } catch (err) {
-    console.error(`Error creating labour account for batch ${batch_id}:`, err);
+    console.error('Error creating labour account:', err);
     res.status(500).json({ error: 'Failed to create labour account' });
   }
 });
 
 app.put('/api/labour/:id', async (req, res) => {
   const { id } = req.params;
-  const { batch_id, date, total_labour, male, female, duration, duration_female, wage, wage_female, total_expense, remarks } = req.body;
+  const { farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, advance, payment_status, payment_mode, notes } = req.body;
+  if (!date || !worker_name || !gender || !work_type || !crop || hours_worked === undefined || daily_wage === undefined || !payment_status || !payment_mode) {
+    return res.status(400).json({ error: 'Missing required fields for update' });
+  }
   try {
-    const calculatedExpense = total_expense || (() => {
-      const m = parseInt(male || 0, 10);
-      const f = parseInt(female || 0, 10);
-      const dm = parseFloat(duration);
-      const df = parseFloat(duration_female || duration);
-      const wm = parseFloat(wage);
-      const wf = parseFloat(wage_female || wage);
-      if (m > 0 || f > 0) {
-        return (m * wm * dm) + (f * wf * df);
-      }
-      return total_labour * wm * dm;
-    })();
-
     const record = await dbService.updateLabourAccount(id, {
-      batch_id,
+      farmer_id,
       date,
-      total_labour,
-      male: male || 0,
-      female: female || 0,
-      duration,
-      duration_female: duration_female || duration,
-      wage,
-      wage_female: wage_female || wage,
-      total_expense: calculatedExpense,
-      remarks: remarks || ''
+      worker_name,
+      gender,
+      work_type,
+      crop,
+      plot,
+      hours_worked,
+      daily_wage,
+      bonus,
+      advance,
+      payment_status,
+      payment_mode,
+      notes
     });
     if (!record) {
       return res.status(404).json({ error: 'Labour account not found' });
     }
-    await updateBatchGamificationState(batch_id);
     res.json(record);
   } catch (err) {
     console.error('Error updating labour account:', err);
@@ -1203,23 +1220,9 @@ app.put('/api/labour/:id', async (req, res) => {
 app.delete('/api/labour/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    let batchId = null;
-    if (isMysql) {
-      const [rows] = await pool.query('SELECT batch_id FROM labour_accounts WHERE id = ?', [id]);
-      if (rows.length > 0) batchId = rows[0].batch_id;
-    } else {
-      const dbPath = path.join(__dirname, 'database.json');
-      const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-      const entry = (db.labour_accounts || []).find(e => e.id === Number(id));
-      if (entry) batchId = entry.batch_id;
-    }
-
     const success = await dbService.deleteLabourAccount(id);
     if (!success) {
       return res.status(404).json({ error: 'Labour account not found' });
-    }
-    if (batchId) {
-      await updateBatchGamificationState(batchId);
     }
     res.json({ message: 'Labour account deleted successfully' });
   } catch (err) {

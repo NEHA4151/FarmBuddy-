@@ -368,17 +368,22 @@ export async function initDb(shouldDrop = false) {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS labour_accounts (
           id INT AUTO_INCREMENT PRIMARY KEY,
-          batch_id VARCHAR(50) NOT NULL,
+          farmer_id VARCHAR(50) NOT NULL,
           date DATE NOT NULL,
-          total_labour INT NOT NULL,
-          male INT NOT NULL,
-          female INT NOT NULL,
-          duration DECIMAL(5,2) NOT NULL,
-          wage DECIMAL(10,2) NOT NULL,
-          total_expense DECIMAL(12,2) NOT NULL,
-          remarks TEXT,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (batch_id) REFERENCES batch_overview(batch_id) ON DELETE CASCADE
+          worker_name VARCHAR(100) NOT NULL,
+          gender VARCHAR(10) NOT NULL,
+          work_type VARCHAR(100) NOT NULL,
+          crop VARCHAR(100) NOT NULL,
+          plot VARCHAR(50) DEFAULT NULL,
+          hours_worked DECIMAL(5,2) NOT NULL,
+          daily_wage DECIMAL(10,2) NOT NULL,
+          bonus DECIMAL(10,2) DEFAULT 0.00,
+          advance DECIMAL(10,2) DEFAULT 0.00,
+          payment_status VARCHAR(20) NOT NULL,
+          payment_mode VARCHAR(20) NOT NULL,
+          total_amount DECIMAL(12,2) NOT NULL,
+          notes TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
 
@@ -460,26 +465,38 @@ export async function initDb(shouldDrop = false) {
   try {
     const initialLabourAccounts = [
       {
-        batch_id: 'FB-2026-002',
+        farmer_id: 'FMR-0921',
         date: '2026-06-15',
-        total_labour: 12,
-        male: 7,
-        female: 5,
-        duration: 8.0,
-        wage: 15.0,
-        total_expense: 1440.0,
-        remarks: 'Sowing sweet potatoes in terrace A.'
+        worker_name: 'Suresh Kumar',
+        gender: 'Male',
+        work_type: 'Sowing',
+        crop: 'Organic Honeycrisp Apples',
+        plot: 'Section 4B',
+        hours_worked: 8.0,
+        daily_wage: 50.0,
+        bonus: 100.0,
+        advance: 50.0,
+        payment_status: 'PAID',
+        payment_mode: 'UPI',
+        total_amount: 450.0,
+        notes: 'Sowing sweet potatoes in terrace A.'
       },
       {
-        batch_id: 'FB-2026-001',
+        farmer_id: 'FMR-0921',
         date: '2026-06-20',
-        total_labour: 8,
-        male: 4,
-        female: 4,
-        duration: 6.0,
-        wage: 16.5,
-        total_expense: 792.0,
-        remarks: 'Watering & weeding orchard Section 4B.'
+        worker_name: 'Sunita Devi',
+        gender: 'Female',
+        work_type: 'Weeding',
+        crop: 'Japanese Sweet Potatoes',
+        plot: 'Hillside Terrace A',
+        hours_worked: 6.0,
+        daily_wage: 45.0,
+        bonus: 50.0,
+        advance: 20.0,
+        payment_status: 'PAID',
+        payment_mode: 'CASH',
+        total_amount: 300.0,
+        notes: 'Watering & weeding orchard Section 4B.'
       }
     ];
 
@@ -523,8 +540,8 @@ export async function initDb(shouldDrop = false) {
       console.log('Seeding labour accounts in MySQL...');
       for (const entry of initialLabourAccounts) {
         await pool.query(
-          'INSERT INTO labour_accounts (batch_id, date, total_labour, male, female, duration, wage, total_expense, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [entry.batch_id, entry.date, entry.total_labour, entry.male, entry.female, entry.duration, entry.wage, entry.total_expense, entry.remarks]
+          'INSERT INTO labour_accounts (farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, advance, payment_status, payment_mode, total_amount, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [entry.farmer_id, entry.date, entry.worker_name, entry.gender, entry.work_type, entry.crop, entry.plot, entry.hours_worked, entry.daily_wage, entry.bonus, entry.advance, entry.payment_status, entry.payment_mode, entry.total_amount, entry.notes]
         );
       }
     }

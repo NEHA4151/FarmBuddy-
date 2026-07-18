@@ -968,10 +968,10 @@ export const dbService = {
   },
 
   // Labour accounts CRUD methods
-  async getAllLabourAccounts(batch_id) {
+  async getAllLabourAccounts(farmer_id) {
     if (isMysql) {
       try {
-        const [rows] = await pool.query('SELECT * FROM labour_accounts WHERE batch_id = ? ORDER BY date DESC', [batch_id]);
+        const [rows] = await pool.query('SELECT * FROM labour_accounts WHERE farmer_id = ? ORDER BY date DESC', [farmer_id]);
         return rows;
       } catch (err) {
         console.error('MySQL labour accounts query failed:', err);
@@ -980,37 +980,49 @@ export const dbService = {
     } else {
       const db = readJsonDb();
       const list = db.labour_accounts || [];
-      return list.filter(item => item.batch_id === batch_id);
+      return list.filter(item => item.farmer_id === farmer_id);
     }
   },
 
   async createLabourAccount(entry) {
-    const { batch_id, date, total_labour, male, female, duration, duration_female, wage, wage_female, total_expense, remarks } = entry;
+    const { farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, advance, payment_status, payment_mode, notes } = entry;
+    const hours = parseFloat(hours_worked || 0);
+    const wage = parseFloat(daily_wage || 0);
+    const b = parseFloat(bonus || 0);
+    const adv = parseFloat(advance || 0);
+    const total_amount = parseFloat(((hours * wage) + b - adv).toFixed(2));
+
     if (isMysql) {
       const [result] = await pool.query(
-        'INSERT INTO labour_accounts (batch_id, date, total_labour, male, female, duration, duration_female, wage, wage_female, total_expense, remarks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [batch_id, date, total_labour, male, female, duration, duration_female || 0, wage, wage_female || 0, total_expense, remarks]
+        'INSERT INTO labour_accounts (farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, advance, payment_status, payment_mode, total_amount, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [farmer_id, date, worker_name, gender, work_type, crop, plot || null, hours, wage, b, adv, payment_status, payment_mode, total_amount, notes || null]
       );
       return {
         id: result.insertId,
-        ...entry
+        ...entry,
+        total_amount
       };
     } else {
       const db = readJsonDb();
       if (!db.labour_accounts) db.labour_accounts = [];
       const newEntry = {
         id: db.labour_accounts.length > 0 ? Math.max(...db.labour_accounts.map(e => e.id)) + 1 : 1,
-        batch_id,
+        farmer_id,
         date,
-        total_labour: parseInt(total_labour, 10),
-        male: parseInt(male, 10),
-        female: parseInt(female, 10),
-        duration: parseFloat(duration),
-        duration_female: parseFloat(duration_female || 0),
-        wage: parseFloat(wage),
-        wage_female: parseFloat(wage_female || 0),
-        total_expense: parseFloat(total_expense),
-        remarks
+        worker_name,
+        gender,
+        work_type,
+        crop,
+        plot: plot || null,
+        hours_worked: hours,
+        daily_wage: wage,
+        bonus: b,
+        advance: adv,
+        payment_status,
+        payment_mode,
+        total_amount,
+        notes: notes || null,
+        created_at: new Date().toISOString()
       };
       db.labour_accounts.push(newEntry);
       writeJsonDb(db);
@@ -1019,13 +1031,19 @@ export const dbService = {
   },
 
   async updateLabourAccount(id, entry) {
-    const { batch_id, date, total_labour, male, female, duration, duration_female, wage, wage_female, total_expense, remarks } = entry;
+    const { farmer_id, date, worker_name, gender, work_type, crop, plot, hours_worked, daily_wage, bonus, advance, payment_status, payment_mode, notes } = entry;
+    const hours = parseFloat(hours_worked || 0);
+    const wage = parseFloat(daily_wage || 0);
+    const b = parseFloat(bonus || 0);
+    const adv = parseFloat(advance || 0);
+    const total_amount = parseFloat(((hours * wage) + b - adv).toFixed(2));
+
     if (isMysql) {
       await pool.query(
-        'UPDATE labour_accounts SET date = ?, total_labour = ?, male = ?, female = ?, duration = ?, duration_female = ?, wage = ?, wage_female = ?, total_expense = ?, remarks = ? WHERE id = ?',
-        [date, total_labour, male, female, duration, duration_female || 0, wage, wage_female || 0, total_expense, remarks, id]
+        'UPDATE labour_accounts SET date = ?, worker_name = ?, gender = ?, work_type = ?, crop = ?, plot = ?, hours_worked = ?, daily_wage = ?, bonus = ?, advance = ?, payment_status = ?, payment_mode = ?, total_amount = ?, notes = ? WHERE id = ?',
+        [date, worker_name, gender, work_type, crop, plot || null, hours, wage, b, adv, payment_status, payment_mode, total_amount, notes || null, id]
       );
-      return { id, ...entry };
+      return { id, ...entry, total_amount };
     } else {
       const db = readJsonDb();
       if (!db.labour_accounts) db.labour_accounts = [];
@@ -1034,17 +1052,22 @@ export const dbService = {
         const existing = db.labour_accounts[existingIdx];
         db.labour_accounts[existingIdx] = {
           id: Number(id),
-          batch_id: batch_id || existing.batch_id,
+          farmer_id: farmer_id || existing.farmer_id,
           date,
-          total_labour: parseInt(total_labour, 10),
-          male: parseInt(male, 10),
-          female: parseInt(female, 10),
-          duration: parseFloat(duration),
-          duration_female: parseFloat(duration_female || 0),
-          wage: parseFloat(wage),
-          wage_female: parseFloat(wage_female || 0),
-          total_expense: parseFloat(total_expense),
-          remarks
+          worker_name,
+          gender,
+          work_type,
+          crop,
+          plot: plot || null,
+          hours_worked: hours,
+          daily_wage: wage,
+          bonus: b,
+          advance: adv,
+          payment_status,
+          payment_mode,
+          total_amount,
+          notes: notes || null,
+          created_at: existing.created_at || new Date().toISOString()
         };
         writeJsonDb(db);
         return db.labour_accounts[existingIdx];

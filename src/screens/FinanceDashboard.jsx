@@ -1,18 +1,15 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useFarm } from '../context/FarmContext';
 import {
   TrendingUp,
   TrendingDown,
   Plus,
   Trash2,
-  Phone,
-  User,
-  Users,
+  Edit2,
   Search,
   Filter,
   Layers,
   Calendar,
-  AlertTriangle,
   Building,
   CheckCircle,
   FileSpreadsheet,
@@ -20,16 +17,16 @@ import {
   ChevronRight,
   PieChart as PieIcon,
   IndianRupee,
-  BadgeAlert
+  BadgeAlert,
+  Users,
+  Check,
+  X,
+  Sparkles
 } from 'lucide-react';
 import {
   PieChart,
   Pie,
   Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
   Tooltip,
   ResponsiveContainer,
   Legend
@@ -48,6 +45,10 @@ export default function FinanceDashboard() {
     deleteTransaction,
     kccAccounts,
     updateKcc,
+    labourAccounts,
+    addLabourAccount,
+    updateLabourAccount,
+    deleteLabourAccount,
     addNotification
   } = useFarm();
 
@@ -85,13 +86,37 @@ export default function FinanceDashboard() {
   const [kccOutstanding, setKccOutstanding] = useState('');
   const [kccDeadline, setKccDeadline] = useState(new Date().toISOString().split('T')[0]);
 
-  // Filters state
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('ALL');
-  const [filterCategory, setFilterCategory] = useState('ALL');
-  const [filterCycle, setFilterCycle] = useState('ALL');
+  // Form states - Labour Records
+  const [showLabourModal, setShowLabourModal] = useState(false);
+  const [editingLabourId, setEditingLabourId] = useState(null);
+  const [labourDate, setLabourDate] = useState(new Date().toISOString().split('T')[0]);
+  const [labourName, setLabourName] = useState('');
+  const [labourGender, setLabourGender] = useState('Male');
+  const [labourWorkType, setLabourWorkType] = useState('Sowing');
+  const [labourCrop, setLabourCrop] = useState('');
+  const [labourPlot, setLabourPlot] = useState('');
+  const [labourHours, setLabourHours] = useState('');
+  const [labourWage, setLabourWage] = useState('');
+  const [labourBonus, setLabourBonus] = useState('');
+  const [labourAdvance, setLabourAdvance] = useState('');
+  const [labourStatus, setLabourStatus] = useState('PENDING');
+  const [labourMode, setLabourMode] = useState('CASH');
+  const [labourNotes, setLabourNotes] = useState('');
 
-  // Load KCC details on component mount
+  // Labour Filters & Pagination
+  const [labourSearch, setLabourSearch] = useState('');
+  const [labourFilterGender, setLabourFilterGender] = useState('ALL');
+  const [labourFilterStatus, setLabourFilterStatus] = useState('ALL');
+  const [labourFilterMode, setLabourFilterMode] = useState('ALL');
+  const [labourPage, setLabourPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // Transactions Filters
+  const [txSearch, setTxSearch] = useState('');
+  const [txFilterType, setTxFilterType] = useState('ALL');
+  const [txFilterCategory, setTxFilterCategory] = useState('ALL');
+
+  // Load KCC details fallback
   const kccInfo = useMemo(() => {
     return kccAccounts[0] || {
       bank_name: 'State Bank of India',
@@ -103,7 +128,7 @@ export default function FinanceDashboard() {
     };
   }, [kccAccounts]);
 
-  // Calculate Net Profit Margins
+  // Calculate Net Profit Margins & Financial stats
   const stats = useMemo(() => {
     let income = 0;
     let expense = 0;
@@ -121,13 +146,22 @@ export default function FinanceDashboard() {
       }
     });
 
+    let totalLabourExpense = 0;
+    labourAccounts.forEach(l => {
+      totalLabourExpense += parseFloat(l.total_amount || 0);
+    });
+
+    // Add labor accounts as outflow to net calculation
+    const totalOutflow = expense + totalLabourExpense;
+
     return {
       totalIncome: income,
       totalExpense: expense,
-      netProfit: income - expense,
+      totalLabourCost: totalLabourExpense,
+      netProfit: income - totalOutflow,
       totalSubsidy: subsidy
     };
-  }, [transactions]);
+  }, [transactions, labourAccounts]);
 
   // Calculations for crop cycle profitability
   const cropCycleProfitability = useMemo(() => {
@@ -157,8 +191,19 @@ export default function FinanceDashboard() {
       }
     });
 
+    // Populate from labour accounts (match crop name or plot)
+    labourAccounts.forEach(l => {
+      const cycle = cropCycles.find(c => 
+        (c.crop_name && c.crop_name.toLowerCase().includes(l.crop.toLowerCase())) ||
+        (c.plot_identifier && l.plot && c.plot_identifier.toLowerCase().includes(l.plot.toLowerCase()))
+      );
+      if (cycle && cycleMap[cycle.id]) {
+        cycleMap[cycle.id].expense += parseFloat(l.total_amount || 0);
+      }
+    });
+
     return Object.values(cycleMap);
-  }, [cropCycles, transactions]);
+  }, [cropCycles, transactions, labourAccounts]);
 
   // Category summary for Recharts
   const chartDataByCategory = useMemo(() => {
@@ -168,11 +213,16 @@ export default function FinanceDashboard() {
         categories[t.category] = (categories[t.category] || 0) + parseFloat(t.amount);
       }
     });
+    // Add Labor category
+    if (stats.totalLabourCost > 0) {
+      categories['LABOUR_OVERHEAD'] = stats.totalLabourCost;
+    }
+
     return Object.keys(categories).map(k => ({
       name: k.replace('_', ' '),
       value: categories[k]
     }));
-  }, [transactions]);
+  }, [transactions, stats.totalLabourCost]);
 
   const COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#6b7280'];
 
@@ -280,52 +330,150 @@ export default function FinanceDashboard() {
     }
   };
 
-  // Export transactions to CSV file
+  // Handle Labour Record submission (Create & Edit)
+  const handleLabourSubmit = async (e) => {
+    e.preventDefault();
+    if (!labourName || !labourHours || !labourWage || !labourCrop) return;
+
+    const payload = {
+      date: labourDate,
+      worker_name: labourName,
+      gender: labourGender,
+      work_type: labourWorkType,
+      crop: labourCrop,
+      plot: labourPlot || null,
+      hours_worked: parseFloat(labourHours),
+      daily_wage: parseFloat(labourWage),
+      bonus: parseFloat(labourBonus || 0),
+      advance: parseFloat(labourAdvance || 0),
+      payment_status: labourStatus,
+      payment_mode: labourMode,
+      notes: labourNotes
+    };
+
+    let success = false;
+    if (editingLabourId) {
+      success = await updateLabourAccount(editingLabourId, payload);
+      if (success) {
+        addNotification("Labour Record Updated", `Updated record for ${labourName}.`, "success");
+      }
+    } else {
+      success = await addLabourAccount(payload);
+      if (success) {
+        addNotification("Labour Record Created", `Logged labour for ${labourName}.`, "success");
+      }
+    }
+
+    if (success) {
+      setShowLabourModal(false);
+      setEditingLabourId(null);
+      // Reset
+      setLabourName('');
+      setLabourHours('');
+      setLabourWage('');
+      setLabourBonus('');
+      setLabourAdvance('');
+      setLabourNotes('');
+      setLabourPlot('');
+    }
+  };
+
+  // Trigger edit modal populated with selected labour record
+  const triggerLabourEdit = (record) => {
+    setEditingLabourId(record.id);
+    setLabourDate(new Date(record.date).toISOString().split('T')[0]);
+    setLabourName(record.worker_name);
+    setLabourGender(record.gender);
+    setLabourWorkType(record.work_type);
+    setLabourCrop(record.crop);
+    setLabourPlot(record.plot || '');
+    setLabourHours(record.hours_worked);
+    setLabourWage(record.daily_wage);
+    setLabourBonus(record.bonus);
+    setLabourAdvance(record.advance);
+    setLabourStatus(record.payment_status);
+    setLabourMode(record.payment_mode);
+    setLabourNotes(record.notes || '');
+    setShowLabourModal(true);
+  };
+
+  // Export transactions/labour records combined to CSV
   const exportToCSV = () => {
-    const headers = ['Transaction ID', 'Date', 'Type', 'Category', 'Amount', 'Payment Mode', 'Notes'];
-    const rows = transactions.map(t => [
-      t.id,
-      t.transaction_date,
-      t.transaction_type,
-      t.category,
-      t.amount,
-      t.payment_mode,
-      `"${(t.notes || '').replace(/"/g, '""')}"`
-    ]);
+    const headers = ['Type', 'Record ID', 'Date', 'Name/Category', 'Crop/Payment Mode', 'Outflow Amount', 'Notes/Worker Details'];
+    
+    const rows = [];
+    
+    // Add transactions
+    transactions.forEach(t => {
+      rows.push([
+        'Ledger Transaction',
+        t.id,
+        t.transaction_date,
+        t.category,
+        t.payment_mode,
+        t.transaction_type === 'EXPENSE' ? t.amount : `-${t.amount}`,
+        `"${(t.notes || '').replace(/"/g, '""')}"`
+      ]);
+    });
+
+    // Add labor records
+    labourAccounts.forEach(l => {
+      rows.push([
+        'Labour Record',
+        l.id,
+        l.date,
+        l.worker_name,
+        l.payment_mode,
+        l.total_amount,
+        `"Worker Name: ${l.worker_name}, Job: ${l.work_type}, Crop: ${l.crop}, Plot: ${l.plot || 'General'}"`
+      ]);
+    });
 
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `FarmBuddy_Financial_Statement_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `FarmBuddy_Unified_Finance_Labour_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // Trigger Print layout
-  const handlePrint = () => {
-    window.print();
-  };
+  // Filtered & Paginated Labour records
+  const filteredLabourAccounts = useMemo(() => {
+    return labourAccounts.filter(l => {
+      const matchesSearch = l.worker_name.toLowerCase().includes(labourSearch.toLowerCase()) || 
+                            l.work_type.toLowerCase().includes(labourSearch.toLowerCase()) || 
+                            l.crop.toLowerCase().includes(labourSearch.toLowerCase()) || 
+                            (l.plot && l.plot.toLowerCase().includes(labourSearch.toLowerCase()));
+      const matchesGender = labourFilterGender === 'ALL' || l.gender === labourFilterGender;
+      const matchesStatus = labourFilterStatus === 'ALL' || l.payment_status === labourFilterStatus;
+      const matchesMode = labourFilterMode === 'ALL' || l.payment_mode === labourFilterMode;
 
-  // Filtered transactions list
+      return matchesSearch && matchesGender && matchesStatus && matchesMode;
+    });
+  }, [labourAccounts, labourSearch, labourFilterGender, labourFilterStatus, labourFilterMode]);
+
+  const paginatedLabour = useMemo(() => {
+    const start = (labourPage - 1) * itemsPerPage;
+    return filteredLabourAccounts.slice(start, start + itemsPerPage);
+  }, [filteredLabourAccounts, labourPage]);
+
+  const totalLabourPages = Math.ceil(filteredLabourAccounts.length / itemsPerPage) || 1;
+
+  // Filtered Ledger transactions
   const filteredTransactions = useMemo(() => {
     return transactions.filter(t => {
-      // 1. Search term check
-      const matchesSearch = t.notes && t.notes.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            t.category.toLowerCase().includes(searchTerm.toLowerCase());
-      // 2. Type check
-      const matchesType = filterType === 'ALL' || t.transaction_type === filterType;
-      // 3. Category check
-      const matchesCategory = filterCategory === 'ALL' || t.category === filterCategory;
-      // 4. Crop cycle check
-      const matchesCycle = filterCycle === 'ALL' || String(t.crop_cycle_id) === String(filterCycle);
+      const matchesSearch = t.notes && t.notes.toLowerCase().includes(txSearch.toLowerCase()) || 
+                            t.category.toLowerCase().includes(txSearch.toLowerCase());
+      const matchesType = txFilterType === 'ALL' || t.transaction_type === txFilterType;
+      const matchesCategory = txFilterCategory === 'ALL' || t.category === txFilterCategory;
 
-      return (searchTerm === '' || matchesSearch) && matchesType && matchesCategory && matchesCycle;
+      return matchesSearch && matchesType && matchesCategory;
     });
-  }, [transactions, searchTerm, filterType, filterCategory, filterCycle]);
+  }, [transactions, txSearch, txFilterType, txFilterCategory]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 bg-warmSand dark:bg-[#0c140f] min-h-screen text-stone-900 dark:text-emerald-50 transition-colors duration-300">
@@ -333,9 +481,9 @@ export default function FinanceDashboard() {
       {/* Title & Stats Export Toolbar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-stone-200/45 dark:border-emerald-950/20 pb-6 print:hidden">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Finance & Accounting</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">Finance & Labour Accounts</h1>
           <p className="text-sm text-stone-500 dark:text-stone-400 mt-1">
-            Digital Bahi Khata, multi-crop profitability tracking, and institutional micro-credit reporting.
+            Complete management of farm labor operations, crop-wise profitability margins, and credit accounting.
           </p>
         </div>
         <div className="flex items-center gap-3 mt-4 md:mt-0">
@@ -344,34 +492,34 @@ export default function FinanceDashboard() {
             className="px-4 py-2 text-xs font-bold bg-white dark:bg-stone-850 hover:bg-stone-50 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-200 border border-stone-200 dark:border-stone-800 rounded-xl transition-all shadow-sm flex items-center gap-2"
           >
             <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-            Export CSV
+            Excel Export
           </button>
           <button
-            onClick={handlePrint}
+            onClick={() => window.print()}
             className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all shadow-sm flex items-center gap-2"
           >
             <Printer className="h-4 w-4" />
-            Print Statement
+            PDF Export
           </button>
         </div>
       </div>
 
       {/* Overview Cards Block */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 print:hidden">
-        {/* Card 1: Net Margin */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 print:hidden">
+        {/* Net Profit Margin Card */}
         <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm flex items-center gap-4">
-          <div className="p-3.5 rounded-2xl bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
+          <div className="p-3.5 rounded-2xl bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 animate-pulse">
             <TrendingUp className="h-6 w-6" />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest block">Net Profit / Margin</span>
+            <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest block">Net Profit Margin</span>
             <span className={`text-xl font-black block mt-0.5 ${stats.netProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
               ₹{stats.netProfit.toLocaleString('en-IN')}
             </span>
           </div>
         </div>
 
-        {/* Card 2: Total Revenue */}
+        {/* Total Inflow Card */}
         <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm flex items-center gap-4">
           <div className="p-3.5 rounded-2xl bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400">
             <IndianRupee className="h-6 w-6" />
@@ -384,28 +532,28 @@ export default function FinanceDashboard() {
           </div>
         </div>
 
-        {/* Card 3: Total Expenses */}
+        {/* Total Outflow Card */}
         <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm flex items-center gap-4">
           <div className="p-3.5 rounded-2xl bg-rose-100 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400">
             <TrendingDown className="h-6 w-6" />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest block">Total Expense</span>
+            <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest block">Total Outflow</span>
             <span className="text-xl font-black text-stone-800 dark:text-stone-100 block mt-0.5">
-              ₹{stats.totalExpense.toLocaleString('en-IN')}
+              ₹{(stats.totalExpense + stats.totalLabourCost).toLocaleString('en-IN')}
             </span>
           </div>
         </div>
 
-        {/* Card 4: KCC Outstanding */}
+        {/* Labour Overhead Card */}
         <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm flex items-center gap-4">
-          <div className="p-3.5 rounded-2xl bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400">
-            <Building className="h-6 w-6" />
+          <div className="p-3.5 rounded-2xl bg-violet-100 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400">
+            <Users className="h-6 w-6" />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest block">KCC Outstanding</span>
+            <span className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-widest block">Labour Overhead</span>
             <span className="text-xl font-black text-stone-800 dark:text-stone-100 block mt-0.5">
-              ₹{parseFloat(kccInfo.current_outstanding || 0).toLocaleString('en-IN')}
+              ₹{stats.totalLabourCost.toLocaleString('en-IN')}
             </span>
           </div>
         </div>
@@ -413,7 +561,7 @@ export default function FinanceDashboard() {
 
       {/* Tabs Menu Navigation */}
       <div className="flex border-b border-stone-200 dark:border-stone-800 print:hidden overflow-x-auto gap-2">
-        {['overview', 'bahikhata', 'crop_ledger', 'kcc_subsidy', 'reports'].map(t => (
+        {['overview', 'labour', 'bahikhata', 'crop_ledger', 'kcc_subsidy', 'reports'].map(t => (
           <button
             key={t}
             onClick={() => setActiveTab(t)}
@@ -435,10 +583,13 @@ export default function FinanceDashboard() {
           {/* Left Block - Quick Actions & Net Flow Analysis */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Quick Actions Bar */}
+            {/* Quick Logging Section */}
             <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-4">
-              <h2 className="text-lg font-extrabold">Quick Financial Logging</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <h2 className="text-lg font-extrabold flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-emerald-500" />
+                Quick Financial Logging
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <button
                   onClick={() => { setTxType('EXPENSE'); setShowTxModal(true); }}
                   className="px-4 py-3 rounded-2xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-950/30 text-rose-600 dark:text-rose-450 hover:bg-rose-100/60 dark:hover:bg-rose-950/30 transition-all font-bold text-xs flex items-center justify-center gap-2"
@@ -454,32 +605,39 @@ export default function FinanceDashboard() {
                   Log Income
                 </button>
                 <button
+                  onClick={() => { setEditingLabourId(null); setShowLabourModal(true); }}
+                  className="px-4 py-3 rounded-2xl bg-violet-50 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-950/30 text-violet-600 dark:text-violet-450 hover:bg-violet-100/60 dark:hover:bg-violet-950/30 transition-all font-bold text-xs flex items-center justify-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Labour Record
+                </button>
+                <button
                   onClick={() => setShowContactModal(true)}
                   className="px-4 py-3 rounded-2xl bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-950/30 text-blue-600 dark:text-blue-450 hover:bg-blue-100/60 dark:hover:bg-blue-950/30 transition-all font-bold text-xs flex items-center justify-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Add Udhaar Contact
+                  Add Credit Contact
                 </button>
               </div>
             </div>
 
-            {/* Profitability by Crop Variety List */}
+            {/* Active Plot Profitability List */}
             <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-extrabold">Active Plot Net Profit</h2>
+                <h2 className="text-lg font-extrabold">Crop Cycle Net Profit</h2>
                 <button
                   onClick={() => setShowCycleModal(true)}
                   className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all flex items-center gap-1.5"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  Map Field Plot
+                  Add Crop Cycle
                 </button>
               </div>
 
               {cropCycleProfitability.length === 0 ? (
                 <div className="text-center py-10 text-stone-400">
                   <Layers className="h-10 w-10 mx-auto opacity-40 mb-2" />
-                  No field plots or crop cycles mapped yet. Click 'Map Field Plot' to start.
+                  No active crop cycles mapped yet. Click 'Add Crop Cycle' to start.
                 </div>
               ) : (
                 <div className="divide-y divide-stone-100 dark:divide-stone-850">
@@ -489,13 +647,13 @@ export default function FinanceDashboard() {
                       <div key={c.id} className="py-4 flex items-center justify-between first:pt-0 last:pb-0">
                         <div>
                           <span className="font-extrabold text-sm text-stone-800 dark:text-stone-100">{c.cropName}</span>
-                          <span className="text-[10px] text-stone-550 block mt-0.5">Plot: {c.plot || 'General'} | Status: {c.status}</span>
+                          <span className="text-[10px] text-stone-500 block mt-0.5">Plot: {c.plot || 'General'} | Status: {c.status}</span>
                         </div>
                         <div className="text-right">
-                          <span className={`font-black text-sm block ${margin >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                          <span className={`font-black text-sm block mt-0.5 ${margin >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
                             {margin >= 0 ? '+' : '-'}₹{Math.abs(margin).toLocaleString('en-IN')}
                           </span>
-                          <span className="text-[10px] text-stone-450 block">In: ₹{c.income} | Out: ₹{c.expense}</span>
+                          <span className="text-[10px] text-stone-450 block">Inflow: ₹{c.income} | Expenses/Labour: ₹{c.expense}</span>
                         </div>
                       </div>
                     );
@@ -515,7 +673,7 @@ export default function FinanceDashboard() {
                 <div className="p-3 bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-2xl">
                   <BadgeAlert className="h-5 w-5" />
                 </div>
-                <h3 className="font-extrabold text-sm text-stone-800 dark:text-stone-200">KCC Deadline Alert</h3>
+                <h3 className="font-extrabold text-sm text-stone-800 dark:text-stone-200">KCC Subvention Target</h3>
               </div>
               
               {subventionDaysLeft <= 0 ? (
@@ -531,7 +689,7 @@ export default function FinanceDashboard() {
                     <span className="text-3xl font-black text-amber-600">{subventionDaysLeft}</span>
                     <span className="text-xs font-bold text-stone-550">Days Left</span>
                   </div>
-                  <div className="text-[10px] text-stone-400">
+                  <div className="text-[10px] text-stone-400 font-semibold">
                     Deadline: {new Date(kccInfo.subvention_deadline).toLocaleDateString()}
                   </div>
                 </div>
@@ -557,6 +715,160 @@ export default function FinanceDashboard() {
         </div>
       )}
 
+      {/* VIEW: LABOUR MANAGEMENT TAB */}
+      {activeTab === 'labour' && (
+        <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-6 print:hidden">
+          
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-extrabold">Labour Records Management</h2>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                Full ledger auditing for local farmhands, wages, advances, and payment statuses.
+              </p>
+            </div>
+            <button
+              onClick={() => { setEditingLabourId(null); setShowLabourModal(true); }}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+            >
+              <Plus className="h-4 w-4" />
+              Add Labour Record
+            </button>
+          </div>
+
+          {/* Search, Filter Controls */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 border-b border-stone-100 dark:border-stone-850 pb-4">
+            <div className="relative col-span-1 sm:col-span-2">
+              <Search className="h-4 w-4 text-stone-400 absolute left-3.5 top-3.5" />
+              <input
+                type="text"
+                value={labourSearch}
+                onChange={(e) => { setLabourSearch(e.target.value); setLabourPage(1); }}
+                placeholder="Search by worker name, work type, crop or plot..."
+                className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-2xl pl-10 pr-4 py-3 text-xs placeholder-stone-450 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold"
+              />
+            </div>
+            <select
+              value={labourFilterGender}
+              onChange={(e) => { setLabourFilterGender(e.target.value); setLabourPage(1); }}
+              className="bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-2xl px-3 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 font-bold"
+            >
+              <option value="ALL">All Genders</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+            <select
+              value={labourFilterStatus}
+              onChange={(e) => { setLabourFilterStatus(e.target.value); setLabourPage(1); }}
+              className="bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-2xl px-3 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 font-bold"
+            >
+              <option value="ALL">All Payment Statuses</option>
+              <option value="PAID">Paid</option>
+              <option value="PENDING">Pending</option>
+            </select>
+          </div>
+
+          {/* Labour Records Table */}
+          {filteredLabourAccounts.length === 0 ? (
+            <div className="text-center py-10 text-stone-400 text-xs">
+              No matching labour records found.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="overflow-x-auto rounded-2xl border border-stone-150 dark:border-stone-800">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-stone-50 dark:bg-stone-900/60 border-b border-stone-150 dark:border-stone-800 text-stone-400 dark:text-stone-500 font-bold">
+                      <th className="p-3">Date</th>
+                      <th className="p-3">Worker Name</th>
+                      <th className="p-3">Gender</th>
+                      <th className="p-3">Work Type</th>
+                      <th className="p-3">Crop / Plot</th>
+                      <th className="p-3 text-right">Hours</th>
+                      <th className="p-3 text-right">Wage</th>
+                      <th className="p-3 text-right">Bonus</th>
+                      <th className="p-3 text-right">Advance</th>
+                      <th className="p-3">Status / Mode</th>
+                      <th className="p-3 text-right">Total Amount</th>
+                      <th className="p-3 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100 dark:divide-stone-850 font-medium">
+                    {paginatedLabour.map(l => (
+                      <tr key={l.id} className="hover:bg-stone-50/50 dark:hover:bg-stone-900/30 transition-colors">
+                        <td className="p-3 whitespace-nowrap">{new Date(l.date).toLocaleDateString()}</td>
+                        <td className="p-3 font-extrabold">{l.worker_name}</td>
+                        <td className="p-3">{l.gender}</td>
+                        <td className="p-3">{l.work_type}</td>
+                        <td className="p-3">
+                          <span className="block font-bold">{l.crop}</span>
+                          <span className="text-[10px] text-stone-450 block">{l.plot || 'General'}</span>
+                        </td>
+                        <td className="p-3 text-right">{l.hours_worked} hrs</td>
+                        <td className="p-3 text-right">₹{l.daily_wage}</td>
+                        <td className="p-3 text-right text-emerald-600">+₹{l.bonus || 0}</td>
+                        <td className="p-3 text-right text-rose-500">-₹{l.advance || 0}</td>
+                        <td className="p-3">
+                          <span className={`inline-block px-2 py-0.5 text-[10px] font-black uppercase rounded ${
+                            l.payment_status === 'PAID' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'
+                          }`}>
+                            {l.payment_status}
+                          </span>
+                          <span className="text-[10px] text-stone-400 block mt-0.5">{l.payment_mode}</span>
+                        </td>
+                        <td className="p-3 text-right font-black text-stone-800 dark:text-stone-100">
+                          ₹{parseFloat(l.total_amount).toLocaleString('en-IN')}
+                        </td>
+                        <td className="p-3 text-center space-x-1.5 whitespace-nowrap">
+                          <button
+                            onClick={() => triggerLabourEdit(l)}
+                            className="p-1.5 text-stone-500 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all inline-flex"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Are you sure you want to delete labor record for ${l.worker_name}?`)) {
+                                deleteLabourAccount(l.id);
+                              }
+                            }}
+                            className="p-1.5 text-stone-500 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all inline-flex"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination Controls */}
+              <div className="flex justify-between items-center text-xs font-bold text-stone-500">
+                <span>Showing {paginatedLabour.length} of {filteredLabourAccounts.length} entries</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={labourPage === 1}
+                    onClick={() => setLabourPage(prev => Math.max(1, prev - 1))}
+                    className="px-3 py-1.5 rounded-lg border border-stone-200 hover:bg-stone-50 disabled:opacity-40"
+                  >
+                    Previous
+                  </button>
+                  <span>Page {labourPage} of {totalLabourPages}</span>
+                  <button
+                    disabled={labourPage === totalLabourPages}
+                    onClick={() => setLabourPage(prev => Math.min(totalLabourPages, prev + 1))}
+                    className="px-3 py-1.5 rounded-lg border border-stone-200 hover:bg-stone-50 disabled:opacity-40"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* VIEW: DIGITAL BAHI KHATA */}
       {activeTab === 'bahikhata' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 print:hidden">
@@ -565,7 +877,7 @@ export default function FinanceDashboard() {
           <div className="space-y-6">
             <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-extrabold text-sm">Udhaar Entities</h3>
+                <h3 className="font-extrabold text-sm">Udhaar Directory</h3>
                 <button
                   onClick={() => setShowContactModal(true)}
                   className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 hover:bg-emerald-100 transition-all"
@@ -617,16 +929,16 @@ export default function FinanceDashboard() {
                   <Search className="h-4 w-4 text-stone-400 absolute left-3.5 top-3.5" />
                   <input
                     type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={txSearch}
+                    onChange={(e) => setTxSearch(e.target.value)}
                     placeholder="Search logs by category or notes..."
                     className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-2xl pl-10 pr-4 py-3 text-xs placeholder-stone-450 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold"
                   />
                 </div>
                 <div className="flex gap-2">
                   <select
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
+                    value={txFilterType}
+                    onChange={(e) => setTxFilterType(e.target.value)}
                     className="bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-2xl px-3 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 font-bold"
                   >
                     <option value="ALL">All Types</option>
@@ -634,8 +946,8 @@ export default function FinanceDashboard() {
                     <option value="EXPENSE">Outflow</option>
                   </select>
                   <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
+                    value={txFilterCategory}
+                    onChange={(e) => setTxFilterCategory(e.target.value)}
                     className="bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-2xl px-3 py-3 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 font-bold"
                   >
                     <option value="ALL">All Categories</option>
@@ -696,7 +1008,7 @@ export default function FinanceDashboard() {
         </div>
       )}
 
-      {/* VIEW: CROP LEDGER */}
+      {/* VIEW: CROP-WISE LEDGER */}
       {activeTab === 'crop_ledger' && (
         <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-6 print:hidden">
           <div className="flex items-center justify-between">
@@ -725,6 +1037,14 @@ export default function FinanceDashboard() {
                   if (t.transaction_type === 'INCOME') income += amt;
                   else expense += amt;
                 });
+                // Add labor expenses mapped to crop/plot
+                labourAccounts.forEach(l => {
+                  if ((c.crop_name && c.crop_name.toLowerCase().includes(l.crop.toLowerCase())) ||
+                      (c.plot_identifier && l.plot && c.plot_identifier.toLowerCase().includes(l.plot.toLowerCase()))) {
+                    expense += parseFloat(l.total_amount || 0);
+                  }
+                });
+
                 return (
                   <div key={c.id} className="p-6 bg-stone-50 dark:bg-stone-900 border border-stone-100 dark:border-stone-850 rounded-3xl space-y-4 relative">
                     <button
@@ -744,7 +1064,7 @@ export default function FinanceDashboard() {
                         <span className="text-sm font-black text-emerald-600 block mt-0.5">₹{income.toLocaleString('en-IN')}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Expenses</span>
+                        <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Expenses / Wages</span>
                         <span className="text-sm font-black text-rose-500 block mt-0.5">₹{expense.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
@@ -774,7 +1094,6 @@ export default function FinanceDashboard() {
       {activeTab === 'kcc_subsidy' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 print:hidden">
           
-          {/* Left Block - KCC Account limit gauge */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-6">
               <div className="flex items-center justify-between">
@@ -818,7 +1137,6 @@ export default function FinanceDashboard() {
             </div>
           </div>
 
-          {/* Right Block - Subventions countdown and subsidy logs */}
           <div className="space-y-6">
             <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-4">
               <h3 className="font-extrabold text-sm">Clearance Deadlines</h3>
@@ -835,13 +1153,12 @@ export default function FinanceDashboard() {
         </div>
       )}
 
-      {/* VIEW: REPORTS & EXPORTS */}
+      {/* VIEW: REPORTS & CHARTS */}
       {activeTab === 'reports' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 print:hidden">
           
-          {/* Left Block - Category Expense Charts */}
           <div className="lg:col-span-2 bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-6">
-            <h2 className="text-lg font-extrabold">Expenses By Category</h2>
+            <h2 className="text-lg font-extrabold">Expenses By Category & Labour Overhead</h2>
             
             {chartDataByCategory.length === 0 ? (
               <div className="text-center py-20 text-stone-400 text-xs">
@@ -872,12 +1189,11 @@ export default function FinanceDashboard() {
             )}
           </div>
 
-          {/* Right Block - Export summaries */}
           <div className="space-y-6">
             <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-emerald-950/20 rounded-3xl p-6 shadow-sm space-y-4">
               <h3 className="font-extrabold text-sm">Download Center</h3>
-              <p className="text-xs text-stone-500">
-                Formats configured to match micro-finance KYC checks and KCC subvention audits.
+              <p className="text-xs text-stone-550">
+                Download formats configured for micro-finance KYC checks and KCC subvention audits.
               </p>
               <div className="space-y-2">
                 <button
@@ -885,14 +1201,14 @@ export default function FinanceDashboard() {
                   className="w-full py-3 rounded-2xl bg-stone-50 hover:bg-stone-100 dark:bg-stone-900 dark:hover:bg-stone-850 text-stone-700 dark:text-stone-200 border border-stone-150 dark:border-stone-800 transition-all font-bold text-xs flex items-center justify-center gap-2"
                 >
                   <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-                  Excel / CSV Spreadsheet
+                  Excel Combined Sheet
                 </button>
                 <button
-                  onClick={handlePrint}
+                  onClick={() => window.print()}
                   className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white transition-all font-bold text-xs flex items-center justify-center gap-2"
                 >
                   <Printer className="h-4 w-4" />
-                  Print Statement (PDF)
+                  PDF Audit Statement
                 </button>
               </div>
             </div>
@@ -904,50 +1220,259 @@ export default function FinanceDashboard() {
       {/* PRINT-ONLY AREA */}
       <div className="hidden print:block space-y-6">
         <div className="border-b-2 border-stone-900 pb-4 text-center">
-          <h1 className="text-2xl font-bold uppercase">FarmBuddy Ledger Statement</h1>
+          <h1 className="text-2xl font-bold uppercase">FarmBuddy Unified Statement</h1>
           <p className="text-xs text-stone-550 mt-1">Generated on: {new Date().toLocaleDateString()}</p>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 border-b border-stone-300 pb-4 text-xs">
+        <div className="grid grid-cols-4 gap-4 border-b border-stone-300 pb-4 text-xs">
           <div>
-            <strong>Income Flow:</strong> ₹{stats.totalIncome.toLocaleString()}
+            <strong>Inflow Flow:</strong> ₹{stats.totalIncome.toLocaleString()}
           </div>
           <div>
-            <strong>Expenses Outflow:</strong> ₹{stats.totalExpense.toLocaleString()}
+            <strong>General Expenses:</strong> ₹{stats.totalExpense.toLocaleString()}
           </div>
           <div>
-            <strong>Net Balance:</strong> ₹{stats.netProfit.toLocaleString()}
+            <strong>Labour Wages Cost:</strong> ₹{stats.totalLabourCost.toLocaleString()}
+          </div>
+          <div>
+            <strong>Net Margin Balance:</strong> ₹{stats.netProfit.toLocaleString()}
           </div>
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-sm font-bold border-b border-stone-800 pb-1">Detailed Transactions Listing</h2>
+          <h2 className="text-sm font-bold border-b border-stone-800 pb-1">Detailed Labour Records Audit</h2>
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-stone-400">
                 <th className="py-2">Date</th>
-                <th className="py-2">Type</th>
-                <th className="py-2">Category</th>
-                <th className="py-2">Amount</th>
-                <th className="py-2">Payment Mode</th>
-                <th className="py-2">Notes</th>
+                <th className="py-2">Worker</th>
+                <th className="py-2">Job / Crop</th>
+                <th className="py-2">Plot</th>
+                <th className="py-2">Rate / Hours</th>
+                <th className="py-2">Advance / Bonus</th>
+                <th className="py-2 text-right">Total Owed</th>
               </tr>
             </thead>
             <tbody>
-              {transactions.map(t => (
-                <tr key={t.id} className="border-b border-stone-200">
-                  <td className="py-2">{new Date(t.transaction_date).toLocaleDateString()}</td>
-                  <td className="py-2 font-bold">{t.transaction_type}</td>
-                  <td className="py-2 capitalise">{t.category.toLowerCase().replace('_', ' ')}</td>
-                  <td className="py-2 font-bold">₹{parseFloat(t.amount).toLocaleString()}</td>
-                  <td className="py-2">{t.payment_mode}</td>
-                  <td className="py-2">{t.notes || 'N/A'}</td>
+              {labourAccounts.map(l => (
+                <tr key={l.id} className="border-b border-stone-200">
+                  <td className="py-2">{new Date(l.date).toLocaleDateString()}</td>
+                  <td className="py-2 font-bold">{l.worker_name} ({l.gender})</td>
+                  <td className="py-2">{l.work_type} • {l.crop}</td>
+                  <td className="py-2">{l.plot || 'General'}</td>
+                  <td className="py-2">₹{l.daily_wage}/hr • {l.hours_worked} hrs</td>
+                  <td className="py-2">A: ₹{l.advance || 0} / B: ₹{l.bonus || 0}</td>
+                  <td className="py-2 text-right font-bold">₹{parseFloat(l.total_amount).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* MODAL: ADD / EDIT LABOUR RECORD */}
+      {showLabourModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm print:hidden">
+          <div className="bg-white dark:bg-[#121f17] border border-stone-150 dark:border-stone-800 w-full max-w-lg rounded-3xl p-6 space-y-4 shadow-xl overflow-y-auto max-h-[90vh]">
+            <div className="flex justify-between items-center border-b border-stone-100 dark:border-stone-880 pb-3">
+              <h3 className="font-extrabold text-base text-stone-800 dark:text-stone-100">
+                {editingLabourId ? 'Edit Labour Record' : 'Add Labour Record'}
+              </h3>
+              <button
+                onClick={() => { setShowLabourModal(false); setEditingLabourId(null); }}
+                className="p-1 text-stone-400 hover:text-stone-600 rounded"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleLabourSubmit} className="space-y-4 text-xs font-semibold">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={labourDate}
+                    onChange={(e) => setLabourDate(e.target.value)}
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Worker Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={labourName}
+                    onChange={(e) => setLabourName(e.target.value)}
+                    placeholder="Worker full name"
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Gender</label>
+                  <select
+                    value={labourGender}
+                    onChange={(e) => setLabourGender(e.target.value)}
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold"
+                  >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Work Type</label>
+                  <select
+                    value={labourWorkType}
+                    onChange={(e) => setLabourWorkType(e.target.value)}
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold"
+                  >
+                    <option value="Sowing">Sowing</option>
+                    <option value="Weeding">Weeding</option>
+                    <option value="Harvesting">Harvesting</option>
+                    <option value="Pesticides Spray">Pesticides Spray</option>
+                    <option value="Irrigation Setup">Irrigation Setup</option>
+                    <option value="Sorting & Packing">Sorting & Packing</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Plot Identifier</label>
+                  <input
+                    type="text"
+                    value={labourPlot}
+                    onChange={(e) => setLabourPlot(e.target.value)}
+                    placeholder="e.g. Plot B-North"
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Crop Variety</label>
+                  <select
+                    value={labourCrop}
+                    onChange={(e) => setLabourCrop(e.target.value)}
+                    required
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold"
+                  >
+                    <option value="">Select Crop</option>
+                    {cropCycles.map(c => (
+                      <option key={c.id} value={c.crop_name}>{c.crop_name} ({c.plot_identifier || 'General'})</option>
+                    ))}
+                    {cropCycles.length === 0 && (
+                      <>
+                        <option value="Organic Honeycrisp Apples">Organic Honeycrisp Apples</option>
+                        <option value="Japanese Sweet Potatoes">Japanese Sweet Potatoes</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Hours Worked</label>
+                  <input
+                    type="number"
+                    required
+                    value={labourHours}
+                    onChange={(e) => setLabourHours(e.target.value)}
+                    placeholder="e.g. 8"
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Hourly Wage (₹)</label>
+                  <input
+                    type="number"
+                    required
+                    value={labourWage}
+                    onChange={(e) => setLabourWage(e.target.value)}
+                    placeholder="e.g. 50"
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Bonus (₹)</label>
+                  <input
+                    type="number"
+                    value={labourBonus}
+                    onChange={(e) => setLabourBonus(e.target.value)}
+                    placeholder="0"
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Advance Paid (₹)</label>
+                  <input
+                    type="number"
+                    value={labourAdvance}
+                    onChange={(e) => setLabourAdvance(e.target.value)}
+                    placeholder="0"
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Payment Status</label>
+                  <select
+                    value={labourStatus}
+                    onChange={(e) => setLabourStatus(e.target.value)}
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold"
+                  >
+                    <option value="PENDING">Pending</option>
+                    <option value="PAID">Paid</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Payment Mode</label>
+                  <select
+                    value={labourMode}
+                    onChange={(e) => setLabourMode(e.target.value)}
+                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold"
+                  >
+                    <option value="CASH">Cash</option>
+                    <option value="UPI">UPI</option>
+                    <option value="UDHAAR">Udhaar (Credit)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Dynamic total calculation indicator */}
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl flex justify-between items-center text-xs">
+                <span className="font-bold text-stone-550">Estimated Total Amount:</span>
+                <span className="font-extrabold text-sm text-emerald-600">
+                  ₹{Math.max(0, (parseFloat(labourHours || 0) * parseFloat(labourWage || 0)) + parseFloat(labourBonus || 0) - parseFloat(labourAdvance || 0)).toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Remarks / Notes</label>
+                <textarea
+                  value={labourNotes}
+                  onChange={(e) => setLabourNotes(e.target.value)}
+                  placeholder="Task specifics, physical condition logs..."
+                  className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 h-20 resize-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all"
+              >
+                {editingLabourId ? 'Save Record Updates' : 'Log Labour Record'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* MODAL: ADD TRANSACTION */}
       {showTxModal && (
