@@ -41,6 +41,8 @@ import {
 
 export default function FinanceDashboard() {
   const {
+    currentBatchId,
+    batches,
     cropCycles,
     addCropCycle,
     deleteCropCycle,
@@ -65,6 +67,12 @@ export default function FinanceDashboard() {
   } = useFarm();
 
   const [activeTab, setActiveTab] = useState('overview');
+
+  const activeBatch = useMemo(() => {
+    return batches.find(b => b.id === currentBatchId);
+  }, [batches, currentBatchId]);
+
+  const activeCrop = activeBatch ? activeBatch.cropType : '';
 
   // Form states - Transactions
   const [showTxModal, setShowTxModal] = useState(false);
@@ -529,7 +537,7 @@ export default function FinanceDashboard() {
   // Handle Labour Record submission (Create & Edit)
   const handleLabourSubmit = async (e) => {
     e.preventDefault();
-    if (!labourName || !labourHours || !labourWage || !labourCrop) {
+    if (!labourName || !labourHours || !labourWage || !(labourCrop || activeCrop)) {
       addNotification("Validation Error", "All fields with asterisks are mandatory.", "error");
       return;
     }
@@ -560,7 +568,7 @@ export default function FinanceDashboard() {
       worker_name: labourName,
       gender: labourGender,
       work_type: labourWorkType,
-      crop: labourCrop,
+      crop: labourCrop || activeCrop,
       plot: labourPlot || null,
       hours_worked: parseFloat(labourHours),
       daily_wage: parseFloat(labourWage),
@@ -2127,24 +2135,10 @@ export default function FinanceDashboard() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Crop Variety</label>
-                  <select
-                    value={labourCrop}
-                    onChange={(e) => setLabourCrop(e.target.value)}
-                    required
-                    className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold"
-                  >
-                    <option value="">Select Crop</option>
-                    {cropCycles.map(c => (
-                      <option key={c.id} value={c.crop_name}>{c.crop_name} ({c.plot_identifier || 'General'})</option>
-                    ))}
-                    {cropCycles.length === 0 && (
-                      <>
-                        <option value="Organic Honeycrisp Apples">Organic Honeycrisp Apples</option>
-                        <option value="Japanese Sweet Potatoes">Japanese Sweet Potatoes</option>
-                      </>
-                    )}
-                  </select>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Crop Variety (Contextual)</label>
+                  <div className="w-full bg-stone-100 dark:bg-stone-850 border border-stone-200 dark:border-stone-800 rounded-xl px-3 py-2.5 font-bold text-stone-600 dark:text-stone-350">
+                    {activeCrop || 'N/A'}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">Hours Worked</label>
