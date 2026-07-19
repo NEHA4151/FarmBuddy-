@@ -978,16 +978,6 @@ export default function CommunityHub() {
             </div>
           </div>
 
-          {/* FarmBuddy Copyright Card (Black) */}
-          <div className="bg-stone-950 dark:bg-[#07130c] border border-stone-800 rounded-[18px] p-5 text-center text-stone-400 space-y-3 relative overflow-hidden">
-            <div className="absolute top-[-20%] right-[-10%] w-[100px] h-[100px] bg-emerald-500/10 rounded-full blur-xl" />
-            <img src="/logo_emblem.png" alt="FarmBuddy Emblem" className="h-10 w-10 mx-auto object-contain" />
-            <div>
-              <span className="text-xs font-black text-white tracking-wider block">FarmBuddy</span>
-              <span className="text-[8px] text-[#4CAF50] font-black uppercase tracking-widest block mt-0.5">— TRUST & TRACE —</span>
-            </div>
-            <span className="text-[9px] text-stone-500 block">© farmbuddy.uvfarms.in.</span>
-          </div>
 
         </div>
 
