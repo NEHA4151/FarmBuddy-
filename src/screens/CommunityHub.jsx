@@ -21,77 +21,6 @@ import {
   Users
 } from 'lucide-react';
 
-// Import local curated crop images (REAL photographs/photorealistic artwork, not SVGs)
-import tomatoHealthy from '../assets/community/tomato/healthy-1.jpg';
-import tomatoLeafCurl from '../assets/community/tomato/leaf-curl.jpg';
-import tomatoBlight from '../assets/community/tomato/blight.jpg';
-import tomatoHarvest from '../assets/community/tomato/harvest.jpg';
-import tomatoDrip from '../assets/community/tomato/drip-irrigation.jpg';
-
-import riceBlast from '../assets/community/rice/blast.jpg';
-import riceNursery from '../assets/community/rice/nursery.jpg';
-import riceHarvest from '../assets/community/rice/harvest.jpg';
-import riceField from '../assets/community/rice/field.jpg';
-
-import coffeeRust from '../assets/community/coffee/rust.jpg';
-import coffeeCherries from '../assets/community/coffee/cherries.jpg';
-import coffeePlantation from '../assets/community/coffee/plantation.jpg';
-import coffeeHarvesting from '../assets/community/coffee/harvesting.jpg';
-
-import potatoHarvest from '../assets/community/sweet-potato/harvest.jpg';
-import potatoCuring from '../assets/community/sweet-potato/curing.jpg';
-import potatoStorage from '../assets/community/sweet-potato/storage.jpg';
-import potatoVines from '../assets/community/sweet-potato/vines.jpg';
-
-import cottonBollworm from '../assets/community/cotton/bollworm.jpg';
-import cottonHarvest from '../assets/community/cotton/harvest.jpg';
-import cottonField from '../assets/community/cotton/field.jpg';
-import cottonHealthy from '../assets/community/cotton/healthy.jpg';
-
-import appleHealthy from '../assets/community/apple/healthy.jpg';
-import appleScab from '../assets/community/apple/scab.jpg';
-import appleThinning from '../assets/community/apple/thinning.jpg';
-
-// Crop Image Mapping Library (Self-contained)
-const CROP_IMAGES = {
-  tomato: {
-    healthy: tomatoHealthy,
-    leafCurl: tomatoLeafCurl,
-    blight: tomatoBlight,
-    harvest: tomatoHarvest,
-    drip: tomatoDrip
-  },
-  rice: {
-    blast: riceBlast,
-    nursery: riceNursery,
-    harvest: riceHarvest,
-    field: riceField
-  },
-  coffee: {
-    rust: coffeeRust,
-    cherries: coffeeCherries,
-    plantation: coffeePlantation,
-    harvesting: coffeeHarvesting
-  },
-  'sweet potato': {
-    harvest: potatoHarvest,
-    curing: potatoCuring,
-    storage: potatoStorage,
-    vines: potatoVines
-  },
-  cotton: {
-    bollworm: cottonBollworm,
-    harvest: cottonHarvest,
-    field: cottonField,
-    healthy: cottonHealthy
-  },
-  apple: {
-    healthy: appleHealthy,
-    scab: appleScab,
-    thinning: appleThinning
-  }
-};
-
 // Helper for rendering group icons
 const renderGroupIcon = (type) => {
   switch (type) {
@@ -106,11 +35,10 @@ const renderGroupIcon = (type) => {
   }
 };
 
-// Centralized Crop-Based Configuration mapping
+// Centralized Crop-Based Configuration mapping (No stock image URLs or placeholders)
 const CROP_COMMUNITY_CONFIGS = {
   tomato: {
     name: '[Tomato Growers]',
-    banner: tomatoDrip,
     description: 'Discuss vine pruning, tomato blights, and organic treatment logs.',
     placeholder: 'Share updates about your tomato crop...',
     hashtags: ['#TomatoDisease', '#LeafCurl', '#TomatoFarming'],
@@ -133,7 +61,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '2h ago',
         content: 'Anyone else seeing this type of leaf curl on their vine tomatoes?',
-        images: [tomatoLeafCurl],
+        images: [],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Early Blight (Alternaria Solani)',
@@ -167,7 +95,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '5h ago',
         content: 'Heirloom vine tomatoes are thriving under drip irrigation system this week.',
-        images: [tomatoHealthy],
+        images: [],
         aiBadge: false,
         likes: 22,
         liked: false,
@@ -184,7 +112,6 @@ const CROP_COMMUNITY_CONFIGS = {
   },
   rice: {
     name: '[Rice Farmers]',
-    banner: riceField,
     description: 'Paddy water management, SRI cultivation methods, and seasonal monsoon crop logs.',
     placeholder: 'Share updates about your rice crop...',
     hashtags: ['#SRIMethod', '#MonsoonSowing', '#PaddyWater'],
@@ -207,7 +134,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '4h ago',
         content: 'Final harvest coming soon for our paddy crops! SRI method yielded excellent results.',
-        images: [riceHarvest],
+        images: [],
         aiBadge: false,
         likes: 24,
         liked: false,
@@ -227,7 +154,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '1d ago',
         content: 'Spotted brown spot symptoms on some early paddy leaves. Drainage is critical here.',
-        images: [riceBlast],
+        images: [],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Brown Spot (Cochliobolus miyabeanus)',
@@ -249,7 +176,6 @@ const CROP_COMMUNITY_CONFIGS = {
   },
   'sweet potato': {
     name: '[Sweet Potato Hub]',
-    banner: potatoVines,
     description: 'Root growth logs, curing techniques, and sweet potato disease diagnostics.',
     placeholder: 'Share updates about your sweet potato crop...',
     hashtags: ['#CuringGuide', '#RootHealth', '#SoilHealth'],
@@ -272,7 +198,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '2d ago',
         content: 'Curing sweet potatoes under 30°C temperature for proper skin healing.',
-        images: [potatoCuring],
+        images: [],
         aiBadge: false,
         likes: 15,
         liked: false,
@@ -292,7 +218,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '3d ago',
         content: 'Sweet potato leaves showing black rot signs. Make sure to rotate crops and use certified seeds.',
-        images: [potatoHarvest],
+        images: [],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Black Rot (Ceratocystis fimbriata)',
@@ -314,7 +240,6 @@ const CROP_COMMUNITY_CONFIGS = {
   },
   apple: {
     name: '[Apple Growers]',
-    banner: appleHealthy,
     description: 'Best practices for pruning, harvesting, and pest control of Honeycrisp apples.',
     placeholder: 'Share updates about your apple orchard...',
     hashtags: ['#AppleThinning', '#OrchardPest', '#SoilHealth'],
@@ -337,7 +262,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '1d ago',
         content: 'Thinning the Honeycrisp apples to ensure better fruit size and sugar concentration.',
-        images: [appleThinning],
+        images: [],
         aiBadge: false,
         likes: 18,
         liked: false,
@@ -357,7 +282,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '3d ago',
         content: 'Detected apple scab spots on some lower foliage. Ventilation pruning is vital.',
-        images: [appleScab],
+        images: [],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Apple Scab (Venturia inaequalis)',
@@ -379,7 +304,6 @@ const CROP_COMMUNITY_CONFIGS = {
   },
   coffee: {
     name: '[Coffee Growers]',
-    banner: coffeePlantation,
     description: 'Shade management, coffee rust monitoring, and premium harvest processing.',
     placeholder: 'Share updates about your coffee crop...',
     hashtags: ['#CoffeeRust', '#CherryMaturation', '#SoilHealth'],
@@ -402,7 +326,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '3d ago',
         content: 'Coffee cherries are maturing well. Shade canopy index is perfect.',
-        images: [coffeeCherries],
+        images: [],
         aiBadge: false,
         likes: 31,
         liked: false,
@@ -421,8 +345,8 @@ const CROP_COMMUNITY_CONFIGS = {
           location: 'Western Ghats Station'
         },
         time: '5d ago',
-        content: 'Some rust patches noticed on arabica leaves. Spray copper fungicide before heavy monsoon rains.',
-        images: [coffeeRust],
+        content: 'Some rust patches noticed on arabica leaves. Spray coffee plants before heavy monsoon rains.',
+        images: [],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Coffee Leaf Rust (Hemileia vastatrix)',
@@ -443,7 +367,6 @@ const CROP_COMMUNITY_CONFIGS = {
   },
   cotton: {
     name: '[Cotton Growers]',
-    banner: cottonField,
     description: 'Bollworm pest control, optimal cotton sowing, and yield prediction logs.',
     placeholder: 'Share updates about your cotton crop...',
     hashtags: ['#BollwormAlert', '#CottonHarvesting', '#SoilHealth'],
@@ -466,7 +389,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '2h ago',
         content: 'Spotted bollworm damage in the lower cotton bolls. Requesting immediate agronomy advice.',
-        images: [cottonBollworm],
+        images: [],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Bollworm Infestation (Helicoverpa armigera)',
@@ -491,7 +414,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '1d ago',
         content: 'Healthy cotton field showing first bolls opening. High quality lint fiber expected.',
-        images: [cottonHealthy],
+        images: [],
         aiBadge: false,
         likes: 19,
         liked: false,
@@ -507,7 +430,6 @@ const CROP_COMMUNITY_CONFIGS = {
   },
   general: {
     name: '[General Crop Chat]',
-    banner: tomatoHealthy,
     description: 'Soil diagnostics, water management, and multi-crop farming discussions.',
     placeholder: 'Share updates about your crops...',
     hashtags: ['#CropHealth', '#FarmingLogs', '#SoilHealth'],
@@ -687,43 +609,33 @@ export default function CommunityHub() {
     }));
   };
 
-  // Render Post Attachment Image / Fallback Card
+  // Render Post Attachment Image (No default/stock placeholder fallback card)
   const renderPostImage = (post) => {
     const imageUrl = post.images && post.images[0];
     const isBroken = !imageUrl || imageErrors[imageUrl];
 
-    if (isBroken) {
+    // IF (relevant image exists) -> Display exactly one image.
+    // ELSE -> Display no image.
+    if (imageUrl && !isBroken) {
       return (
-        <div className="w-full aspect-video border border-stone-200 dark:border-stone-850 p-6 text-center select-none bg-stone-50/50 dark:bg-stone-900/10 rounded-2xl flex flex-col items-center justify-center space-y-2">
-          <ImageIcon className="h-8 w-8 text-stone-300 dark:text-stone-700 animate-pulse" />
-          <div className="space-y-1">
-            <p className="text-xs font-black text-stone-600 dark:text-stone-300 flex items-center justify-center gap-1.5">
-              📷 No image uploaded by the farmer
-            </p>
-            <p className="text-[10px] text-stone-400 font-semibold max-w-[280px] leading-normal">
-              Upload an image to help the community understand your issue.
-            </p>
-          </div>
+        <div className="w-full aspect-video rounded-2xl overflow-hidden border border-stone-100 dark:border-stone-850 bg-stone-50 dark:bg-stone-900/5">
+          <img 
+            src={imageUrl} 
+            alt="Crop post attachment" 
+            className="w-full h-full object-cover cursor-pointer hover:scale-[1.01] transition-transform duration-300"
+            onError={() => handleImageError(imageUrl)}
+            onClick={() => {
+              if (post.aiBadge) {
+                setActiveAiPost(post);
+                setShowAiAnalysisModal(true);
+              }
+            }}
+          />
         </div>
       );
     }
 
-    return (
-      <div className="w-full aspect-video rounded-2xl overflow-hidden border border-stone-100 dark:border-stone-850 bg-stone-50 dark:bg-stone-900/5">
-        <img 
-          src={imageUrl} 
-          alt="Crop post attachment" 
-          className="w-full h-full object-cover cursor-pointer hover:scale-[1.01] transition-transform duration-300"
-          onError={() => handleImageError(imageUrl)}
-          onClick={() => {
-            if (post.aiBadge) {
-              setActiveAiPost(post);
-              setShowAiAnalysisModal(true);
-            }
-          }}
-        />
-      </div>
-    );
+    return null;
   };
 
   // Create Post Submit
@@ -821,8 +733,6 @@ export default function CommunityHub() {
 
     handleReplyChange(postId, 'text', '');
   };
-
-  const isBannerBroken = !config.banner || imageErrors[config.banner];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-[#F8F6EF] dark:bg-[#0c140f] min-h-screen text-stone-900 dark:text-emerald-50 transition-colors duration-300">
@@ -928,33 +838,21 @@ export default function CommunityHub() {
 
           {/* DYNAMIC COMMUNITY BANNER & DETAILS */}
           <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] overflow-hidden shadow-sm animate-fadeIn">
-            <div className="h-36 relative bg-stone-100 dark:bg-stone-900">
-              {!isBannerBroken ? (
-                <img 
-                  src={config.banner} 
-                  alt={config.name} 
-                  className="w-full h-full object-cover" 
-                  onError={() => handleImageError(config.banner)}
-                />
-              ) : (
-                <div className="w-full h-full bg-[#1b4332] flex items-center justify-center">
-                  <Sprout className="h-8 w-8 text-emerald-100" />
-                </div>
-              )}
-            </div>
-            <div className="p-4 space-y-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h2 className="text-base font-extrabold text-stone-900 dark:text-white flex items-center gap-1.5">
-                    {config.name}
-                    <CheckCircle className="h-3.5 w-3.5 text-[#2E7D32]" />
-                  </h2>
-                  <span className="text-[9px] text-[#2E7D32] font-black block mt-0.5">
-                    {config.members || '1.2k'} Members
-                  </span>
-                </div>
+            <div className="h-32 bg-gradient-to-r from-[#1b4332] to-[#2d6a4f] flex flex-col justify-end p-5 relative">
+              <div className="absolute top-4 right-4 bg-emerald-500/20 text-emerald-300 font-extrabold text-[9px] px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-500/30">
+                <Sprout className="h-3 w-3" />
+                Active Crop Hub
               </div>
-              <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed font-semibold">
+              <h2 className="text-lg font-black text-white flex items-center gap-1.5 leading-none">
+                {config.name}
+                <CheckCircle className="h-4 w-4 text-emerald-400 fill-white stroke-[#1b4332]" />
+              </h2>
+              <span className="text-[10px] text-emerald-200 font-bold block mt-1">
+                {config.members || '1.2k'} Members • Verified Agriculture Community
+              </span>
+            </div>
+            <div className="p-5 space-y-4">
+              <p className="text-xs text-stone-650 dark:text-stone-300 leading-relaxed font-semibold">
                 {config.description}
               </p>
 
@@ -966,7 +864,7 @@ export default function CommunityHub() {
                 </div>
                 <div>
                   <span className="font-extrabold block text-stone-400 uppercase tracking-wider mb-1">Guidelines</span>
-                  <p className="text-stone-500 italic">{config.rules}</p>
+                  <p className="text-stone-500 italic font-semibold">{config.rules}</p>
                 </div>
               </div>
             </div>
@@ -1030,7 +928,7 @@ export default function CommunityHub() {
                       {post.content}
                     </p>
 
-                    {/* Premium, High-quality Local Cover Image (Strictly 16:9 Aspect Ratio) */}
+                    {/* Render cover image strictly based on logic constraint */}
                     {renderPostImage(post)}
 
                     {/* AI Leaf Scan Report tag */}
@@ -1050,7 +948,7 @@ export default function CommunityHub() {
                       </div>
                     )}
 
-                    {/* Refactored actions bar matching agriculture dashboard style (NO RT) */}
+                    {/* Action buttons bar */}
                     <div className="flex justify-between items-center bg-[#1b4332] rounded-xl px-5 py-2.5 text-white text-xs select-none">
                       <button 
                         onClick={() => toggleComments(post.id)}
@@ -1104,7 +1002,7 @@ export default function CommunityHub() {
                                 <span className="font-extrabold text-stone-850 dark:text-stone-100">{c.authorName}</span>
                                 <span className="text-[8px] text-stone-400">{c.time}</span>
                               </div>
-                              <p className="text-stone-600 dark:text-stone-300 mt-0.5">{c.text}</p>
+                              <p className="text-stone-650 dark:text-stone-300 mt-0.5">{c.text}</p>
                             </div>
                           </div>
                         ))}
@@ -1207,12 +1105,14 @@ export default function CommunityHub() {
             </div>
 
             <div className="space-y-4">
-              <div className="relative w-full aspect-video rounded-xl overflow-hidden border">
-                <img src={activeAiPost.images[0]} alt="Sick leaf" className="w-full h-full object-cover" />
-                <div className="absolute top-2 right-2 bg-emerald-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full">
-                  Scan 100% Complete
+              {activeAiPost.images && activeAiPost.images[0] && (
+                <div className="relative w-full aspect-video rounded-xl overflow-hidden border">
+                  <img src={activeAiPost.images[0]} alt="Sick leaf" className="w-full h-full object-cover" />
+                  <div className="absolute top-2 right-2 bg-emerald-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full">
+                    Scan 100% Complete
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
@@ -1305,9 +1205,9 @@ export default function CommunityHub() {
                   <span>Experience:</span>
                   <span className="font-extrabold text-stone-900 dark:text-white">{activeFarmerProfile.experience}</span>
                 </div>
-                <div className="flex justify-between p-2.5 bg-stone-50 dark:bg-stone-900/30 rounded-xl">
+                <div className="flex justify-between p-2.5 bg-stone-50 dark:bg-[#1b4332]/20 rounded-xl">
                   <span>Primary Crops:</span>
-                  <span className="font-extrabold text-stone-900 dark:text-white">{activeFarmerProfile.crops}</span>
+                  <span className="font-extrabold text-[#2E7D32] dark:text-emerald-400">{activeFarmerProfile.crops}</span>
                 </div>
               </div>
             </div>

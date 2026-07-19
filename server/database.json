@@ -875,6 +875,17 @@
       "login_count": 1,
       "trust_score": 100,
       "created_at": "2026-07-19T07:04:32.937Z"
+    },
+    {
+      "id": 25,
+      "farmer_id": "UJ_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-19T07:11:25.849Z"
     }
   ],
   "admins": [],
