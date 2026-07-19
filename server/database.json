@@ -729,7 +729,7 @@
       "email": null,
       "password_hash": null,
       "is_registered": false,
-      "login_count": 1,
+      "login_count": 2,
       "trust_score": 100,
       "created_at": "2026-07-18T06:06:05.715Z"
     },
@@ -897,6 +897,28 @@
       "login_count": 1,
       "trust_score": 100,
       "created_at": "2026-07-19T07:17:48.352Z"
+    },
+    {
+      "id": 27,
+      "farmer_id": "SUJA_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-19T07:21:52.377Z"
+    },
+    {
+      "id": 28,
+      "farmer_id": "NNKUK_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-19T07:25:40.292Z"
     }
   ],
   "admins": [],
