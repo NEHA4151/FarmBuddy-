@@ -23,6 +23,7 @@ import {
   Calendar,
   ShieldCheck,
   ChevronLeft,
+  ChevronRight,
   Play,
   Droplet,
   Clock,
@@ -284,6 +285,25 @@ export default function CommunityHub() {
         };
       }
       return p;
+    }));
+  };
+
+  const handleCommunityJoinToggle = (communityId) => {
+    setCommunities(prev => prev.map(c => {
+      if (c.id === communityId) {
+        const nextJoined = !c.joined;
+        addNotification(
+          nextJoined ? "Joined Community" : "Left Community",
+          nextJoined ? `You joined ${c.name}` : `You left ${c.name}`,
+          "success"
+        );
+        return {
+          ...c,
+          joined: nextJoined,
+          members: nextJoined ? c.members + 1 : c.members - 1
+        };
+      }
+      return c;
     }));
   };
 
