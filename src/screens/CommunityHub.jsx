@@ -21,36 +21,36 @@ import {
   Users
 } from 'lucide-react';
 
-// Import local curated crop images
-import tomatoHealthy from '../assets/community/tomato/healthy-1.svg';
-import tomatoLeafCurl from '../assets/community/tomato/leaf-curl.svg';
-import tomatoBlight from '../assets/community/tomato/blight.svg';
-import tomatoHarvest from '../assets/community/tomato/harvest.svg';
-import tomatoDrip from '../assets/community/tomato/drip-irrigation.svg';
+// Import local curated crop images (REAL photographs/photorealistic artwork, not SVGs)
+import tomatoHealthy from '../assets/community/tomato/healthy-1.jpg';
+import tomatoLeafCurl from '../assets/community/tomato/leaf-curl.jpg';
+import tomatoBlight from '../assets/community/tomato/blight.jpg';
+import tomatoHarvest from '../assets/community/tomato/harvest.jpg';
+import tomatoDrip from '../assets/community/tomato/drip-irrigation.jpg';
 
-import riceBlast from '../assets/community/rice/blast.svg';
-import riceNursery from '../assets/community/rice/nursery.svg';
-import riceHarvest from '../assets/community/rice/harvest.svg';
-import riceField from '../assets/community/rice/field.svg';
+import riceBlast from '../assets/community/rice/blast.jpg';
+import riceNursery from '../assets/community/rice/nursery.jpg';
+import riceHarvest from '../assets/community/rice/harvest.jpg';
+import riceField from '../assets/community/rice/field.jpg';
 
-import coffeeRust from '../assets/community/coffee/rust.svg';
-import coffeeCherries from '../assets/community/coffee/cherries.svg';
-import coffeePlantation from '../assets/community/coffee/plantation.svg';
-import coffeeHarvesting from '../assets/community/coffee/harvesting.svg';
+import coffeeRust from '../assets/community/coffee/rust.jpg';
+import coffeeCherries from '../assets/community/coffee/cherries.jpg';
+import coffeePlantation from '../assets/community/coffee/plantation.jpg';
+import coffeeHarvesting from '../assets/community/coffee/harvesting.jpg';
 
-import potatoHarvest from '../assets/community/sweet-potato/harvest.svg';
-import potatoCuring from '../assets/community/sweet-potato/curing.svg';
-import potatoStorage from '../assets/community/sweet-potato/storage.svg';
-import potatoVines from '../assets/community/sweet-potato/vines.svg';
+import potatoHarvest from '../assets/community/sweet-potato/harvest.jpg';
+import potatoCuring from '../assets/community/sweet-potato/curing.jpg';
+import potatoStorage from '../assets/community/sweet-potato/storage.jpg';
+import potatoVines from '../assets/community/sweet-potato/vines.jpg';
 
-import cottonBollworm from '../assets/community/cotton/bollworm.svg';
-import cottonHarvest from '../assets/community/cotton/harvest.svg';
-import cottonField from '../assets/community/cotton/field.svg';
-import cottonHealthy from '../assets/community/cotton/healthy.svg';
+import cottonBollworm from '../assets/community/cotton/bollworm.jpg';
+import cottonHarvest from '../assets/community/cotton/harvest.jpg';
+import cottonField from '../assets/community/cotton/field.jpg';
+import cottonHealthy from '../assets/community/cotton/healthy.jpg';
 
-import appleHealthy from '../assets/community/apple/healthy.svg';
-import appleScab from '../assets/community/apple/scab.svg';
-import appleThinning from '../assets/community/apple/thinning.svg';
+import appleHealthy from '../assets/community/apple/healthy.jpg';
+import appleScab from '../assets/community/apple/scab.jpg';
+import appleThinning from '../assets/community/apple/thinning.jpg';
 
 // Crop Image Mapping Library (Self-contained)
 const CROP_IMAGES = {
@@ -694,8 +694,8 @@ export default function CommunityHub() {
 
     if (isBroken) {
       return (
-        <div className="rounded-2xl border border-stone-200 dark:border-stone-850 p-6 text-center select-none bg-stone-50/50 dark:bg-stone-900/10 py-8 flex flex-col items-center justify-center space-y-2">
-          <ImageIcon className="h-7 w-7 text-stone-300 dark:text-stone-700 animate-pulse" />
+        <div className="w-full aspect-video border border-stone-200 dark:border-stone-850 p-6 text-center select-none bg-stone-50/50 dark:bg-stone-900/10 rounded-2xl flex flex-col items-center justify-center space-y-2">
+          <ImageIcon className="h-8 w-8 text-stone-300 dark:text-stone-700 animate-pulse" />
           <div className="space-y-1">
             <p className="text-xs font-black text-stone-600 dark:text-stone-300 flex items-center justify-center gap-1.5">
               📷 No image uploaded by the farmer
@@ -709,11 +709,11 @@ export default function CommunityHub() {
     }
 
     return (
-      <div className="rounded-2xl overflow-hidden border border-stone-100 dark:border-stone-850 bg-stone-50 dark:bg-stone-900/5">
+      <div className="w-full aspect-video rounded-2xl overflow-hidden border border-stone-100 dark:border-stone-850 bg-stone-50 dark:bg-stone-900/5">
         <img 
           src={imageUrl} 
           alt="Crop post attachment" 
-          className="w-full h-64 object-cover cursor-pointer"
+          className="w-full h-full object-cover cursor-pointer hover:scale-[1.01] transition-transform duration-300"
           onError={() => handleImageError(imageUrl)}
           onClick={() => {
             if (post.aiBadge) {
@@ -928,7 +928,7 @@ export default function CommunityHub() {
 
           {/* DYNAMIC COMMUNITY BANNER & DETAILS */}
           <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] overflow-hidden shadow-sm animate-fadeIn">
-            <div className="h-28 relative bg-stone-100 dark:bg-stone-900">
+            <div className="h-36 relative bg-stone-100 dark:bg-stone-900">
               {!isBannerBroken ? (
                 <img 
                   src={config.banner} 
@@ -1030,7 +1030,7 @@ export default function CommunityHub() {
                       {post.content}
                     </p>
 
-                    {/* Curated Local image / Fallback card */}
+                    {/* Premium, High-quality Local Cover Image (Strictly 16:9 Aspect Ratio) */}
                     {renderPostImage(post)}
 
                     {/* AI Leaf Scan Report tag */}
@@ -1207,7 +1207,7 @@ export default function CommunityHub() {
             </div>
 
             <div className="space-y-4">
-              <div className="relative h-44 rounded-xl overflow-hidden border">
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden border">
                 <img src={activeAiPost.images[0]} alt="Sick leaf" className="w-full h-full object-cover" />
                 <div className="absolute top-2 right-2 bg-emerald-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full">
                   Scan 100% Complete

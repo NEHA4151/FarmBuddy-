@@ -853,6 +853,28 @@
       "login_count": 1,
       "trust_score": 100,
       "created_at": "2026-07-19T04:15:01.009Z"
+    },
+    {
+      "id": 23,
+      "farmer_id": "UUKKK_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-19T06:42:14.640Z"
+    },
+    {
+      "id": 24,
+      "farmer_id": "QK_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-19T07:04:32.937Z"
     }
   ],
   "admins": [],

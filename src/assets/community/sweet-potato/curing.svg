@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
-      <rect width="100%" height="100%" fill="#FFE0B2"/>
-      <rect x="150" y="250" width="500" height="200" rx="20" fill="#E65100" opacity="0.1"/>
-      <path d="M300,330 Q400,300 500,330 Q400,360 300,330 Z" fill="#B0BEC5"/>
-      <path d="M280,310 L300,290 L320,310" stroke="#E65100" stroke-width="4" fill="none"/>
-      <text x="400" y="180" font-family="sans-serif" font-size="24" font-weight="bold" fill="#E65100" text-anchor="middle">Sweet Potato Curing Room (30°C)</text>
-    </svg>
