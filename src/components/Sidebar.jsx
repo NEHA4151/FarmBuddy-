@@ -144,13 +144,17 @@ export default function Sidebar() {
                   <BarChart3 className="h-4 w-4" />
                   6. Analytics
                 </button>
-                <button onClick={() => handleNav('workflow-labour')} className={getLinkClass('workflow-labour')}>
+                 <button onClick={() => handleNav('workflow-labour')} className={getLinkClass('workflow-labour')}>
                   <Users className="h-4 w-4" />
                   7. Finance & Accounting
                 </button>
+                <button onClick={() => handleNav('workflow-community')} className={getLinkClass('workflow-community')}>
+                  <Users className="h-4 w-4" />
+                  8. Community
+                </button>
                 <button onClick={() => handleNav('workflow-export')} className={getLinkClass('workflow-export')}>
                   <Download className="h-4 w-4" />
-                  8. Export
+                  9. Export
                 </button>
               </div>
             )}
@@ -203,10 +207,6 @@ export default function Sidebar() {
           <button onClick={() => handleNav('profile')} className={getLinkClass('profile')}>
             <User className="h-4 w-4" />
             Profile
-          </button>
-          <button onClick={() => handleNav('community')} className={getLinkClass('community')}>
-            <Users className="h-4 w-4" />
-            Community
           </button>
           <button onClick={() => handleNav('faqs')} className={getLinkClass('faqs')}>
             <HelpCircle className="h-4 w-4" />

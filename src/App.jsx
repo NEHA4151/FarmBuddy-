@@ -120,6 +120,7 @@ function AppContent() {
       case 'faqs':
         return <FAQs />;
       case 'community':
+      case 'workflow-community':
         return <CommunityHub />;
       // Workflow Screens
       case 'workflow-calendar':
