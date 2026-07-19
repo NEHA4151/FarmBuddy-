@@ -19,13 +19,14 @@ import {
   Bell,
   X,
   TrendingUp,
-  Award,
-  ChevronRight,
   Smile,
   Calendar,
   ShieldCheck,
   ChevronLeft,
-  ChevronDown
+  Play,
+  Droplet,
+  Clock,
+  MoreHorizontal
 } from 'lucide-react';
 
 export default function CommunityHub() {
@@ -40,12 +41,10 @@ export default function CommunityHub() {
   const [selectedFarmerUsername, setSelectedFarmerUsername] = useState(null);
   const [showCreateCommunityModal, setShowCreateCommunityModal] = useState(false);
   const [showAiAnalysisModal, setShowAiAnalysisModal] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [activeAiPost, setActiveAiPost] = useState(null);
 
   // Search & Filter states
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All'); // 'All' | 'Following' | 'Nearby' | 'Crop-wise' | 'Disease' | 'Newest' | 'Popular'
   const [selectedHashtag, setSelectedHashtag] = useState(null);
 
   // Create Post states
@@ -61,122 +60,96 @@ export default function CommunityHub() {
   const [newCommRules, setNewCommRules] = useState('');
   const [newCommBanner, setNewCommBanner] = useState('https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop&q=60');
 
-  // Comment Reply Form state map: { [postId]: { text: '', emojiOpen: false, attachments: [] } }
+  // Comment Reply Form state map: { [postId]: { text: '', emojiOpen: false } }
   const [repliesState, setRepliesState] = useState({});
 
-  // Mock Databases (State-driven to prevent hardcoding and support interactive updates)
+  // Mock Databases (Strictly matched to the wireframe layout)
   const [communities, setCommunities] = useState([
     {
       id: 'organic',
-      name: 'Organic Farming',
+      name: '[Organic Growers]',
+      iconType: 'leaf',
       banner: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&auto=format&fit=crop&q=60',
       description: 'Discuss standard bio-fertilizers, vermicomposting, and natural pesticide solutions.',
       members: 1240,
       joined: true,
       rules: '1. Only organic topics. 2. Respect members. 3. No commercial spam.',
-      admins: ['Dr. Ramesh Patel', 'Neha Khetan'],
-      pinnedPost: 'Welcome to the Organic Farming group! Check out the composting guidelines pinned below.'
+      admins: ['Soil Dr. Amit', 'Farmer Priya'],
+      pinnedPost: 'Welcome to the Organic Growers group! Check out the composting guidelines pinned below.'
     },
     {
-      id: 'tomato',
-      name: 'Tomato Growers',
-      banner: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&auto=format&fit=crop&q=60',
-      description: 'Everything about tomato varieties, staking, leaf diseases, and high-yield methods.',
+      id: 'south-india',
+      name: '[South India Hub]',
+      iconType: 'map-pin',
+      banner: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=800&auto=format&fit=crop&q=60',
+      description: 'Paddy water management, SRI, and southern monsoon crop logs.',
       members: 850,
       joined: true,
-      rules: '1. Share clear disease pictures. 2. Specify planting season. 3. Keep discussions helpful.',
-      admins: ['Suresh Kumar', 'Dr. Ramesh Patel'],
-      pinnedPost: 'Alert: Bacterial Wilt spreads fast in high humidity. Stiff spray guidelines are posted.'
-    },
-    {
-      id: 'rice',
-      name: 'Rice Farmers',
-      banner: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=800&auto=format&fit=crop&q=60',
-      description: 'System of Rice Intensification (SRI), water management, paddy disease, and market rates.',
-      members: 1920,
-      joined: false,
-      rules: '1. Focus on wet/dry cultivation techniques. 2. Post seed selection tips. 3. No off-topic politics.',
-      admins: ['Mohammad Ali', 'Suresh Kumar'],
+      rules: '1. Focus on southern cultivation regions. 2. Post seasonal tips. 3. Be friendly.',
+      admins: ['Aman Amit', 'Mser Nrii'],
       pinnedPost: 'SRI method yields up to 40% more crop weight. Read our quick manual.'
     },
     {
-      id: 'hydro',
-      name: 'Hydroponics',
+      id: 'hydroponic-hub',
+      name: '[Hydroponic Hub]',
+      iconType: 'droplet',
       banner: 'https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=800&auto=format&fit=crop&q=60',
-      description: 'Soilless cultivation setup, nutrient solutions, pH maintenance, and vertical crop logs.',
+      description: 'pH levels, nutrient solutions, lettuce and strawberry vertical pipes.',
       members: 310,
-      joined: false,
-      rules: '1. Share nutrient formulation logs. 2. Equipment trouble support welcome. 3. Be friendly.',
-      admins: ['Dr. Ramesh Patel'],
+      joined: true,
+      rules: '1. Share nutrient logs. 2. Technical issues welcome. 3. Be clean.',
+      admins: ['Soil Dr. Amit'],
       pinnedPost: 'Optimal pH for tomato hydroponic systems should be kept strictly between 5.5 and 6.5.'
     }
   ]);
 
   const [trendingHashtags] = useState([
-    { tag: '#TomatoDisease', posts: 142 },
-    { tag: '#OrganicFarming', posts: 89 },
-    { tag: '#MonsoonTips', posts: 64 },
-    { tag: '#SoilHealth', posts: 53 },
-    { tag: '#DripIrrigation', posts: 31 }
-  ]);
-
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: 'like', text: 'Dr. Ramesh Patel liked your post on Leaf Curl diagnostics.', read: false, time: '5m ago' },
-    { id: 2, type: 'comment', text: 'Suresh Kumar commented: "Try using neem oil spray weekly."', read: false, time: '20m ago' },
-    { id: 3, type: 'invite', text: 'You have been invited to join the Hydroponics community.', read: true, time: '1h ago' }
-  ]);
-
-  const [webinars] = useState([
-    { id: 1, title: 'Preventing Monsoon Crop Rot', speaker: 'Dr. Ramesh Patel', date: 'July 24, 03:00 PM', link: '#', attendees: 142 },
-    { id: 2, title: 'Organic Pest Defense Basics', speaker: 'Suresh Kumar', date: 'July 28, 11:00 AM', link: '#', attendees: 89 }
-  ]);
-
-  const [schemes] = useState([
-    { id: 1, title: 'PM-KISAN 17th Installment Release', desc: 'Direct financial transfer of ₹2,000 to beneficiary accounts.', link: '#' },
-    { id: 2, title: 'Subsidized Solar Water Pump Subsidy', desc: 'Apply today for a 60% subsidy under PM-KUSUM Scheme.', link: '#' }
+    { tag: '#MonsoonSowing', posts: 142 },
+    { tag: '#TomatoesHelp', posts: 89 },
+    { tag: '#SoilHealth', posts: 53 }
   ]);
 
   const [expertProfiles, setExpertProfiles] = useState([
     {
-      username: 'dr_ramesh',
-      name: 'Dr. Ramesh Patel',
-      role: 'Agronomy Scientist',
+      username: 'SoilnFalter',
+      name: 'Soil Dr. Amit',
+      role: 'Agronomy Specialist',
       verified: true,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
       location: 'Agricultural Research Inst, Pune',
-      experience: '18 Years Research & Advisory',
-      crops: 'Tomatoes, Cotton, Wheat',
+      experience: '15 Years Soil Health Research',
+      crops: 'Soil Nutrition, Fertilizers',
       followers: 2430,
-      joinedGroups: ['Organic Farming', 'Tomato Growers'],
+      joinedGroups: ['[Organic Growers]'],
       trustScore: 98,
       following: false
     },
     {
-      username: 'suresh_k',
-      name: 'Suresh Kumar',
-      role: 'Master Farmer',
+      username: 'FaimFater',
+      name: 'Aman Amit',
+      role: 'Paddy Expert',
       verified: true,
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=60',
       location: 'Nashik, Maharashtra',
-      experience: '12 Years Grape & Tomato cultivation',
-      crops: 'Grapes, Tomatoes, Peppers',
+      experience: '10 Years Rice Cultivation',
+      crops: 'Basmati Rice, SRI Method',
       followers: 1890,
-      joinedGroups: ['Tomato Growers', 'Organic Farming'],
-      trustScore: 95,
-      following: true
+      joinedGroups: ['[South India Hub]'],
+      trustScore: 94,
+      following: false
     },
     {
-      username: 'neha_k',
-      name: 'Neha Khetan',
-      role: 'Horticulture Specialist',
+      username: 'PriyaFarm',
+      name: 'Mser Nrii',
+      role: 'Pest Specialist',
       verified: false,
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60',
-      location: 'Sikar, Rajasthan',
-      experience: '5 Years Greenhouses',
-      crops: 'Strawberries, Leafy Greens',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60',
+      location: 'Coimbatore, TN',
+      experience: '6 Years Integrated Pest Mgmt',
+      crops: 'Chili, Grapes, Tomatoes',
       followers: 840,
-      joinedGroups: ['Organic Farming', 'Hydroponics'],
-      trustScore: 89,
+      joinedGroups: ['[Hydroponic Hub]'],
+      trustScore: 88,
       following: false
     }
   ]);
@@ -185,14 +158,14 @@ export default function CommunityHub() {
     {
       id: 1,
       author: {
-        name: 'Suresh Kumar',
-        username: 'suresh_k',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
+        name: 'Farmer Priya',
+        username: 'PriyaFarms',
+        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60',
         verified: true,
-        location: 'Nashik, Maharashtra'
+        location: 'Pune, Maharashtra'
       },
       time: '2h ago',
-      content: 'I noticed some light spots on the lower leaves of my tomato plants today. Looks like early stage Alternaria Solani (Early Blight). Any recommendations on organic sprays before this spreads to adjacent plots? #TomatoDisease #OrganicFarming',
+      content: 'Anyone else seeing this type of leaf curl on their vine tomatoes?',
       crop: 'Tomatoes',
       location: 'Plot B-North',
       images: [
@@ -209,10 +182,10 @@ export default function CommunityHub() {
       comments: [
         {
           id: 101,
-          authorName: 'Dr. Ramesh Patel',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60',
+          authorName: 'Soil Dr. Amit',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
           time: '1h ago',
-          text: 'Suresh, definitely trim those bottom leaves so they do not touch the damp soil. High moisture accelerates Alternaria spores. If it spreads, spray neem oil formulation at 2% concentration.',
+          text: 'Priya, definitely trim those bottom leaves so they do not touch the damp soil. High moisture accelerates Alternaria spores. If it spreads, spray neem oil formulation at 2% concentration.',
           replies: []
         }
       ],
@@ -223,20 +196,18 @@ export default function CommunityHub() {
     {
       id: 2,
       author: {
-        name: 'Neha Khetan',
-        username: 'neha_k',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60',
-        verified: false,
-        location: 'Sikar, Rajasthan'
+        name: 'Rakesh',
+        username: 'RakeshFarmBuddy',
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=60',
+        verified: true,
+        location: 'Satara, Maharashtra'
       },
       time: '4h ago',
-      content: 'Sharing a quick snapshot of our vertical hydroponic setup. The butterhead lettuce crop is ready for harvest this week! Nutrient PPM is stable at 650 with pH 5.8. #Hydroponics #SoilHealth',
-      crop: 'Lettuce',
-      location: 'Polyhouse 2',
-      images: [
-        'https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=600&auto=format&fit=crop&q=60',
-        'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&auto=format&fit=crop&q=60'
-      ],
+      content: 'Final harvest coming soon!',
+      crop: 'Paddy Rice',
+      location: 'Plot D-South',
+      videoUrl: 'mock_video',
+      videoThumbnail: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=600&auto=format&fit=crop&q=60',
       aiBadge: false,
       likes: 24,
       liked: true,
@@ -258,75 +229,51 @@ export default function CommunityHub() {
     if (!selectedFarmerUsername) return null;
     return expertProfiles.find(f => f.username === selectedFarmerUsername) || {
       username: selectedFarmerUsername,
-      name: selectedFarmerUsername === user.name ? user.name : 'Farmer Friend',
+      name: selectedFarmerUsername === 'PriyaFarms' ? 'Farmer Priya' : 'Rakesh',
       role: 'Farmer',
-      verified: false,
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=60',
-      location: 'Local Region',
-      experience: '2 Years Cultivation',
-      crops: 'Mixed crops',
-      followers: 12,
-      joinedGroups: ['Organic Farming'],
-      trustScore: 82,
+      verified: true,
+      avatar: selectedFarmerUsername === 'PriyaFarms' 
+        ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60'
+        : 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=60',
+      location: 'Maharashtra Region',
+      experience: '5 Years Cultivation',
+      crops: 'Tomatoes, Paddy',
+      followers: 430,
+      joinedGroups: ['[Organic Growers]'],
+      trustScore: 92,
       following: false
     };
-  }, [selectedFarmerUsername, expertProfiles, user]);
+  }, [selectedFarmerUsername, expertProfiles]);
 
-  // Filter Timeline Posts (Search & Filter Pills & Hashtags)
+  // Filter Timeline Posts (Search & Hashtags)
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
-      // 1. Search Query filter
+      // Search Query filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesAuthor = post.author.name.toLowerCase().includes(query);
         const matchesContent = post.content.toLowerCase().includes(query);
-        const matchesCrop = post.crop && post.crop.toLowerCase().includes(query);
-        const matchesDisease = post.aiAnalysis && post.aiAnalysis.disease.toLowerCase().includes(query);
-        if (!matchesAuthor && !matchesContent && !matchesCrop && !matchesDisease) return false;
+        if (!matchesAuthor && !matchesContent) return false;
       }
 
-      // 2. Hashtag filter
+      // Hashtag filter
       if (selectedHashtag && !post.content.toLowerCase().includes(selectedHashtag.toLowerCase())) {
         return false;
       }
 
-      // 3. Category Filter Pills
-      if (activeFilter === 'Following') {
-        // Find experts the user is following
-        const followingUsernames = expertProfiles.filter(e => e.following).map(e => e.username);
-        if (!followingUsernames.includes(post.author.username)) return false;
-      }
-      if (activeFilter === 'Nearby Farmers') {
-        // Mock filter for items near user's state
-        if (!post.author.location.toLowerCase().includes('maharashtra') && post.author.username !== 'suresh_k') return false;
-      }
-      if (activeFilter === 'Crop-wise') {
-        if (!post.crop) return false;
-      }
-      if (activeFilter === 'Disease Discussions') {
-        if (!post.aiBadge) return false;
-      }
-
-      // 4. Community specific page filter
+      // Community specific page filter
       if (currentViewMode === 'community-detail' && activeCommunity) {
-        // Filter posts that belong to the active community's keywords/hashtags
-        const communityKeyword = activeCommunity.name.split(' ')[0].toLowerCase(); // e.g. "organic" or "tomato"
+        const communityKeyword = activeCommunity.name.replace(/[\[\]]/g, '').split(' ')[0].toLowerCase(); // organic or south
         const matchesContent = post.content.toLowerCase().includes(communityKeyword);
         const matchesCrop = post.crop && post.crop.toLowerCase().includes(communityKeyword);
         if (!matchesContent && !matchesCrop) return false;
       }
 
       return true;
-    }).sort((a, b) => {
-      if (activeFilter === 'Popular') {
-        return b.likes - a.likes;
-      }
-      // Newest default
-      return b.id - a.id;
-    });
-  }, [posts, searchQuery, activeFilter, selectedHashtag, currentViewMode, activeCommunity, expertProfiles]);
+    }).sort((a, b) => b.id - a.id);
+  }, [posts, searchQuery, selectedHashtag, currentViewMode, activeCommunity]);
 
-  // Social Toggle Operations
+  // Social Toggles
   const handleLike = (postId) => {
     setPosts(prev => prev.map(p => {
       if (p.id === postId) {
@@ -347,13 +294,12 @@ export default function CommunityHub() {
       }
       return p;
     }));
-    addNotification("Saved", "Post added to bookmarks.", "success");
+    addNotification("Bookmarked", "Discussion added to saved list.", "success");
   };
 
   const handleShare = (postId) => {
-    // Simulating API Share
-    navigator.clipboard.writeText(`https://farmbuddy.com/community/post/${postId}`);
-    addNotification("Copied Link", "Discussion link copied to clipboard.", "success");
+    navigator.clipboard.writeText(`https://farmbuddy.uvfarms.in/community/post/${postId}`);
+    addNotification("Copied Link", "Link copied to clipboard.", "success");
     setPosts(prev => prev.map(p => {
       if (p.id === postId) return { ...p, shares: p.shares + 1 };
       return p;
@@ -365,8 +311,8 @@ export default function CommunityHub() {
       if (e.username === username) {
         const nextState = !e.following;
         addNotification(
-          nextState ? "Followed User" : "Unfollowed User",
-          nextState ? `You followed ${e.name}.` : `You unfollowed ${e.name}.`,
+          nextState ? "Followed Expert" : "Unfollowed",
+          nextState ? `Following ${e.name}` : `Unfollowed ${e.name}`,
           "success"
         );
         return {
@@ -377,61 +323,6 @@ export default function CommunityHub() {
       }
       return e;
     }));
-  };
-
-  const handleCommunityJoinToggle = (commId) => {
-    setCommunities(prev => prev.map(c => {
-      if (c.id === commId) {
-        const nextState = !c.joined;
-        addNotification(
-          nextState ? "Joined Group" : "Left Group",
-          nextState ? `Joined ${c.name}.` : `Left ${c.name}.`,
-          "success"
-        );
-        return {
-          ...c,
-          joined: nextState,
-          members: nextState ? c.members + 1 : c.members - 1
-        };
-      }
-      return c;
-    }));
-  };
-
-  // Drag and Drop files handlers
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const fileList = Array.from(e.dataTransfer.files).map(file => ({
-        name: file.name,
-        type: file.type.startsWith('video/') ? 'video' : 'image',
-        url: URL.createObjectURL(file)
-      }));
-      setPostAttachments(prev => [...prev, ...fileList]);
-    }
-  };
-
-  const triggerFileSelect = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      const fileList = Array.from(e.target.files).map(file => ({
-        name: file.name,
-        type: file.type.startsWith('video/') ? 'video' : 'image',
-        url: URL.createObjectURL(file)
-      }));
-      setPostAttachments(prev => [...prev, ...fileList]);
-    }
   };
 
   // Create Post Submit
@@ -453,7 +344,7 @@ export default function CommunityHub() {
       crop: postCrop || null,
       location: postLocation || null,
       images: postAttachments.map(a => a.url),
-      aiBadge: postAttachments.length > 0 && (postCrop || postText.includes('#Disease') || postText.includes('sick') || postText.includes('spot')),
+      aiBadge: postText.includes('spot') || postText.includes('curl') || postText.includes('blight'),
       aiAnalysis: postText.includes('spot') || postText.includes('blight') ? {
         disease: 'Early Spot / Blight Suspect',
         confidence: 85,
@@ -484,8 +375,9 @@ export default function CommunityHub() {
 
     const newGroup = {
       id: newCommName.toLowerCase().replace(/\s+/g, '-'),
-      name: newCommName,
+      name: `[${newCommName}]`,
       banner: newCommBanner,
+      iconType: 'leaf',
       description: newCommDesc || 'Farming hub community created by farmer.',
       members: 1,
       joined: true,
@@ -506,7 +398,7 @@ export default function CommunityHub() {
     setNewCommRules('');
   };
 
-  // Nested comments system
+  // Comments toggles & updates
   const toggleComments = (postId) => {
     setPosts(prev => prev.map(p => {
       if (p.id === postId) {
@@ -520,7 +412,7 @@ export default function CommunityHub() {
     setRepliesState(prev => ({
       ...prev,
       [postId]: {
-        ...(prev[postId] || { text: '', emojiOpen: false, attachments: [] }),
+        ...(prev[postId] || { text: '', emojiOpen: false }),
         [field]: value
       }
     }));
@@ -551,106 +443,40 @@ export default function CommunityHub() {
     handleReplyChange(postId, 'text', '');
   };
 
-  const insertEmoji = (postId, emoji) => {
-    const currentText = repliesState[postId]?.text || '';
-    handleReplyChange(postId, 'text', currentText + emoji);
-    handleReplyChange(postId, 'emojiOpen', false);
+  const renderGroupIcon = (type) => {
+    switch (type) {
+      case 'map-pin':
+        return <MapPin className="h-4.5 w-4.5 text-[#2E7D32]" />;
+      case 'droplet':
+        return <Droplet className="h-4.5 w-4.5 text-[#2E7D32]" />;
+      default:
+        return <Sprout className="h-4.5 w-4.5 text-[#2E7D32]" />;
+    }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-6 space-y-6 bg-[#F8F6EF] dark:bg-[#0c140f] min-h-screen text-stone-900 dark:text-emerald-50 transition-colors duration-300">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-[#F8F6EF] dark:bg-[#0c140f] min-h-screen text-stone-900 dark:text-emerald-50 transition-colors duration-300">
       
-      {/* HEADER SECTION WITH BRAND & SEARCH */}
-      <div className="flex flex-col md:flex-row items-center justify-between border-b border-stone-200/60 dark:border-emerald-950/20 pb-4 gap-4 print:hidden">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2">
-            <Users className="h-6 w-6 text-[#2E7D32]" />
-            Community Hub
-          </h1>
-          <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
-            Consult agriculture experts, discuss leaf disease diagnostics, and share vertical farming logs.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          {/* Main search bar */}
-          <div className="relative flex-1 md:w-80">
-            <Search className="h-4 w-4 text-stone-400 absolute left-3.5 top-3" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search farmers, crops, crop diseases..."
-              className="w-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl pl-10 pr-4 py-2.5 text-xs placeholder-stone-450 focus:outline-none focus:ring-1 focus:ring-[#2E7D32] font-semibold"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-3 text-stone-400 hover:text-stone-600">
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Notifications Button */}
-          <div className="relative">
-            <button 
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2.5 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-850 rounded-xl hover:bg-stone-50 transition-all relative"
-            >
-              <Bell className="h-4.5 w-4.5 text-stone-600 dark:text-emerald-400" />
-              {notifications.some(n => !n.read) && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-ping" />
-              )}
-            </button>
-
-            {/* Notifications Dropdown Drawer */}
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#121f17] border border-stone-200 dark:border-stone-800 shadow-xl rounded-2xl p-4 z-50 space-y-3">
-                <div className="flex justify-between items-center border-b border-stone-100 dark:border-stone-850 pb-2">
-                  <span className="font-extrabold text-xs">Notifications</span>
-                  <button 
-                    onClick={() => {
-                      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-                      setShowNotifications(false);
-                    }}
-                    className="text-[10px] text-[#2E7D32] font-bold hover:underline"
-                  >
-                    Mark read
-                  </button>
-                </div>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {notifications.map(n => (
-                    <div key={n.id} className={`p-2 rounded-xl text-[10px] ${n.read ? 'opacity-70' : 'bg-[#F8F6EF] dark:bg-emerald-950/15 border-l-2 border-[#2E7D32]'}`}>
-                      <p className="font-semibold text-stone-800 dark:text-stone-200">{n.text}</p>
-                      <span className="text-[8px] text-stone-400 block mt-1">{n.time}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 3-COLUMN RESPONSIVE LAYOUT */}
+      {/* 3-COLUMN STRUCTURE MATCHING WIREFRAME EXACTLY */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
-        {/* LEFT COLUMN: COMMUNITIES & TRENDS */}
+        {/* LEFT COLUMN: GROUPS & TRENDING (Width: 280px equivalent on grid) */}
         <div className="lg:col-span-1 space-y-6">
           
-          {/* Create Community Card */}
+          {/* My Groups Card */}
           <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs font-black uppercase tracking-wider text-stone-400">My Communities</h2>
+              <h2 className="text-sm font-black text-stone-900 dark:text-white">My Groups</h2>
               <button 
                 onClick={() => setShowCreateCommunityModal(true)}
-                className="p-1.5 bg-emerald-50 dark:bg-emerald-950/20 text-[#2E7D32] rounded-lg hover:bg-emerald-100 transition-all"
+                className="p-1 bg-emerald-50 dark:bg-emerald-950/20 text-[#2E7D32] rounded-lg hover:bg-emerald-100 transition-all"
                 title="Create Group"
               >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {communities.filter(c => c.joined).map(comm => (
                 <div 
                   key={comm.id}
@@ -663,23 +489,21 @@ export default function CommunityHub() {
                     currentViewMode === 'community-detail' && selectedCommunityId === comm.id ? 'bg-[#F8F6EF] dark:bg-emerald-950/10 border-l-2 border-[#2E7D32]' : ''
                   }`}
                 >
-                  <img src={comm.banner} alt={comm.name} className="h-8 w-8 rounded-lg object-cover" />
+                  <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/20">
+                    {renderGroupIcon(comm.iconType)}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-extrabold text-[11px] truncate text-stone-800 dark:text-stone-100">{comm.name}</h3>
-                    <span className="text-[9px] text-stone-400">{comm.members} Members</span>
+                    <h3 className="font-extrabold text-xs truncate text-stone-850 dark:text-stone-100">{comm.name}</h3>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Trending Hashtags Widget */}
+          {/* Trending Topics Widget */}
           <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4">
-            <h2 className="text-xs font-black uppercase tracking-wider text-stone-400 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-[#2E7D32]" />
-              Trending in Farming
-            </h2>
-            <div className="space-y-3.5">
+            <h2 className="text-sm font-black text-stone-900 dark:text-white">Trending Topics</h2>
+            <div className="space-y-3 font-semibold text-xs text-stone-600 dark:text-stone-300">
               {trendingHashtags.map(t => (
                 <div 
                   key={t.tag}
@@ -687,45 +511,11 @@ export default function CommunityHub() {
                     setSelectedHashtag(selectedHashtag === t.tag ? null : t.tag);
                     setCurrentViewMode('feed');
                   }}
-                  className={`group flex justify-between items-center cursor-pointer ${
-                    selectedHashtag === t.tag ? 'text-[#2E7D32] font-black' : 'text-stone-600 dark:text-stone-300'
+                  className={`cursor-pointer hover:text-[#2E7D32] transition-colors py-1 block ${
+                    selectedHashtag === t.tag ? 'text-[#2E7D32] font-black' : ''
                   }`}
                 >
-                  <div className="min-w-0">
-                    <span className="text-[11px] font-bold block group-hover:text-[#2E7D32] transition-colors">{t.tag}</span>
-                    <span className="text-[9px] text-stone-400 block mt-0.5">{t.posts} discussions logged</span>
-                  </div>
-                  <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-all text-[#2E7D32]" />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Suggested Groups (Not Joined Yet) */}
-          <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4">
-            <h2 className="text-xs font-black uppercase tracking-wider text-stone-400">Discover Groups</h2>
-            <div className="space-y-3">
-              {communities.filter(c => !c.joined).map(comm => (
-                <div key={comm.id} className="flex items-center justify-between gap-2 p-1.5 rounded-xl hover:bg-stone-50 dark:hover:bg-white/5 transition-all">
-                  <div 
-                    onClick={() => {
-                      setSelectedCommunityId(comm.id);
-                      setCurrentViewMode('community-detail');
-                    }}
-                    className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0"
-                  >
-                    <img src={comm.banner} alt={comm.name} className="h-7 w-7 rounded-lg object-cover" />
-                    <div className="min-w-0">
-                      <h4 className="font-extrabold text-[10px] truncate text-stone-800 dark:text-stone-100">{comm.name}</h4>
-                      <span className="text-[8px] text-stone-400 block">{comm.members} Members</span>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => handleCommunityJoinToggle(comm.id)}
-                    className="px-2.5 py-1 text-[9px] font-bold bg-[#2E7D32] hover:bg-emerald-700 text-white rounded-lg transition-all"
-                  >
-                    Join
-                  </button>
+                  {t.tag}
                 </div>
               ))}
             </div>
@@ -733,462 +523,330 @@ export default function CommunityHub() {
 
         </div>
 
-        {/* CENTER FEED: TIMELINE OR COMMUNITY DETAIL VIEW */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* CENTER FEED: TIMELINE WITH LOGGING ROW */}
+        <div className="lg:col-span-2 space-y-5">
           
-          {/* COMMUNITY DETAIL BANNER HEADER */}
-          {currentViewMode === 'community-detail' && activeCommunity && (
-            <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] overflow-hidden shadow-sm">
-              <div className="h-28 relative">
-                <img src={activeCommunity.banner} alt={activeCommunity.name} className="w-full h-full object-cover" />
-                <button 
-                  onClick={() => setCurrentViewMode('feed')}
-                  className="absolute top-3 left-3 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white backdrop-blur-sm transition-all"
-                >
-                  <ChevronLeft className="h-4.5 w-4.5" />
-                </button>
-              </div>
-              <div className="p-5 space-y-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-xl font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
-                      {activeCommunity.name}
-                      <CheckCircle className="h-4 w-4 text-[#2E7D32]" />
-                    </h2>
-                    <span className="text-[10px] text-[#2E7D32] font-extrabold mt-1 block">
-                      {activeCommunity.members} ACTIVE MEMBERS
-                    </span>
-                  </div>
-                  <button 
-                    onClick={() => handleCommunityJoinToggle(activeCommunity.id)}
-                    className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      activeCommunity.joined 
-                        ? 'border border-stone-300 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300' 
-                        : 'bg-[#2E7D32] hover:bg-[#205823] text-white'
-                    }`}
-                  >
-                    {activeCommunity.joined ? 'Leave Community' : 'Join Community'}
-                  </button>
-                </div>
+          {/* Main heading above feed */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-extrabold tracking-tight">Community Hub</h1>
+          </div>
 
-                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed cursor-default select-none">
-                  {activeCommunity.description}
-                </p>
-
-                {/* Rules & Admins grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-stone-100 dark:border-stone-850 text-[10px]">
-                  <div>
-                    <span className="font-extrabold block text-stone-400 uppercase tracking-wider mb-1">Admins</span>
-                    <p className="font-bold text-[#2E7D32]">{activeCommunity.admins.join(', ')}</p>
-                  </div>
-                  <div>
-                    <span className="font-extrabold block text-stone-400 uppercase tracking-wider mb-1">Community Guidelines</span>
-                    <p className="text-stone-500 italic">{activeCommunity.rules}</p>
-                  </div>
-                </div>
-
-                {/* Pinned Post */}
-                {activeCommunity.pinnedPost && (
-                  <div className="p-3 bg-amber-500/5 border border-amber-500/25 rounded-xl text-[10px] text-amber-800 dark:text-amber-300 flex items-start gap-2">
-                    <span className="font-extrabold text-[8px] bg-amber-500 text-white px-1.5 py-0.5 rounded uppercase mt-0.5">PINNED</span>
-                    <p className="font-bold">{activeCommunity.pinnedPost}</p>
-                  </div>
-                )}
-              </div>
+          {/* CREATE POST INPUT BAR ROW (Matches X.com bar in image) */}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={postText}
+                onChange={(e) => setPostText(e.target.value)}
+                placeholder="What's happening in your field?"
+                className="w-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-full pl-5 pr-4 py-2.5 text-xs placeholder-stone-450 focus:outline-none focus:ring-1 focus:ring-[#2E7D32] font-semibold shadow-sm"
+              />
             </div>
-          )}
-
-          {/* CROP WORKFLOW FILTER PILLS (Only on main feed) */}
-          {currentViewMode === 'feed' && (
-            <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
-              {['All', 'Following', 'Nearby Farmers', 'Crop-wise', 'Disease Discussions', 'Newest', 'Popular'].map(pill => (
+            
+            {/* Quick action buttons row */}
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => addNotification("Attach Image", "Use drag & drop or create post modal to attach local files.", "info")}
+                className="p-2.5 bg-[#1b4332] text-white hover:bg-emerald-950 rounded-xl shadow-sm transition-all"
+                title="Upload Image"
+              >
+                <ImageIcon className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => addNotification("Attach Video", "Drag and drop video files to upload them.", "info")}
+                className="p-2.5 bg-[#1b4332] text-white hover:bg-emerald-950 rounded-xl shadow-sm transition-all"
+                title="Upload Video"
+              >
+                <Video className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => {
+                  const loc = prompt("Tag Plot / Farm Location:", "Plot B-North");
+                  if (loc) setPostLocation(loc);
+                }}
+                className="p-2.5 bg-[#1b4332] text-white hover:bg-emerald-950 rounded-xl shadow-sm transition-all"
+                title="Add Location"
+              >
+                <MapPin className="h-4 w-4" />
+              </button>
+              {postText.trim() && (
                 <button
-                  key={pill}
-                  onClick={() => {
-                    setActiveFilter(pill);
-                    setSelectedHashtag(null);
-                  }}
-                  className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold transition-all whitespace-nowrap ${
-                    activeFilter === pill && !selectedHashtag
-                      ? 'bg-[#2E7D32] text-white shadow-sm'
-                      : 'bg-white dark:bg-[#121f17] text-stone-600 dark:text-stone-300 border border-stone-200/60 dark:border-emerald-950/20 hover:bg-stone-50'
-                  }`}
+                  onClick={handleCreatePost}
+                  className="px-4 py-2 bg-[#2E7D32] hover:bg-emerald-700 text-white rounded-full text-xs font-black transition-all shadow-sm"
                 >
-                  {pill}
+                  Post
                 </button>
-              ))}
+              )}
             </div>
-          )}
+          </div>
 
           {/* ACTIVE FILTER HASHTAG BANNER */}
           {selectedHashtag && (
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-950/20 rounded-2xl flex justify-between items-center">
               <span className="text-xs font-bold text-[#2E7D32]">Showing matches for: <strong>{selectedHashtag}</strong></span>
-              <button 
-                onClick={() => setSelectedHashtag(null)}
-                className="text-stone-400 hover:text-stone-600"
-              >
+              <button onClick={() => setSelectedHashtag(null)} className="text-stone-400 hover:text-stone-600">
                 <X className="h-4 w-4" />
               </button>
             </div>
           )}
 
-          {/* CREATE POST CARD */}
-          <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4">
-            <div className="flex gap-3">
-              <img 
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=60" 
-                alt="My profile" 
-                className="h-10 w-10 rounded-full object-cover" 
-              />
-              <div className="flex-1">
-                <textarea
-                  value={postText}
-                  onChange={(e) => setPostText(e.target.value)}
-                  placeholder="What's happening in your farm today? Share logs, ask questions..."
-                  className="w-full text-xs text-stone-700 dark:text-stone-100 placeholder-stone-400 bg-transparent border-0 focus:outline-none focus:ring-0 resize-none h-20"
-                />
-              </div>
-            </div>
-
-            {/* DRAG AND DROP ZONE FOR FILES */}
-            <div 
-              onDragEnter={handleDrag}
-              onDragOver={handleDrag}
-              onDragLeave={handleDrag}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-all ${
-                dragActive ? 'border-[#2E7D32] bg-emerald-50/20' : 'border-stone-200 dark:border-stone-850 hover:bg-stone-50/50'
-              }`}
-            >
-              <input 
-                type="file" 
-                id="file-upload" 
-                multiple 
-                onChange={triggerFileSelect} 
-                className="hidden" 
-                accept="image/*,video/*"
-              />
-              <label htmlFor="file-upload" className="cursor-pointer space-y-1.5 block">
-                <ImageIcon className="h-6 w-6 text-stone-400 mx-auto" />
-                <p className="text-[10px] text-stone-500">
-                  <span className="font-bold text-[#2E7D32]">Click to upload</span> or drag and drop crop images/videos
-                </p>
-              </label>
-            </div>
-
-            {/* ATTACHMENT PREVIEWS */}
-            {postAttachments.length > 0 && (
-              <div className="grid grid-cols-4 gap-2">
-                {postAttachments.map((file, idx) => (
-                  <div key={idx} className="relative h-16 rounded-lg overflow-hidden border border-stone-200">
-                    {file.type === 'video' ? (
-                      <div className="w-full h-full bg-black/10 flex items-center justify-center text-[8px] text-stone-600 font-bold">Video</div>
-                    ) : (
-                      <img src={file.url} alt="upload preview" className="w-full h-full object-cover" />
-                    )}
-                    <button 
-                      onClick={() => setPostAttachments(prev => prev.filter((_, i) => i !== idx))}
-                      className="absolute top-1 right-1 p-0.5 bg-black/60 rounded-full text-white hover:bg-black/80"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* METADATA TARGETS (Crop, Plot location) */}
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="flex items-center gap-2 bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2">
-                <Sprout className="h-4 w-4 text-[#2E7D32]" />
-                <select
-                  value={postCrop}
-                  onChange={(e) => setPostCrop(e.target.value)}
-                  className="bg-transparent border-0 focus:outline-none focus:ring-0 text-[10px] font-bold text-stone-600 dark:text-stone-300 w-full"
+          {/* COMMUNITY DETAIL BANNER HEADER */}
+          {currentViewMode === 'community-detail' && activeCommunity && (
+            <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] overflow-hidden shadow-sm">
+              <div className="h-24 relative">
+                <img src={activeCommunity.banner} alt={activeCommunity.name} className="w-full h-full object-cover" />
+                <button 
+                  onClick={() => setCurrentViewMode('feed')}
+                  className="absolute top-3 left-3 p-1.5 bg-black/40 hover:bg-black/60 rounded-full text-white backdrop-blur-sm transition-all"
                 >
-                  <option value="">Link Crop Variety</option>
-                  <option value="Tomatoes">Tomatoes</option>
-                  <option value="Paddy Rice">Paddy Rice</option>
-                  <option value="Lettuce">Lettuce</option>
-                  <option value="Grapes">Grapes</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2 bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2">
-                <MapPin className="h-4 w-4 text-rose-500" />
-                <input
-                  type="text"
-                  value={postLocation}
-                  onChange={(e) => setPostLocation(e.target.value)}
-                  placeholder="Tag Plot / Location"
-                  className="bg-transparent border-0 focus:outline-none focus:ring-0 text-[10px] font-bold text-stone-600 dark:text-stone-350 w-full"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-between items-center pt-2 border-t border-stone-100 dark:border-stone-850">
-              <div className="flex gap-2">
-                {/* Simulated shortcuts */}
-                <button className="p-1.5 rounded-lg text-stone-400 hover:text-[#2E7D32] hover:bg-stone-50">
-                  <ImageIcon className="h-4.5 w-4.5" />
-                </button>
-                <button className="p-1.5 rounded-lg text-stone-400 hover:text-[#2E7D32] hover:bg-stone-50">
-                  <Video className="h-4.5 w-4.5" />
+                  <ChevronLeft className="h-4.5 w-4.5" />
                 </button>
               </div>
-
-              <button
-                onClick={handleCreatePost}
-                className="px-5 py-2.5 bg-[#2E7D32] hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs transition-all flex items-center gap-1.5"
-              >
-                Post Update
-              </button>
+              <div className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-base font-extrabold text-stone-900 dark:text-white flex items-center gap-1.5">
+                      {activeCommunity.name}
+                      <CheckCircle className="h-3.5 w-3.5 text-[#2E7D32]" />
+                    </h2>
+                    <span className="text-[9px] text-[#2E7D32] font-black block mt-0.5">
+                      {activeCommunity.members} Members
+                    </span>
+                  </div>
+                  <button 
+                    onClick={() => handleCommunityJoinToggle(activeCommunity.id)}
+                    className="px-3.5 py-1 rounded-xl text-xs font-bold border border-stone-300 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-rose-55 hover:text-rose-600 transition-all"
+                  >
+                    {activeCommunity.joined ? 'Leave Community' : 'Join'}
+                  </button>
+                </div>
+                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed cursor-default select-none">
+                  {activeCommunity.description}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* TIMELINE LIST */}
+          {/* POSTS LIST TIMELINE */}
           <div className="space-y-4">
-            {filteredPosts.length === 0 ? (
-              <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 rounded-[18px] p-10 text-center text-stone-400">
-                <Compass className="h-10 w-10 mx-auto opacity-40 mb-2 text-[#2E7D32]" />
-                No matching discussions or logs found. Start a new topic above!
-              </div>
-            ) : (
-              filteredPosts.map(post => {
-                const commentState = repliesState[post.id] || { text: '', emojiOpen: false };
-                return (
-                  <div key={post.id} className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4 hover:shadow-md transition-all duration-300">
-                    
-                    {/* POST AUTHOR METADATA */}
-                    <div className="flex justify-between items-start">
-                      <div className="flex gap-3">
-                        <img 
-                          src={post.author.avatar} 
-                          alt={post.author.name} 
-                          className="h-10 w-10 rounded-full object-cover cursor-pointer hover:opacity-85 transition-opacity"
-                          onClick={() => setSelectedFarmerUsername(post.author.username)}
-                        />
-                        <div>
-                          <div className="flex items-center gap-1">
-                            <span 
-                              onClick={() => setSelectedFarmerUsername(post.author.username)}
-                              className="font-extrabold text-xs text-stone-900 dark:text-white cursor-pointer hover:underline"
-                            >
-                              {post.author.name}
-                            </span>
-                            {post.author.verified && (
-                              <CheckCircle className="h-3.5 w-3.5 text-[#2E7D32] fill-emerald-50 dark:fill-stone-900" title="Verified Professional" />
-                            )}
-                            <span className="text-[10px] text-stone-400">@{post.author.username}</span>
-                          </div>
+            {filteredPosts.map(post => {
+              const commentState = repliesState[post.id] || { text: '', emojiOpen: false };
+              return (
+                <div key={post.id} className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4 hover:shadow-md transition-all duration-300">
+                  
+                  {/* Top row of post */}
+                  <div className="flex justify-between items-start">
+                    <div className="flex gap-3">
+                      <img 
+                        src={post.author.avatar} 
+                        alt={post.author.name} 
+                        className="h-10 w-10 rounded-full object-cover cursor-pointer"
+                        onClick={() => setSelectedFarmerUsername(post.author.username)}
+                      />
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span 
+                            onClick={() => setSelectedFarmerUsername(post.author.username)}
+                            className="font-black text-xs text-stone-900 dark:text-white cursor-pointer hover:underline"
+                          >
+                            {post.author.name}
+                          </span>
+                          {post.author.verified && (
+                            <CheckCircle className="h-3.5 w-3.5 text-[#2E7D32]" />
+                          )}
+                          <span className="text-[10px] text-stone-400">@{post.author.username}</span>
+                          <span className="text-[10px] text-stone-300 dark:text-stone-700">•</span>
                           
-                          <span className="text-[9px] text-stone-400 block mt-0.5">
-                            {post.time} • {post.author.location}
+                          {/* Leaf verified label */}
+                          <span className="text-[9px] text-[#2E7D32] flex items-center gap-0.5 bg-emerald-50 dark:bg-emerald-950/20 px-1.5 py-0.5 rounded font-extrabold">
+                            <Sprout className="h-2.5 w-2.5" />
+                            Verified
                           </span>
                         </div>
+                        <span className="text-[9px] text-stone-400 block mt-0.5">{post.time} • {post.author.location}</span>
                       </div>
-
-                      {/* Crop link badge */}
-                      {post.crop && (
-                        <span className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/20 text-[#2E7D32] text-[9px] font-black rounded-lg">
-                          {post.crop}
-                        </span>
-                      )}
                     </div>
 
-                    {/* POST DESCRIPTION */}
-                    <p className="text-xs text-stone-700 dark:text-stone-200 leading-relaxed font-medium">
-                      {post.content}
-                    </p>
+                    <button 
+                      onClick={() => addNotification("Action", "More options placeholder.", "info")} 
+                      className="text-stone-400 hover:text-stone-600"
+                    >
+                      <MoreHorizontal className="h-4.5 w-4.5" />
+                    </button>
+                  </div>
 
-                    {/* IMAGES GRID (Supports 1-4 images) */}
-                    {post.images && post.images.length > 0 && (
-                      <div className={`grid gap-2 rounded-2xl overflow-hidden border border-stone-100 dark:border-stone-850 ${
-                        post.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
-                      }`}>
-                        {post.images.map((img, index) => (
-                          <img 
-                            key={index} 
-                            src={img} 
-                            alt={`Attachment ${index}`} 
-                            className="w-full h-48 object-cover hover:scale-[1.01] duration-300 cursor-pointer"
-                            onClick={() => {
-                              if (post.aiBadge) {
-                                setActiveAiPost(post);
-                                setShowAiAnalysisModal(true);
-                              }
-                            }}
-                          />
-                        ))}
-                      </div>
-                    )}
+                  {/* Post description text */}
+                  <p className="text-xs text-stone-750 dark:text-stone-200 leading-relaxed font-semibold">
+                    {post.content}
+                  </p>
 
-                    {/* AI ANALYTICS CORNER BADGE */}
-                    {post.aiBadge && (
-                      <div 
+                  {/* Media attachments (Images / Video) */}
+                  {post.images && post.images.length > 0 && !post.videoUrl && (
+                    <div className="rounded-2xl overflow-hidden border border-stone-100">
+                      <img 
+                        src={post.images[0]} 
+                        alt="Crop log" 
+                        className="w-full h-64 object-cover cursor-pointer"
                         onClick={() => {
-                          setActiveAiPost(post);
-                          setShowAiAnalysisModal(true);
+                          if (post.aiBadge) {
+                            setActiveAiPost(post);
+                            setShowAiAnalysisModal(true);
+                          }
                         }}
-                        className="px-3.5 py-2 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 cursor-pointer rounded-2xl flex items-center justify-between text-[10px] text-emerald-800 dark:text-emerald-300 font-bold transition-all"
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <ShieldCheck className="h-4 w-4 text-[#2E7D32]" />
-                          AI Analysis Report Available
-                        </span>
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </div>
-                    )}
-
-                    {/* ACTIONS BAR (OUTLINED W/ GREEN HOVER) */}
-                    <div className="flex justify-between items-center pt-3 border-t border-stone-100 dark:border-stone-850 text-stone-500 text-xs">
-                      
-                      {/* Like button */}
-                      <button 
-                        onClick={() => handleLike(post.id)}
-                        className={`flex items-center gap-1.5 hover:text-emerald-600 transition-all ${
-                          post.liked ? 'text-emerald-600 font-bold' : ''
-                        }`}
-                      >
-                        <Heart className={`h-4.5 w-4.5 transition-transform duration-300 active:scale-150 ${post.liked ? 'fill-emerald-500 stroke-emerald-500' : ''}`} />
-                        <span>{post.likes}</span>
-                      </button>
-
-                      {/* Comment toggle button */}
-                      <button 
-                        onClick={() => toggleComments(post.id)}
-                        className={`flex items-center gap-1.5 hover:text-emerald-600 transition-all ${
-                          post.commentsExpanded ? 'text-emerald-600 font-bold' : ''
-                        }`}
-                      >
-                        <MessageCircle className="h-4.5 w-4.5" />
-                        <span>{post.comments.length}</span>
-                      </button>
-
-                      {/* Share button */}
-                      <button 
-                        onClick={() => handleShare(post.id)}
-                        className="flex items-center gap-1.5 hover:text-emerald-600 transition-all"
-                      >
-                        <Share2 className="h-4.5 w-4.5" />
-                        <span>{post.shares}</span>
-                      </button>
-
-                      {/* Bookmark button */}
-                      <button 
-                        onClick={() => handleSave(post.id)}
-                        className={`flex items-center gap-1.5 hover:text-emerald-600 transition-all ${
-                          post.saved ? 'text-emerald-600' : ''
-                        }`}
-                      >
-                        <Bookmark className={`h-4.5 w-4.5 ${post.saved ? 'fill-emerald-500 stroke-emerald-500' : ''}`} />
-                      </button>
-
+                      />
                     </div>
+                  )}
 
-                    {/* EXPANDED COMMENTS ACCORDION */}
-                    {post.commentsExpanded && (
-                      <div className="pt-4 border-t border-stone-100 dark:border-stone-850 space-y-4 animate-fadeIn">
-                        
-                        {/* Nested comments list */}
-                        {post.comments.map(c => (
-                          <div key={c.id} className="flex gap-2.5 text-[11px] p-2 bg-[#F8F6EF]/60 dark:bg-stone-900/40 rounded-xl">
-                            <img src={c.avatar} alt={c.authorName} className="h-7 w-7 rounded-full object-cover" />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-baseline justify-between">
-                                <span className="font-extrabold text-stone-850 dark:text-stone-100">{c.authorName}</span>
-                                <span className="text-[8px] text-stone-400">{c.time}</span>
-                              </div>
-                              <p className="text-stone-600 dark:text-stone-300 mt-1 leading-relaxed">{c.text}</p>
-                            </div>
-                          </div>
-                        ))}
-
-                        {/* Reply editor form */}
-                        <div className="flex gap-2 items-center relative">
-                          <input
-                            type="text"
-                            value={commentState.text}
-                            onChange={(e) => handleReplyChange(post.id, 'text', e.target.value)}
-                            placeholder="Write an advice or comment..."
-                            className="flex-1 bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2 text-[10px] focus:outline-none focus:ring-1 focus:ring-[#2E7D32]"
-                          />
-                          
-                          {/* Quick Emoji selection */}
-                          <div className="relative">
-                            <button 
-                              onClick={() => handleReplyChange(post.id, 'emojiOpen', !commentState.emojiOpen)}
-                              className="p-1.5 text-stone-400 hover:text-stone-600"
-                            >
-                              <Smile className="h-4 w-4" />
-                            </button>
-
-                            {commentState.emojiOpen && (
-                              <div className="absolute bottom-8 right-0 bg-white border border-stone-200 rounded-xl p-2 shadow-lg flex gap-1 z-20">
-                                {['👍', '🌱', '❓', '🍃', '🙌'].map(e => (
-                                  <button key={e} onClick={() => insertEmoji(post.id, e)} className="hover:scale-125 transition-transform text-xs">{e}</button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-
-                          <button
-                            onClick={() => handleAddReply(post.id)}
-                            className="px-3.5 py-1.5 bg-[#2E7D32] hover:bg-emerald-700 text-white rounded-lg font-bold text-[9px] transition-all"
-                          >
-                            Reply
-                          </button>
-                        </div>
+                  {post.videoUrl && (
+                    <div className="relative rounded-2xl overflow-hidden border border-stone-150 h-56 bg-stone-900">
+                      <img src={post.videoThumbnail} alt="video thumbnail" className="w-full h-full object-cover opacity-60" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <button 
+                          onClick={() => addNotification("Video Playing", "Simulating video playback player.", "info")}
+                          className="p-4 bg-emerald-600 text-white rounded-full hover:scale-115 transition-transform shadow-lg"
+                        >
+                          <Play className="h-6 w-6 fill-white" />
+                        </button>
                       </div>
-                    )}
+                    </div>
+                  )}
+
+                  {/* AI Disease Tag badge */}
+                  {post.aiBadge && (
+                    <div 
+                      onClick={() => {
+                        setActiveAiPost(post);
+                        setShowAiAnalysisModal(true);
+                      }}
+                      className="px-3.5 py-2 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 cursor-pointer rounded-xl flex items-center justify-between text-[10px] text-emerald-800 dark:text-emerald-350 font-bold transition-all"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <ShieldCheck className="h-4 w-4 text-[#2E7D32]" />
+                        AI Leaf disease diagnosis report available
+                      </span>
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </div>
+                  )}
+
+                  {/* SOLID DARK GREEN ACTIONS BAR WITH WHITE ICONS */}
+                  <div className="flex justify-between items-center bg-[#1b4332] rounded-xl px-5 py-2.5 text-white text-xs select-none">
+                    
+                    {/* Comment icon button */}
+                    <button 
+                      onClick={() => toggleComments(post.id)}
+                      className="flex items-center gap-1.5 hover:text-emerald-300 transition-colors"
+                      title="Replies"
+                    >
+                      <MessageCircle className="h-4.5 w-4.5" />
+                      {post.comments.length > 0 && <span>{post.comments.length}</span>}
+                    </button>
+
+                    {/* RT Share icon */}
+                    <button 
+                      onClick={() => handleShare(post.id)}
+                      className="flex items-center gap-1 hover:text-emerald-300 transition-colors font-extrabold text-[10px]"
+                      title="Retweet"
+                    >
+                      <Share2 className="h-4 w-4 rotate-90" />
+                      <span>RT</span>
+                    </button>
+
+                    {/* Heart Like icon */}
+                    <button 
+                      onClick={() => handleLike(post.id)}
+                      className={`flex items-center gap-1.5 hover:text-emerald-300 transition-colors ${
+                        post.liked ? 'text-emerald-300 font-bold' : ''
+                      }`}
+                      title="Like"
+                    >
+                      <Heart className={`h-4.5 w-4.5 ${post.liked ? 'fill-white stroke-white' : ''}`} />
+                      <span>{post.likes}</span>
+                    </button>
+
+                    {/* Bookmark Save icon */}
+                    <button 
+                      onClick={() => handleSave(post.id)}
+                      className="hover:text-emerald-300 transition-colors"
+                      title="Bookmark"
+                    >
+                      <Bookmark className={`h-4.5 w-4.5 ${post.saved ? 'fill-white stroke-white' : ''}`} />
+                    </button>
 
                   </div>
-                );
-              })
-            )}
+
+                  {/* COMMENTS DRAWER DROPDOWN */}
+                  {post.commentsExpanded && (
+                    <div className="pt-3 space-y-3.5 border-t border-stone-100 dark:border-stone-850 animate-fadeIn text-[11px]">
+                      {post.comments.map(c => (
+                        <div key={c.id} className="flex gap-2.5 p-2 bg-[#F8F6EF]/60 dark:bg-stone-900/40 rounded-xl">
+                          <img src={c.avatar} alt={c.authorName} className="h-7 w-7 rounded-full object-cover" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-baseline justify-between">
+                              <span className="font-extrabold text-stone-850 dark:text-stone-100">{c.authorName}</span>
+                              <span className="text-[8px] text-stone-400">{c.time}</span>
+                            </div>
+                            <p className="text-stone-600 dark:text-stone-300 mt-0.5">{c.text}</p>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Reply form */}
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={commentState.text}
+                          onChange={(e) => handleReplyChange(post.id, 'text', e.target.value)}
+                          placeholder="Write a comment..."
+                          className="flex-1 bg-stone-50 dark:bg-stone-900 border border-stone-150 dark:border-stone-800 rounded-xl px-3 py-2 text-[10px] focus:outline-none"
+                        />
+                        <button
+                          onClick={() => handleAddReply(post.id)}
+                          className="px-3.5 py-1.5 bg-[#2E7D32] hover:bg-[#1b4332] text-white rounded-lg font-bold text-[9px] transition-all"
+                        >
+                          Reply
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              );
+            })}
           </div>
 
         </div>
 
-        {/* RIGHT COLUMN: RECOMMENDATIONS & SCHEMES */}
+        {/* RIGHT COLUMN: DISCOVER PEOPLE & EVENTS (White cards) */}
         <div className="lg:col-span-1 space-y-6">
           
-          {/* Weather Warning Widget */}
-          <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 dark:from-amber-500/5 dark:to-transparent border border-amber-500/30 rounded-[18px] p-5 space-y-3.5">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-600 animate-bounce" />
-              <h3 className="font-extrabold text-xs text-stone-800 dark:text-stone-200 uppercase tracking-wide">Weather Alert</h3>
-            </div>
-            <p className="text-[10px] text-stone-600 dark:text-stone-300 leading-relaxed font-semibold">
-              Heavy rain forecast in Pune & Nashik divisions for next 48 hours. Ensure proper drainage in tomato plots.
-            </p>
-          </div>
-
-          {/* Expert Profiles list */}
+          {/* Suggested Connections Card */}
           <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4">
-            <h2 className="text-xs font-black uppercase tracking-wider text-stone-400">Suggested Experts</h2>
-            <div className="space-y-3.5">
+            <div>
+              <h2 className="text-sm font-black text-stone-900 dark:text-white">Suggested Connections</h2>
+              <span className="text-[10px] text-stone-400 block mt-0.5">People to follow</span>
+            </div>
+
+            <div className="space-y-4">
               {expertProfiles.map(exp => (
-                <div key={exp.username} className="flex items-center justify-between gap-2 p-1 rounded-xl hover:bg-stone-50 dark:hover:bg-white/5 transition-all">
+                <div key={exp.username} className="flex items-center justify-between gap-2 p-0.5 rounded-xl hover:bg-stone-50 dark:hover:bg-white/5 transition-all">
                   <div 
                     onClick={() => setSelectedFarmerUsername(exp.username)}
                     className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0"
                   >
-                    <img src={exp.avatar} alt={exp.name} className="h-8 w-8 rounded-full object-cover" />
+                    <img src={exp.avatar} alt={exp.name} className="h-9 w-9 rounded-full object-cover" />
                     <div className="min-w-0">
                       <div className="flex items-center gap-0.5">
-                        <span className="font-extrabold text-[10px] text-stone-850 dark:text-stone-100 truncate block">{exp.name}</span>
-                        {exp.verified && <CheckCircle className="h-3 w-3 text-[#2E7D32] fill-emerald-50 dark:fill-stone-900" />}
+                        <span className="font-extrabold text-[11px] text-stone-850 dark:text-stone-100 truncate block">{exp.name}</span>
+                        {exp.verified && <CheckCircle className="h-3 w-3 text-[#2E7D32]" />}
                       </div>
-                      <span className="text-[8px] text-stone-400 block truncate">{exp.role}</span>
+                      <span className="text-[9px] text-stone-400 block truncate">@{exp.username}</span>
                     </div>
                   </div>
                   <button 
                     onClick={() => handleFollowToggle(exp.username)}
                     className={`px-3 py-1 rounded-lg text-[9px] font-bold transition-all ${
                       exp.following 
-                        ? 'border border-stone-300 dark:border-stone-700 text-stone-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300' 
+                        ? 'border border-stone-300 dark:border-stone-700 text-stone-500' 
                         : 'bg-[#2E7D32] hover:bg-emerald-700 text-white'
                     }`}
                   >
@@ -1199,40 +857,31 @@ export default function CommunityHub() {
             </div>
           </div>
 
-          {/* Webinars & Events Widget */}
+          {/* Community Events Card */}
           <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4">
-            <h2 className="text-xs font-black uppercase tracking-wider text-stone-400 flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-[#2E7D32]" />
-              Upcoming Webinars
-            </h2>
-            <div className="space-y-3.5">
-              {webinars.map(w => (
-                <div key={w.id} className="p-3 bg-stone-50 dark:bg-stone-900/40 border border-stone-150 dark:border-stone-850 rounded-xl space-y-1.5 hover:shadow-sm transition-all">
-                  <h4 className="font-extrabold text-[10px] text-stone-850 dark:text-stone-150 leading-tight">{w.title}</h4>
-                  <div className="flex justify-between items-center text-[8px] text-stone-400">
-                    <span>Host: {w.speaker}</span>
-                    <span className="text-[#2E7D32] font-extrabold">{w.date}</span>
-                  </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-stone-100 dark:border-stone-800 text-[8px]">
-                    <span className="text-stone-400">{w.attendees} Registered</span>
-                    <a href={w.link} className="text-[#2E7D32] font-black hover:underline">Register</a>
-                  </div>
-                </div>
-              ))}
+            <h2 className="text-sm font-black text-stone-900 dark:text-white">Community Events</h2>
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 rounded-xl space-y-2">
+              <span className="text-[9px] font-bold text-[#2E7D32] block uppercase tracking-wider">Online Webinar</span>
+              <h4 className="font-extrabold text-xs text-stone-900 dark:text-stone-150 leading-tight">
+                Webinar: Drip Irrigation Best Practices
+              </h4>
+              <div className="flex items-center gap-3 pt-2 border-t border-stone-200/40 dark:border-stone-800 text-[9px] text-stone-500 font-bold">
+                <span className="flex items-center gap-1"><Calendar className="h-3 w-3 text-[#2E7D32]" /> Aug 10, 2026</span>
+                <span>|</span>
+                <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-[#2E7D32]" /> 6:00 PM</span>
+              </div>
             </div>
           </div>
 
-          {/* Govt Schemes Info Widget */}
-          <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4">
-            <h2 className="text-xs font-black uppercase tracking-wider text-stone-400">Government Schemes</h2>
-            <div className="space-y-3.5">
-              {schemes.map(s => (
-                <div key={s.id} className="space-y-1">
-                  <h4 className="font-bold text-[10px] text-[#2E7D32] hover:underline cursor-pointer">{s.title}</h4>
-                  <p className="text-[9px] text-stone-550 dark:text-stone-300 leading-snug">{s.desc}</p>
-                </div>
-              ))}
+          {/* FarmBuddy Copyright Card (Black) */}
+          <div className="bg-stone-950 dark:bg-[#07130c] border border-stone-800 rounded-[18px] p-5 text-center text-stone-400 space-y-3 relative overflow-hidden">
+            <div className="absolute top-[-20%] right-[-10%] w-[100px] h-[100px] bg-emerald-500/10 rounded-full blur-xl" />
+            <img src="/logo_emblem.png" alt="FarmBuddy Emblem" className="h-10 w-10 mx-auto object-contain" />
+            <div>
+              <span className="text-xs font-black text-white tracking-wider block">FarmBuddy</span>
+              <span className="text-[8px] text-[#4CAF50] font-black uppercase tracking-widest block mt-0.5">— TRUST & TRACE —</span>
             </div>
+            <span className="text-[9px] text-stone-500 block">© farmbuddy.uvfarms.in.</span>
           </div>
 
         </div>
@@ -1295,7 +944,7 @@ export default function CommunityHub() {
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-[#2E7D32] hover:bg-emerald-700 text-white font-black transition-all"
+                className="w-full py-3 rounded-xl bg-[#2E7D32] hover:bg-[#1b4332] text-white font-black transition-all"
               >
                 Launch Community
               </button>
@@ -1349,7 +998,7 @@ export default function CommunityHub() {
                 <button 
                   onClick={() => {
                     setShowAiAnalysisModal(false);
-                    addNotification("Consultation Scheduled", "Request sent to Dr. Ramesh Patel.", "success");
+                    addNotification("Consultation Scheduled", "Request sent to Soil Dr. Amit.", "success");
                   }}
                   className="w-full py-2.5 rounded-xl border border-[#2E7D32] hover:bg-emerald-50 text-[#2E7D32] font-bold text-xs text-center"
                 >
@@ -1407,13 +1056,9 @@ export default function CommunityHub() {
               {activeFarmerProfile.username !== user?.email?.split('@')[0] && (
                 <button 
                   onClick={() => handleFollowToggle(activeFarmerProfile.username)}
-                  className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${
-                    activeFarmerProfile.following 
-                      ? 'border border-stone-300 dark:border-stone-700 text-stone-500 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300' 
-                      : 'bg-[#2E7D32] hover:bg-emerald-700 text-white'
-                  }`}
+                  className="px-6 py-2 rounded-xl text-xs font-bold bg-[#2E7D32] hover:bg-emerald-700 text-white"
                 >
-                  {activeFarmerProfile.following ? 'Following' : 'Follow Farmer'}
+                  Follow Farmer
                 </button>
               )}
             </div>
@@ -1433,26 +1078,6 @@ export default function CommunityHub() {
                 <div className="flex justify-between p-2.5 bg-stone-50 dark:bg-stone-900/30 rounded-xl">
                   <span>Primary Crops:</span>
                   <span className="font-extrabold text-stone-900 dark:text-white">{activeFarmerProfile.crops}</span>
-                </div>
-                <div className="flex justify-between p-2.5 bg-stone-50 dark:bg-stone-900/30 rounded-xl">
-                  <span>Communities Joined:</span>
-                  <span className="font-extrabold text-stone-900 dark:text-white">{activeFarmerProfile.joinedGroups?.join(', ') || 'Organic Farming'}</span>
-                </div>
-              </div>
-
-              {/* Farmer's recent posts list preview */}
-              <div className="space-y-3 pt-3">
-                <h4 className="font-extrabold text-xs text-stone-400 uppercase tracking-wider">Recent Timeline Posts</h4>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {posts.filter(p => p.author.username === activeFarmerProfile.username).map(p => (
-                    <div key={p.id} className="p-3 border border-stone-150 rounded-xl space-y-1.5">
-                      <span className="text-[8px] text-stone-400 block">{p.time}</span>
-                      <p className="text-[10px] text-stone-750 line-clamp-2">{p.content}</p>
-                    </div>
-                  ))}
-                  {posts.filter(p => p.author.username === activeFarmerProfile.username).length === 0 && (
-                    <p className="text-[10px] text-stone-450 italic text-center">No posts indexed for this farmer yet.</p>
-                  )}
                 </div>
               </div>
             </div>
