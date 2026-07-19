@@ -743,6 +743,17 @@
       "login_count": 1,
       "trust_score": 100,
       "created_at": "2026-07-18T06:11:28.711Z"
+    },
+    {
+      "id": 13,
+      "farmer_id": "EO_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-07-19T03:36:26.514Z"
     }
   ],
   "admins": [],

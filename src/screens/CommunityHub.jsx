@@ -771,7 +771,7 @@ export default function CommunityHub() {
                   </button>
                 </div>
 
-                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed cursor-default select-none">
                   {activeCommunity.description}
                 </p>
 
