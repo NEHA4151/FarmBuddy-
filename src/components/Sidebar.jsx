@@ -204,6 +204,10 @@ export default function Sidebar() {
             <User className="h-4 w-4" />
             Profile
           </button>
+          <button onClick={() => handleNav('community')} className={getLinkClass('community')}>
+            <Users className="h-4 w-4" />
+            Community
+          </button>
           <button onClick={() => handleNav('faqs')} className={getLinkClass('faqs')}>
             <HelpCircle className="h-4 w-4" />
             FAQ

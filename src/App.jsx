@@ -26,6 +26,7 @@ import LabourAccountsView from './screens/LabourAccountsView';
 import Leaderboard from './screens/Leaderboard';
 import RewardOverlay from './components/RewardOverlay';
 import FinanceDashboard from './screens/FinanceDashboard';
+import CommunityHub from './screens/CommunityHub';
 
 function AppContent() {
   const { currentView, setCurrentView, currentBatchId, setCurrentBatchId, user, sidebarOpen, setSidebarOpen } = useFarm();
@@ -118,6 +119,8 @@ function AppContent() {
         return <Profile />;
       case 'faqs':
         return <FAQs />;
+      case 'community':
+        return <CommunityHub />;
       // Workflow Screens
       case 'workflow-calendar':
         return <CalendarView />;
