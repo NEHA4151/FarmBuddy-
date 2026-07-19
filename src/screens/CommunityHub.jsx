@@ -25,6 +25,355 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 
+// Centralized Crop-Based Configuration mapping (Single Source of Truth)
+const CROP_COMMUNITY_CONFIGS = {
+  tomato: {
+    name: '[Tomato Growers]',
+    banner: 'https://images.unsplash.com/photo-1595855759920-86582396756a?w=800&auto=format&fit=crop&q=60',
+    description: 'Discuss vine pruning, tomato blights, and organic treatment logs.',
+    placeholder: 'Share updates about your tomato crop...',
+    hashtags: ['#TomatoDisease', '#LeafCurl', '#TomatoFarming'],
+    iconType: 'leaf',
+    events: {
+      topic: 'Webinar: Tomato Blight Organic Control & Ventilation',
+      date: 'Aug 10, 2026',
+      time: '6:00 PM'
+    },
+    samplePosts: [
+      {
+        id: 'tomato-1',
+        author: {
+          name: 'Farmer Priya',
+          username: 'PriyaFarms',
+          avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60',
+          verified: true,
+          location: 'Pune, Maharashtra'
+        },
+        time: '2h ago',
+        content: 'Anyone else seeing this type of leaf curl on their vine tomatoes?',
+        images: ['https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&auto=format&fit=crop&q=60'],
+        aiBadge: true,
+        aiAnalysis: {
+          disease: 'Early Blight (Alternaria Solani)',
+          confidence: 91,
+          recommendation: 'Remove affected lower leaves immediately to improve ventilation. Apply copper-based organic fungicides.'
+        },
+        likes: 12,
+        liked: false,
+        comments: [
+          {
+            id: 101,
+            authorName: 'Soil Dr. Amit',
+            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
+            time: '1h ago',
+            text: 'Priya, trim bottom leaves so spores do not splash up from wet soil. Neem oil is also effective.',
+            replies: []
+          }
+        ],
+        commentsExpanded: false,
+        saved: false,
+        shares: 2
+      },
+      {
+        id: 'tomato-2',
+        author: {
+          name: 'Suresh Kumar',
+          username: 'SureshGrower',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
+          verified: true,
+          location: 'Nashik, Maharashtra'
+        },
+        time: '5h ago',
+        content: 'Heirloom vine tomatoes are thriving under drip irrigation system this week.',
+        images: ['https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=600&auto=format&fit=crop&q=60'],
+        aiBadge: false,
+        likes: 22,
+        liked: false,
+        comments: [],
+        commentsExpanded: false,
+        saved: false,
+        shares: 1
+      }
+    ],
+    connections: [
+      { name: 'Soil Dr. Amit', username: 'SoilnFalter', role: 'Agronomy Specialist', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60', verified: true, followers: 2430, trustScore: 98 },
+      { name: 'Mser Nrii', username: 'PriyaFarm', role: 'Pest Specialist', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60', verified: false, followers: 840, trustScore: 88 }
+    ]
+  },
+  rice: {
+    name: '[Rice Farmers]',
+    banner: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=800&auto=format&fit=crop&q=60',
+    description: 'Paddy water management, SRI cultivation methods, and seasonal monsoon crop logs.',
+    placeholder: 'Share updates about your rice crop...',
+    hashtags: ['#SRIMethod', '#MonsoonSowing', '#PaddyWater'],
+    iconType: 'map-pin',
+    events: {
+      topic: 'Webinar: Drip Irrigation & SRI Paddy Cultivation',
+      date: 'Aug 12, 2026',
+      time: '6:00 PM'
+    },
+    samplePosts: [
+      {
+        id: 'rice-1',
+        author: {
+          name: 'Rakesh',
+          username: 'RakeshFarmBuddy',
+          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=60',
+          verified: true,
+          location: 'Satara, Maharashtra'
+        },
+        time: '4h ago',
+        content: 'Final harvest coming soon for our paddy crops! SRI method yielded excellent results.',
+        images: ['https://images.unsplash.com/photo-1536882240095-0379873feb4e?w=600&auto=format&fit=crop&q=60'],
+        aiBadge: false,
+        likes: 24,
+        liked: false,
+        comments: [],
+        commentsExpanded: false,
+        saved: true,
+        shares: 5
+      },
+      {
+        id: 'rice-2',
+        author: {
+          name: 'Aman Amit',
+          username: 'FaimFater',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
+          verified: true,
+          location: 'Coimbatore, TN'
+        },
+        time: '1d ago',
+        content: 'Spotted brown spot symptoms on some early paddy leaves. Drainage is critical here.',
+        images: ['https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=60'],
+        aiBadge: true,
+        aiAnalysis: {
+          disease: 'Brown Spot (Cochliobolus miyabeanus)',
+          confidence: 88,
+          recommendation: 'Improve soil drainage immediately. Apply potash fertilizer to strengthen paddy resistance.'
+        },
+        likes: 14,
+        liked: false,
+        comments: [],
+        commentsExpanded: false,
+        saved: false,
+        shares: 1
+      }
+    ],
+    connections: [
+      { name: 'Aman Amit', username: 'FaimFater', role: 'Paddy Expert', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=60', verified: true, followers: 1890, trustScore: 94 },
+      { name: 'Soil Dr. Amit', username: 'SoilnFalter', role: 'Agronomy Specialist', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60', verified: true, followers: 2430, trustScore: 98 }
+    ]
+  },
+  'sweet potato': {
+    name: '[Sweet Potato Hub]',
+    banner: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&auto=format&fit=crop&q=60',
+    description: 'Root growth logs, curing techniques, and sweet potato disease diagnostics.',
+    placeholder: 'Share updates about your sweet potato crop...',
+    hashtags: ['#CuringGuide', '#RootHealth', '#SoilHealth'],
+    iconType: 'map-pin',
+    events: {
+      topic: 'Webinar: Curing & Storage Techniques',
+      date: 'Aug 15, 2026',
+      time: '6:00 PM'
+    },
+    samplePosts: [
+      {
+        id: 'potato-1',
+        author: {
+          name: 'Ramesh Patel',
+          username: 'RameshAgri',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
+          verified: true,
+          location: 'Anand, Gujarat'
+        },
+        time: '2d ago',
+        content: 'Curing sweet potatoes under 30°C temperature for proper skin healing.',
+        images: ['https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=600&auto=format&fit=crop&q=60'],
+        aiBadge: false,
+        likes: 15,
+        liked: false,
+        comments: [],
+        commentsExpanded: false,
+        saved: false,
+        shares: 3
+      },
+      {
+        id: 'potato-2',
+        author: {
+          name: 'Soil Dr. Amit',
+          username: 'SoilnFalter',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
+          verified: true,
+          location: 'Pune Research Station'
+        },
+        time: '3d ago',
+        content: 'Sweet potato leaves showing black rot signs. Make sure to rotate crops and use certified seeds.',
+        images: ['https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=600&auto=format&fit=crop&q=60'],
+        aiBadge: true,
+        aiAnalysis: {
+          disease: 'Black Rot (Ceratocystis fimbriata)',
+          confidence: 89,
+          recommendation: 'Dispose of infected crop debris. Maintain strict crop rotation for at least 3-4 years.'
+        },
+        likes: 9,
+        liked: false,
+        comments: [],
+        commentsExpanded: false,
+        saved: false,
+        shares: 1
+      }
+    ],
+    connections: [
+      { name: 'Soil Dr. Amit', username: 'SoilnFalter', role: 'Agronomy Specialist', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60', verified: true, followers: 2430, trustScore: 98 },
+      { name: 'Ramesh Patel', username: 'RameshAgri', role: 'Sweet Potato Grower', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=60', verified: true, followers: 890, trustScore: 92 }
+    ]
+  },
+  apple: {
+    name: '[Apple Growers]',
+    banner: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop&q=60',
+    description: 'Best practices for pruning, harvesting, and pest control of Honeycrisp apples.',
+    placeholder: 'Share updates about your apple orchard...',
+    hashtags: ['#AppleThinning', '#OrchardPest', '#SoilHealth'],
+    iconType: 'leaf',
+    events: {
+      topic: 'Webinar: Maximizing Orchard Quality & Thinning',
+      date: 'Aug 18, 2026',
+      time: '6:00 PM'
+    },
+    samplePosts: [
+      {
+        id: 'apple-1',
+        author: {
+          name: 'Suresh Kumar',
+          username: 'SureshGrower',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
+          verified: true,
+          location: 'Shimla, HP'
+        },
+        time: '1d ago',
+        content: 'Thinning the Honeycrisp apples to ensure better fruit size and sugar concentration.',
+        images: ['https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&auto=format&fit=crop&q=60'],
+        aiBadge: false,
+        likes: 18,
+        liked: false,
+        comments: [],
+        commentsExpanded: false,
+        saved: false,
+        shares: 1
+      },
+      {
+        id: 'apple-2',
+        author: {
+          name: 'Mser Nrii',
+          username: 'PriyaFarm',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60',
+          verified: true,
+          location: 'Solan, HP'
+        },
+        time: '3d ago',
+        content: 'Detected apple scab spots on some lower foliage. Ventilation pruning is vital.',
+        images: ['https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?w=600&auto=format&fit=crop&q=60'],
+        aiBadge: true,
+        aiAnalysis: {
+          disease: 'Apple Scab (Venturia inaequalis)',
+          confidence: 87,
+          recommendation: 'Prune dense branches to allow light. Collect and burn fallen leaves to prevent overwintering.'
+        },
+        likes: 11,
+        liked: false,
+        comments: [],
+        commentsExpanded: false,
+        saved: false,
+        shares: 2
+      }
+    ],
+    connections: [
+      { name: 'Soil Dr. Amit', username: 'SoilnFalter', role: 'Agronomy Specialist', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60', verified: true, followers: 2430, trustScore: 98 },
+      { name: 'Mser Nrii', username: 'PriyaFarm', role: 'Pest Specialist', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60', verified: false, followers: 840, trustScore: 88 }
+    ]
+  },
+  coffee: {
+    name: '[Coffee Growers]',
+    banner: 'https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=800&auto=format&fit=crop&q=60',
+    description: 'Shade management, coffee rust monitoring, and premium harvest processing.',
+    placeholder: 'Share updates about your coffee crop...',
+    hashtags: ['#CoffeeRust', '#CherryMaturation', '#SoilHealth'],
+    iconType: 'droplet',
+    events: {
+      topic: 'Webinar: Managing Coffee Rust in Monsoons',
+      date: 'Aug 20, 2026',
+      time: '6:00 PM'
+    },
+    samplePosts: [
+      {
+        id: 'coffee-1',
+        author: {
+          name: 'Coffee Master',
+          username: 'CoffeeFm',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60',
+          verified: true,
+          location: 'Coorg, Karnataka'
+        },
+        time: '3d ago',
+        content: 'Coffee cherries are maturing well. Shade canopy index is perfect.',
+        images: ['https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=60'],
+        aiBadge: false,
+        likes: 31,
+        liked: false,
+        comments: [],
+        commentsExpanded: false,
+        saved: false,
+        shares: 4
+      },
+      {
+        id: 'coffee-2',
+        author: {
+          name: 'Soil Dr. Amit',
+          username: 'SoilnFalter',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
+          verified: true,
+          location: 'Western Ghats Station'
+        },
+        time: '5d ago',
+        content: 'Some rust patches noticed on arabica leaves. Spray copper fungicide before heavy monsoon rains.',
+        images: ['https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&auto=format&fit=crop&q=60'],
+        aiBadge: true,
+        aiAnalysis: {
+          disease: 'Coffee Leaf Rust (Hemileia vastatrix)',
+          confidence: 90,
+          recommendation: 'Apply copper preventive spray. Ensure shade trees do not cause too much humidity.'
+        },
+        likes: 17,
+        liked: false,
+        comments: [],
+        commentsExpanded: false,
+        saved: false,
+        shares: 2
+      }
+    ],
+    connections: [
+      { name: 'Soil Dr. Amit', username: 'SoilnFalter', role: 'Agronomy Specialist', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60', verified: true, followers: 2430, trustScore: 98 }
+    ]
+  },
+  general: {
+    name: '[General Crop Chat]',
+    banner: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop&q=60',
+    description: 'Soil diagnostics, water management, and multi-crop farming discussions.',
+    placeholder: 'Share updates about your crops...',
+    hashtags: ['#CropHealth', '#FarmingLogs', '#SoilHealth'],
+    iconType: 'leaf',
+    events: {
+      topic: 'Webinar: Integrated Crop Nutrition Management',
+      date: 'Aug 22, 2026',
+      time: '6:00 PM'
+    },
+    samplePosts: [],
+    connections: [
+      { name: 'Soil Dr. Amit', username: 'SoilnFalter', role: 'Agronomy Specialist', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60', verified: true, followers: 2430, trustScore: 98 }
+    ]
+  }
+};
+
 export default function CommunityHub() {
   const { user, addNotification, currentBatchId, batches } = useFarm();
 
@@ -43,8 +392,13 @@ export default function CommunityHub() {
     if (lower.includes('sweet potato') || lower.includes('potato')) return 'sweet potato';
     if (lower.includes('apple')) return 'apple';
     if (lower.includes('coffee')) return 'coffee';
-    return lower;
+    return 'general';
   }, [activeCrop]);
+
+  // Load centralized crop config dynamically based on current batch crop
+  const config = useMemo(() => {
+    return CROP_COMMUNITY_CONFIGS[cropKeyword] || CROP_COMMUNITY_CONFIGS.general;
+  }, [cropKeyword]);
 
   // Modal / Side drawer states
   const [selectedFarmerUsername, setSelectedFarmerUsername] = useState(null);
@@ -55,376 +409,31 @@ export default function CommunityHub() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHashtag, setSelectedHashtag] = useState(null);
 
-  // Create Post states
+  // Create Post text input
   const [postText, setPostText] = useState('');
   const [postAttachments, setPostAttachments] = useState([]); // Array of { name, type, url }
 
   // Comment Reply Form state map: { [postId]: { text: '', emojiOpen: false } }
   const [repliesState, setRepliesState] = useState({});
 
-  // Dynamic Community Group Config based on Crop Type
-  const communities = useMemo(() => {
-    const list = [];
-    if (cropKeyword === 'tomato') {
-      list.push({
-        id: 'tomato',
-        name: '[Tomato Growers]',
-        iconType: 'leaf',
-        banner: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&auto=format&fit=crop&q=60',
-        description: 'Discuss vine pruning, tomato blights, and organic treatment logs.',
-        members: 1240,
-        rules: '1. Only tomato topics. 2. Share organic pest control tips. 3. No commercial spam.',
-        admins: ['Soil Dr. Amit', 'Farmer Priya'],
-        pinnedPost: 'Welcome to the Tomato Growers group! Composting guide is updated below.'
-      });
-    } else if (cropKeyword === 'rice') {
-      list.push({
-        id: 'rice',
-        name: '[Rice Farmers]',
-        iconType: 'map-pin',
-        banner: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=800&auto=format&fit=crop&q=60',
-        description: 'Paddy water management, SRI, and southern monsoon crop logs.',
-        members: 850,
-        rules: '1. Rice and SRI topics. 2. Post seasonal water levels.',
-        admins: ['Aman Amit', 'Mser Nrii'],
-        pinnedPost: 'SRI method yields up to 40% more crop weight. Read our quick manual.'
-      });
-    } else if (cropKeyword === 'sweet potato') {
-      list.push({
-        id: 'sweet-potato',
-        name: '[Sweet Potato Hub]',
-        iconType: 'map-pin',
-        banner: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&auto=format&fit=crop&q=60',
-        description: 'Root growth logs, curing techniques, and sweet potato disease diagnostics.',
-        members: 310,
-        rules: '1. Share root logs. 2. Curing steps recommendations.',
-        admins: ['Soil Dr. Amit'],
-        pinnedPost: 'Optimal curing temperature is 29°C with 90% humidity for 5-7 days.'
-      });
-    } else if (cropKeyword === 'apple') {
-      list.push({
-        id: 'apple',
-        name: '[Apple Growers]',
-        iconType: 'leaf',
-        banner: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop&q=60',
-        description: 'Best practices for pruning, harvesting, and pest control of Honeycrisp apples.',
-        members: 420,
-        rules: '1. Apple pruning timelines only. 2. Organic pest control guides.',
-        admins: ['Soil Dr. Amit'],
-        pinnedPost: 'Summer pruning guidelines for maximizing sun exposure are uploaded.'
-      });
-    } else if (cropKeyword === 'coffee') {
-      list.push({
-        id: 'coffee',
-        name: '[Coffee Growers]',
-        iconType: 'droplet',
-        banner: 'https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=800&auto=format&fit=crop&q=60',
-        description: 'Shade management, coffee rust monitoring, and harvest processing.',
-        members: 280,
-        rules: '1. Focus on quality cherries. 2. Share rust alerts.',
-        admins: ['Soil Dr. Amit'],
-        pinnedPost: 'Coffee rust preventive spray schedule has been updated for this monsoon.'
-      });
-    } else {
-      // Dynamic fallback
-      list.push({
-        id: 'dynamic',
-        name: `[${activeCrop} Growers]`,
-        iconType: 'leaf',
-        banner: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop&q=60',
-        description: `Discussion group dedicated to ${activeCrop} cultivation and farming logs.`,
-        members: 150,
-        rules: '1. Respect all farmers. 2. Keep posts relevant to this crop.',
-        admins: ['Soil Dr. Amit'],
-        pinnedPost: `Welcome to the ${activeCrop} Growers community!`
-      });
+  // Centralized crop-isolated local post databases state
+  const [postsByCrop, setPostsByCrop] = useState({});
+
+  // Active timeline posts filtered dynamically by active crop state
+  const activePosts = useMemo(() => {
+    if (!postsByCrop[cropKeyword]) {
+      setPostsByCrop(prev => ({
+        ...prev,
+        [cropKeyword]: config.samplePosts
+      }));
+      return config.samplePosts;
     }
-    return list;
-  }, [cropKeyword, activeCrop]);
+    return postsByCrop[cropKeyword];
+  }, [cropKeyword, config, postsByCrop]);
 
-  const activeCommunity = communities[0];
-
-  // Dynamic Trending Hashtags based on Crop
-  const trendingHashtags = useMemo(() => {
-    if (cropKeyword === 'tomato') {
-      return [
-        { tag: '#TomatoDisease', posts: 142 },
-        { tag: '#OrganicFarming', posts: 89 },
-        { tag: '#SoilHealth', posts: 53 }
-      ];
-    } else if (cropKeyword === 'rice') {
-      return [
-        { tag: '#SRIMethod', posts: 110 },
-        { tag: '#MonsoonSowing', posts: 95 },
-        { tag: '#PaddyWater', posts: 42 }
-      ];
-    } else if (cropKeyword === 'apple') {
-      return [
-        { tag: '#AppleThinning', posts: 64 },
-        { tag: '#OrchardPest', posts: 38 },
-        { tag: '#SoilHealth', posts: 24 }
-      ];
-    } else if (cropKeyword === 'sweet potato') {
-      return [
-        { tag: '#CuringGuide', posts: 45 },
-        { tag: '#RootHealth', posts: 29 },
-        { tag: '#SoilHealth', posts: 12 }
-      ];
-    } else if (cropKeyword === 'coffee') {
-      return [
-        { tag: '#CoffeeRust', posts: 72 },
-        { tag: '#CherryMaturation', posts: 51 },
-        { tag: '#SoilHealth', posts: 33 }
-      ];
-    }
-    return [
-      { tag: '#CropCare', posts: 31 },
-      { tag: '#FarmingLogs', posts: 18 },
-      { tag: '#SoilHealth', posts: 10 }
-    ];
-  }, [cropKeyword]);
-
-  // Suggested Experts List
-  const [expertProfiles, setExpertProfiles] = useState([
-    {
-      username: 'SoilnFalter',
-      name: 'Soil Dr. Amit',
-      role: 'Agronomy Specialist',
-      verified: true,
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
-      location: 'Agricultural Research Inst, Pune',
-      experience: '15 Years Soil Health Research',
-      crops: 'Soil Nutrition, Fertilizers',
-      followers: 2430,
-      joinedGroups: ['[Organic Growers]'],
-      trustScore: 98,
-      following: false
-    },
-    {
-      username: 'FaimFater',
-      name: 'Aman Amit',
-      role: 'Paddy Expert',
-      verified: true,
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=60',
-      location: 'Nashik, Maharashtra',
-      experience: '10 Years Rice Cultivation',
-      crops: 'Basmati Rice, SRI Method',
-      followers: 1890,
-      joinedGroups: ['[South India Hub]'],
-      trustScore: 94,
-      following: false
-    },
-    {
-      username: 'PriyaFarm',
-      name: 'Mser Nrii',
-      role: 'Pest Specialist',
-      verified: false,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60',
-      location: 'Coimbatore, TN',
-      experience: '6 Years Integrated Pest Mgmt',
-      crops: 'Chili, Grapes, Tomatoes',
-      followers: 840,
-      joinedGroups: ['[Hydroponic Hub]'],
-      trustScore: 88,
-      following: false
-    }
-  ]);
-
-  // Combined Posts Database
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      author: {
-        name: 'Farmer Priya',
-        username: 'PriyaFarms',
-        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60',
-        verified: true,
-        location: 'Pune, Maharashtra'
-      },
-      time: '2h ago',
-      content: 'Anyone else seeing this type of leaf curl on their vine tomatoes?',
-      crop: 'Tomatoes',
-      location: 'Plot B-North',
-      images: [
-        'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&auto=format&fit=crop&q=60'
-      ],
-      aiBadge: true,
-      aiAnalysis: {
-        disease: 'Early Blight (Alternaria Solani)',
-        confidence: 91,
-        recommendation: 'Remove affected lower leaves immediately to improve ventilation. Apply copper-based organic fungicides.'
-      },
-      likes: 12,
-      liked: false,
-      comments: [
-        {
-          id: 101,
-          authorName: 'Soil Dr. Amit',
-          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
-          time: '1h ago',
-          text: 'Priya, definitely trim those bottom leaves so they do not touch the damp soil. High moisture accelerates Alternaria spores. neem oil spray at 2% is also effective.',
-          replies: []
-        }
-      ],
-      commentsExpanded: false,
-      saved: false,
-      shares: 2
-    },
-    {
-      id: 2,
-      author: {
-        name: 'Rakesh',
-        username: 'RakeshFarmBuddy',
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=60',
-        verified: true,
-        location: 'Satara, Maharashtra'
-      },
-      time: '4h ago',
-      content: 'Final harvest coming soon for our paddy crops!',
-      crop: 'Paddy Rice',
-      location: 'Plot D-South',
-      videoUrl: 'mock_video',
-      videoThumbnail: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=600&auto=format&fit=crop&q=60',
-      aiBadge: false,
-      likes: 24,
-      liked: true,
-      comments: [],
-      commentsExpanded: false,
-      saved: true,
-      shares: 5
-    },
-    {
-      id: 3,
-      author: {
-        name: 'Suresh Kumar',
-        username: 'SureshGrower',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
-        verified: true,
-        location: 'Shimla, HP'
-      },
-      time: '1d ago',
-      content: 'Thinning the Honeycrisp apples to ensure better fruit size and sugar concentration.',
-      crop: 'Organic Honeycrisp Apples',
-      location: 'Plot A-West',
-      images: [
-        'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&auto=format&fit=crop&q=60'
-      ],
-      aiBadge: false,
-      likes: 18,
-      liked: false,
-      comments: [],
-      commentsExpanded: false,
-      saved: false,
-      shares: 1
-    },
-    {
-      id: 4,
-      author: {
-        name: 'Ramesh Patel',
-        username: 'RameshAgri',
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=60',
-        verified: true,
-        location: 'Anand, Gujarat'
-      },
-      time: '2d ago',
-      content: 'Curing sweet potatoes under 30°C temperature for proper skin healing.',
-      crop: 'Japanese Sweet Potatoes',
-      location: 'Plot C-East',
-      images: [
-        'https://images.unsplash.com/photo-1596097635121-14b63b7a0c19?w=600&auto=format&fit=crop&q=60'
-      ],
-      aiBadge: false,
-      likes: 15,
-      liked: false,
-      comments: [],
-      commentsExpanded: false,
-      saved: false,
-      shares: 3
-    },
-    {
-      id: 5,
-      author: {
-        name: 'Coffee Master',
-        username: 'CoffeeFm',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60',
-        verified: true,
-        location: 'Coorg, Karnataka'
-      },
-      time: '3d ago',
-      content: 'Coffee cherries are maturing well. Shade canopy index is perfect.',
-      crop: 'Premium Arabica Coffee',
-      location: 'Hills-Slope B',
-      images: [
-        'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=60'
-      ],
-      aiBadge: false,
-      likes: 31,
-      liked: false,
-      comments: [],
-      commentsExpanded: false,
-      saved: false,
-      shares: 4
-    }
-  ]);
-
-  // Combined Active User Profile
-  const activeFarmerProfile = useMemo(() => {
-    if (!selectedFarmerUsername) return null;
-    return expertProfiles.find(f => f.username === selectedFarmerUsername) || {
-      username: selectedFarmerUsername,
-      name: selectedFarmerUsername === 'PriyaFarms' ? 'Farmer Priya' : 'Rakesh',
-      role: 'Farmer',
-      verified: true,
-      avatar: selectedFarmerUsername === 'PriyaFarms' 
-        ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60'
-        : 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=60',
-      location: 'Maharashtra Region',
-      experience: '5 Years Cultivation',
-      crops: activeCrop,
-      followers: 430,
-      joinedGroups: [activeCommunity.name],
-      trustScore: 92,
-      following: false
-    };
-  }, [selectedFarmerUsername, expertProfiles, activeCrop, activeCommunity]);
-
-  // Dynamic Webinar Topic based on Crop
-  const activeWebinarTopic = useMemo(() => {
-    if (cropKeyword === 'tomato') {
-      return 'Webinar: Tomato Blight Organic Control & Ventilation';
-    } else if (cropKeyword === 'rice') {
-      return 'Webinar: Drip Irrigation & SRI Paddy Cultivation';
-    } else if (cropKeyword === 'apple') {
-      return 'Webinar: Maximizing Orchard Quality & Thinning';
-    } else if (cropKeyword === 'sweet potato') {
-      return 'Webinar: Curing & Storage Techniques';
-    } else if (cropKeyword === 'coffee') {
-      return 'Webinar: Managing Coffee Rust in Monsoons';
-    }
-    return 'Webinar: Soil Health & Canopy Index Management';
-  }, [cropKeyword]);
-
-  // Filter Timeline Posts (Lock to active crop category!)
+  // Filter Timeline Posts (Search & Hashtags inside active crop category!)
   const filteredPosts = useMemo(() => {
-    return posts.filter(post => {
-      // Dynamic Crop Filtering
-      const postCropLower = post.crop ? post.crop.toLowerCase() : '';
-      
-      if (cropKeyword === 'tomato') {
-        if (!postCropLower.includes('tomato')) return false;
-      } else if (cropKeyword === 'rice') {
-        if (!postCropLower.includes('rice') && !postCropLower.includes('paddy')) return false;
-      } else if (cropKeyword === 'sweet potato') {
-        if (!postCropLower.includes('sweet potato') && !postCropLower.includes('potato')) return false;
-      } else if (cropKeyword === 'apple') {
-        if (!postCropLower.includes('apple')) return false;
-      } else if (cropKeyword === 'coffee') {
-        if (!postCropLower.includes('coffee')) return false;
-      } else {
-        // Fallback match using normalized keyword
-        if (!postCropLower.includes(cropKeyword)) return false;
-      }
-
+    return activePosts.filter(post => {
       // Search Query filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -440,58 +449,87 @@ export default function CommunityHub() {
 
       return true;
     }).sort((a, b) => b.id - a.id);
-  }, [posts, searchQuery, selectedHashtag, cropKeyword]);
+  }, [activePosts, searchQuery, selectedHashtag]);
+
+  // Combined Active User Profile
+  const activeFarmerProfile = useMemo(() => {
+    if (!selectedFarmerUsername) return null;
+    const allSuggested = config.connections;
+    const match = allSuggested.find(f => f.username === selectedFarmerUsername);
+    if (match) {
+      return {
+        ...match,
+        experience: 'Research Advisor',
+        crops: activeCrop,
+        joinedGroups: [config.name],
+        following: false
+      };
+    }
+    return {
+      username: selectedFarmerUsername,
+      name: selectedFarmerUsername === 'PriyaFarms' ? 'Farmer Priya' : 'Rakesh',
+      role: 'Farmer',
+      verified: true,
+      avatar: selectedFarmerUsername === 'PriyaFarms' 
+        ? 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60'
+        : 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=60',
+      location: 'Maharashtra Region',
+      experience: '5 Years Cultivation',
+      crops: activeCrop,
+      followers: 430,
+      joinedGroups: [config.name],
+      trustScore: 92,
+      following: false
+    };
+  }, [selectedFarmerUsername, config, activeCrop]);
 
   // Social actions
   const handleLike = (postId) => {
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        return {
-          ...p,
-          likes: p.liked ? p.likes - 1 : p.likes + 1,
-          liked: !p.liked
-        };
-      }
-      return p;
-    }));
+    setPostsByCrop(prev => {
+      const cropList = prev[cropKeyword] || [];
+      const updated = cropList.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            likes: p.liked ? p.likes - 1 : p.likes + 1,
+            liked: !p.liked
+          };
+        }
+        return p;
+      });
+      return { ...prev, [cropKeyword]: updated };
+    });
   };
 
   const handleSave = (postId) => {
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        return { ...p, saved: !p.saved };
-      }
-      return p;
-    }));
+    setPostsByCrop(prev => {
+      const cropList = prev[cropKeyword] || [];
+      const updated = cropList.map(p => {
+        if (p.id === postId) {
+          return { ...p, saved: !p.saved };
+        }
+        return p;
+      });
+      return { ...prev, [cropKeyword]: updated };
+    });
     addNotification("Bookmarked", "Discussion added to saved list.", "success");
   };
 
   const handleShare = (postId) => {
     navigator.clipboard.writeText(`https://farmbuddy.uvfarms.in/community/post/${postId}`);
     addNotification("Copied Link", "Link copied to clipboard.", "success");
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) return { ...p, shares: p.shares + 1 };
-      return p;
-    }));
+    setPostsByCrop(prev => {
+      const cropList = prev[cropKeyword] || [];
+      const updated = cropList.map(p => {
+        if (p.id === postId) return { ...p, shares: p.shares + 1 };
+        return p;
+      });
+      return { ...prev, [cropKeyword]: updated };
+    });
   };
 
   const handleFollowToggle = (username) => {
-    setExpertProfiles(prev => prev.map(e => {
-      if (e.username === username) {
-        const nextState = !e.following;
-        addNotification(
-          nextState ? "Followed Expert" : "Unfollowed",
-          nextState ? `Following ${e.name}` : `Unfollowed ${e.name}`,
-          "success"
-        );
-        return {
-          ...e,
-          following: nextState,
-          followers: nextState ? e.followers + 1 : e.followers - 1
-        };
-      }
-      return e;
-    }));
+    addNotification("Connection Updated", `You updated connection status for @${username}`, "success");
   };
 
   // Create Post Submit
@@ -500,7 +538,7 @@ export default function CommunityHub() {
     if (!postText.trim() && postAttachments.length === 0) return;
 
     const newPost = {
-      id: posts.length + 1,
+      id: `${cropKeyword}-${Date.now()}`,
       author: {
         name: user?.name || 'Farmer Friend',
         username: user?.email ? user.email.split('@')[0] : 'me',
@@ -517,7 +555,7 @@ export default function CommunityHub() {
       aiAnalysis: postText.includes('spot') || postText.includes('blight') ? {
         disease: 'Early Spot / Blight Suspect',
         confidence: 85,
-        recommendation: 'System detected signs of foliage fungus. Trim lower leaves and spray organic suspension.'
+        recommendation: 'System detected signs of foliage fungus. Prune bottom leaves and apply organic copper formulation.'
       } : null,
       likes: 0,
       liked: false,
@@ -527,20 +565,28 @@ export default function CommunityHub() {
       shares: 0
     };
 
-    setPosts(prev => [newPost, ...prev]);
-    addNotification("Posted successfully", `Your update is live in the ${activeCrop} Community feed.`, "success");
+    setPostsByCrop(prev => ({
+      ...prev,
+      [cropKeyword]: [newPost, ...(prev[cropKeyword] || [])]
+    }));
+
+    addNotification("Posted successfully", `Your update is live in the ${config.name} feed.`, "success");
     setPostText('');
     setPostAttachments([]);
   };
 
   // Comments toggles & updates
   const toggleComments = (postId) => {
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        return { ...p, commentsExpanded: !p.commentsExpanded };
-      }
-      return p;
-    }));
+    setPostsByCrop(prev => {
+      const cropList = prev[cropKeyword] || [];
+      const updated = cropList.map(p => {
+        if (p.id === postId) {
+          return { ...p, commentsExpanded: !p.commentsExpanded };
+        }
+        return p;
+      });
+      return { ...prev, [cropKeyword]: updated };
+    });
   };
 
   const handleReplyChange = (postId, field, value) => {
@@ -557,23 +603,27 @@ export default function CommunityHub() {
     const postState = repliesState[postId];
     if (!postState || !postState.text.trim()) return;
 
-    setPosts(prev => prev.map(p => {
-      if (p.id === postId) {
-        const newComment = {
-          id: p.comments.length + 101,
-          authorName: user?.name || 'Farmer Friend',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=60',
-          time: 'Just now',
-          text: postState.text,
-          replies: []
-        };
-        return {
-          ...p,
-          comments: [...p.comments, newComment]
-        };
-      }
-      return p;
-    }));
+    setPostsByCrop(prev => {
+      const cropList = prev[cropKeyword] || [];
+      const updated = cropList.map(p => {
+        if (p.id === postId) {
+          const newComment = {
+            id: p.comments.length + 101,
+            authorName: user?.name || 'Farmer Friend',
+            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=60',
+            time: 'Just now',
+            text: postState.text,
+            replies: []
+          };
+          return {
+            ...p,
+            comments: [...p.comments, newComment]
+          };
+        }
+        return p;
+      });
+      return { ...prev, [cropKeyword]: updated };
+    });
 
     handleReplyChange(postId, 'text', '');
   };
@@ -598,23 +648,18 @@ export default function CommunityHub() {
         {/* LEFT COLUMN: ACTIVE GROUP INFO & HASHTAGS */}
         <div className="lg:col-span-1 space-y-6">
           
-          {/* Active Group Highlight (Read-only) */}
-          <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4">
+          {/* Active Group Highlight */}
+          <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4 animate-fadeIn">
             <h2 className="text-sm font-black text-stone-900 dark:text-white">Active Community</h2>
             <div className="space-y-3">
-              {communities.map(comm => (
-                <div 
-                  key={comm.id}
-                  className="flex items-center gap-3 p-2.5 rounded-xl bg-[#F8F6EF]/60 dark:bg-emerald-950/10 border-l-4 border-[#2E7D32]"
-                >
-                  <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/20">
-                    {renderGroupIcon(comm.iconType)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-extrabold text-xs truncate text-stone-850 dark:text-stone-100">{comm.name}</h3>
-                  </div>
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#F8F6EF]/60 dark:bg-emerald-950/10 border-l-4 border-[#2E7D32]">
+                <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/20">
+                  {renderGroupIcon(config.iconType)}
                 </div>
-              ))}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-extrabold text-xs truncate text-stone-850 dark:text-stone-100">{config.name}</h3>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -622,17 +667,17 @@ export default function CommunityHub() {
           <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4">
             <h2 className="text-sm font-black text-stone-900 dark:text-white">Trending Topics</h2>
             <div className="space-y-3 font-semibold text-xs text-stone-600 dark:text-stone-300">
-              {trendingHashtags.map(t => (
+              {config.hashtags.map(tag => (
                 <div 
-                  key={t.tag}
+                  key={tag}
                   onClick={() => {
-                    setSelectedHashtag(selectedHashtag === t.tag ? null : t.tag);
+                    setSelectedHashtag(selectedHashtag === tag ? null : tag);
                   }}
                   className={`cursor-pointer hover:text-[#2E7D32] transition-colors py-1 block ${
-                    selectedHashtag === t.tag ? 'text-[#2E7D32] font-black' : ''
+                    selectedHashtag === tag ? 'text-[#2E7D32] font-black' : ''
                   }`}
                 >
-                  {t.tag}
+                  {tag}
                 </div>
               ))}
             </div>
@@ -648,28 +693,28 @@ export default function CommunityHub() {
             <h1 className="text-xl font-extrabold tracking-tight">Community Hub</h1>
           </div>
 
-          {/* CREATE POST INPUT BAR ROW (Auto-tagged to active Crop and Plot) */}
+          {/* CREATE POST INPUT BAR ROW */}
           <div className="flex items-center gap-3 bg-white dark:bg-[#121f17] p-3.5 border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] shadow-sm">
             <div className="relative flex-1">
               <input
                 type="text"
                 value={postText}
                 onChange={(e) => setPostText(e.target.value)}
-                placeholder={`Post updates about ${activeCrop}...`}
+                placeholder={config.placeholder}
                 className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-full pl-5 pr-4 py-2 text-xs placeholder-stone-450 focus:outline-none focus:ring-1 focus:ring-[#2E7D32] font-semibold"
               />
             </div>
             
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => addNotification("Attach Image", "Local image selection trigger.", "info")}
+                onClick={() => addNotification("Attach Image", "Upload image attachments trigger.", "info")}
                 className="p-2 bg-[#1b4332] text-white hover:bg-emerald-950 rounded-xl transition-all"
                 title="Upload Image"
               >
                 <ImageIcon className="h-3.5 w-3.5" />
               </button>
               <button 
-                onClick={() => addNotification("Attach Video", "Local video selection trigger.", "info")}
+                onClick={() => addNotification("Attach Video", "Upload video attachments trigger.", "info")}
                 className="p-2 bg-[#1b4332] text-white hover:bg-emerald-950 rounded-xl transition-all"
                 title="Upload Video"
               >
@@ -688,7 +733,7 @@ export default function CommunityHub() {
 
           {/* SELECTED HASHTAG FILTER */}
           {selectedHashtag && (
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-950/20 rounded-2xl flex justify-between items-center">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-950/20 rounded-2xl flex justify-between items-center animate-fadeIn">
               <span className="text-xs font-bold text-[#2E7D32]">Showing matches for: <strong>{selectedHashtag}</strong></span>
               <button onClick={() => setSelectedHashtag(null)} className="text-stone-400 hover:text-stone-600">
                 <X className="h-4 w-4" />
@@ -696,42 +741,40 @@ export default function CommunityHub() {
             </div>
           )}
 
-          {/* ISOLATED COMMUNITY BANNER & DETAILS */}
-          {activeCommunity && (
-            <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] overflow-hidden shadow-sm">
-              <div className="h-24 relative">
-                <img src={activeCommunity.banner} alt={activeCommunity.name} className="w-full h-full object-cover" />
-              </div>
-              <div className="p-4 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-base font-extrabold text-stone-900 dark:text-white flex items-center gap-1.5">
-                      {activeCommunity.name}
-                      <CheckCircle className="h-3.5 w-3.5 text-[#2E7D32]" />
-                    </h2>
-                    <span className="text-[9px] text-[#2E7D32] font-black block mt-0.5">
-                      {activeCommunity.members} Members
-                    </span>
-                  </div>
+          {/* DYNAMIC COMMUNITY BANNER & DETAILS */}
+          <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] overflow-hidden shadow-sm animate-fadeIn">
+            <div className="h-28 relative bg-stone-100 dark:bg-stone-900">
+              <img src={config.banner} alt={config.name} className="w-full h-full object-cover" />
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-base font-extrabold text-stone-900 dark:text-white flex items-center gap-1.5">
+                    {config.name}
+                    <CheckCircle className="h-3.5 w-3.5 text-[#2E7D32]" />
+                  </h2>
+                  <span className="text-[9px] text-[#2E7D32] font-black block mt-0.5">
+                    {config.members} Members
+                  </span>
                 </div>
-                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed cursor-default select-none">
-                  {activeCommunity.description}
-                </p>
+              </div>
+              <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+                {config.description}
+              </p>
 
-                {/* Admins & Guidelines */}
-                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-stone-100 dark:border-stone-850 text-[10px]">
-                  <div>
-                    <span className="font-extrabold block text-stone-400 uppercase tracking-wider mb-1">Admins</span>
-                    <p className="font-bold text-[#2E7D32]">{activeCommunity.admins.join(', ')}</p>
-                  </div>
-                  <div>
-                    <span className="font-extrabold block text-stone-400 uppercase tracking-wider mb-1">Guidelines</span>
-                    <p className="text-stone-500 italic">{activeCommunity.rules}</p>
-                  </div>
+              {/* Guidelines & Admins */}
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-stone-100 dark:border-stone-850 text-[10px]">
+                <div>
+                  <span className="font-extrabold block text-stone-400 uppercase tracking-wider mb-1">Admins</span>
+                  <p className="font-bold text-[#2E7D32]">{config.samplePosts[0]?.author.name || 'Soil Dr. Amit'}</p>
+                </div>
+                <div>
+                  <span className="font-extrabold block text-stone-400 uppercase tracking-wider mb-1">Guidelines</span>
+                  <p className="text-stone-500 italic">{config.rules}</p>
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
           {/* TIMELINE FEED */}
           <div className="space-y-4">
@@ -745,7 +788,7 @@ export default function CommunityHub() {
               filteredPosts.map(post => {
                 const commentState = repliesState[post.id] || { text: '', emojiOpen: false };
                 return (
-                  <div key={post.id} className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4 hover:shadow-md transition-all duration-300">
+                  <div key={post.id} className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4 hover:shadow-md transition-all duration-300 animate-fadeIn">
                     
                     {/* Top row */}
                     <div className="flex justify-between items-start">
@@ -791,13 +834,18 @@ export default function CommunityHub() {
                       {post.content}
                     </p>
 
-                    {/* Images / Videos */}
-                    {post.images && post.images.length > 0 && !post.videoUrl && (
-                      <div className="rounded-2xl overflow-hidden border border-stone-100">
+                    {/* Images / Videos (Strictly matching - or custom no image placeholder!) */}
+                    {post.images && post.images.length > 0 && !post.videoUrl ? (
+                      <div className="rounded-2xl overflow-hidden border border-stone-100 dark:border-stone-850">
                         <img 
                           src={post.images[0]} 
                           alt="Crop log" 
                           className="w-full h-64 object-cover cursor-pointer"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = ''; // Clear image to render placeholder text
+                            addNotification("Image Error", "Failed to load custom crop asset. Rendering placeholder.", "error");
+                          }}
                           onClick={() => {
                             if (post.aiBadge) {
                               setActiveAiPost(post);
@@ -806,9 +854,7 @@ export default function CommunityHub() {
                           }}
                         />
                       </div>
-                    )}
-
-                    {post.videoUrl && (
+                    ) : post.videoUrl ? (
                       <div className="relative rounded-2xl overflow-hidden border border-stone-150 h-56 bg-stone-900">
                         <img src={post.videoThumbnail} alt="video thumbnail" className="w-full h-full object-cover opacity-60" />
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -819,6 +865,11 @@ export default function CommunityHub() {
                             <Play className="h-6 w-6 fill-white" />
                           </button>
                         </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border-2 border-dashed border-stone-200 dark:border-stone-800 p-6 text-center text-stone-400 select-none bg-stone-50/50 dark:bg-stone-900/10">
+                        <ImageIcon className="h-6 w-6 mx-auto mb-1 text-stone-350 dark:text-stone-750" />
+                        <p className="text-[10px] font-bold">No image uploaded</p>
                       </div>
                     )}
 
@@ -924,15 +975,15 @@ export default function CommunityHub() {
         {/* RIGHT COLUMN: SUGGESTED EXPERTS & WEBINAR */}
         <div className="lg:col-span-1 space-y-6">
           
-          {/* Suggested Experts */}
-          <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4">
+          {/* Suggested Connections (Crop-isolated) */}
+          <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4 animate-fadeIn">
             <div>
               <h2 className="text-sm font-black text-stone-900 dark:text-white">Suggested Connections</h2>
               <span className="text-[10px] text-stone-400 block mt-0.5">People to follow</span>
             </div>
 
             <div className="space-y-4">
-              {expertProfiles.map(exp => (
+              {config.connections.map(exp => (
                 <div key={exp.username} className="flex items-center justify-between gap-2 p-0.5 rounded-xl hover:bg-stone-50 dark:hover:bg-white/5 transition-all">
                   <div 
                     onClick={() => setSelectedFarmerUsername(exp.username)}
@@ -949,35 +1000,30 @@ export default function CommunityHub() {
                   </div>
                   <button 
                     onClick={() => handleFollowToggle(exp.username)}
-                    className={`px-3 py-1 rounded-lg text-[9px] font-bold transition-all ${
-                      exp.following 
-                        ? 'border border-stone-300 dark:border-stone-700 text-stone-500' 
-                        : 'bg-[#2E7D32] hover:bg-emerald-700 text-white'
-                    }`}
+                    className="px-3 py-1 rounded-lg text-[9px] font-bold bg-[#2E7D32] hover:bg-emerald-700 text-white transition-all"
                   >
-                    {exp.following ? 'Following' : 'Follow'}
+                    Follow
                   </button>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Dynamic Webinar/Event based on crop */}
-          <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4">
+          {/* Dynamic Crop Webinar/Event */}
+          <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4 animate-fadeIn">
             <h2 className="text-sm font-black text-stone-900 dark:text-white">Community Events</h2>
             <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 rounded-xl space-y-2">
               <span className="text-[9px] font-bold text-[#2E7D32] block uppercase tracking-wider">Online Webinar</span>
               <h4 className="font-extrabold text-xs text-stone-900 dark:text-stone-150 leading-tight">
-                {activeWebinarTopic}
+                {config.events.topic}
               </h4>
               <div className="flex items-center gap-3 pt-2 border-t border-stone-200/40 dark:border-stone-800 text-[9px] text-stone-500 font-bold">
-                <span className="flex items-center gap-1"><Calendar className="h-3 w-3 text-[#2E7D32]" /> Aug 10, 2026</span>
+                <span className="flex items-center gap-1"><Calendar className="h-3 w-3 text-[#2E7D32]" /> {config.events.date}</span>
                 <span>|</span>
-                <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-[#2E7D32]" /> 6:00 PM</span>
+                <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-[#2E7D32]" /> {config.events.time}</span>
               </div>
             </div>
           </div>
-
 
         </div>
 
@@ -1082,15 +1128,6 @@ export default function CommunityHub() {
                   <span className="text-[9px] text-stone-400 uppercase font-bold tracking-wider">Trust Score</span>
                 </div>
               </div>
-
-              {activeFarmerProfile.username !== user?.email?.split('@')[0] && (
-                <button 
-                  onClick={() => handleFollowToggle(activeFarmerProfile.username)}
-                  className="px-6 py-2 rounded-xl text-xs font-bold bg-[#2E7D32] hover:bg-emerald-700 text-white"
-                >
-                  Follow Farmer
-                </button>
-              )}
             </div>
 
             <div className="space-y-4 flex-1">
@@ -1099,7 +1136,7 @@ export default function CommunityHub() {
               <div className="space-y-3 text-[11px] font-semibold text-stone-700 dark:text-stone-300">
                 <div className="flex justify-between p-2.5 bg-stone-50 dark:bg-stone-900/30 rounded-xl">
                   <span>Farm Location:</span>
-                  <span className="font-extrabold text-stone-900 dark:text-white">{activeFarmerProfile.location}</span>
+                  <span className="font-extrabold text-stone-900 dark:text-white">{activeFarmerProfile.location || 'Maharashtra Region'}</span>
                 </div>
                 <div className="flex justify-between p-2.5 bg-stone-50 dark:bg-stone-900/30 rounded-xl">
                   <span>Experience:</span>
