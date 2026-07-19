@@ -8,7 +8,14 @@
   body {
     background-color: #F8F6ED;
     color: #1F2937;
+    cursor: default;
+    user-select: none;
     @apply font-sans antialiased transition-colors duration-300;
+  }
+  
+  input, textarea, [contenteditable="true"] {
+    cursor: text;
+    user-select: text;
   }
   
   body.dark {
