@@ -17,9 +17,39 @@ import {
   Play,
   Droplet,
   Clock,
-  MoreHorizontal,
   Users
 } from 'lucide-react';
+
+// Import local curated crop images (REAL photographs/photorealistic artwork, not SVGs)
+import tomatoHealthy from '../assets/community/tomato/healthy-1.jpg';
+import tomatoLeafCurl from '../assets/community/tomato/leaf-curl.jpg';
+import tomatoBlight from '../assets/community/tomato/blight.jpg';
+import tomatoHarvest from '../assets/community/tomato/harvest.jpg';
+import tomatoDrip from '../assets/community/tomato/drip-irrigation.jpg';
+
+import riceBlast from '../assets/community/rice/blast.jpg';
+import riceNursery from '../assets/community/rice/nursery.jpg';
+import riceHarvest from '../assets/community/rice/harvest.jpg';
+import riceField from '../assets/community/rice/field.jpg';
+
+import coffeeRust from '../assets/community/coffee/rust.jpg';
+import coffeeCherries from '../assets/community/coffee/cherries.jpg';
+import coffeePlantation from '../assets/community/coffee/plantation.jpg';
+import coffeeHarvesting from '../assets/community/coffee/harvesting.jpg';
+
+import potatoHarvest from '../assets/community/sweet-potato/harvest.jpg';
+import potatoCuring from '../assets/community/sweet-potato/curing.jpg';
+import potatoStorage from '../assets/community/sweet-potato/storage.jpg';
+import potatoVines from '../assets/community/sweet-potato/vines.jpg';
+
+import cottonBollworm from '../assets/community/cotton/bollworm.jpg';
+import cottonHarvest from '../assets/community/cotton/harvest.jpg';
+import cottonField from '../assets/community/cotton/field.jpg';
+import cottonHealthy from '../assets/community/cotton/healthy.jpg';
+
+import appleHealthy from '../assets/community/apple/healthy.jpg';
+import appleScab from '../assets/community/apple/scab.jpg';
+import appleThinning from '../assets/community/apple/thinning.jpg';
 
 // Helper for rendering group icons
 const renderGroupIcon = (type) => {
@@ -61,7 +91,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '2h ago',
         content: 'Anyone else seeing this type of leaf curl on their vine tomatoes?',
-        images: [],
+        images: [tomatoLeafCurl],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Early Blight (Alternaria Solani)',
@@ -95,7 +125,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '5h ago',
         content: 'Heirloom vine tomatoes are thriving under drip irrigation system this week.',
-        images: [],
+        images: [tomatoHealthy],
         aiBadge: false,
         likes: 22,
         liked: false,
@@ -134,7 +164,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '4h ago',
         content: 'Final harvest coming soon for our paddy crops! SRI method yielded excellent results.',
-        images: [],
+        images: [riceHarvest],
         aiBadge: false,
         likes: 24,
         liked: false,
@@ -154,7 +184,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '1d ago',
         content: 'Spotted brown spot symptoms on some early paddy leaves. Drainage is critical here.',
-        images: [],
+        images: [riceBlast],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Brown Spot (Cochliobolus miyabeanus)',
@@ -198,7 +228,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '2d ago',
         content: 'Curing sweet potatoes under 30°C temperature for proper skin healing.',
-        images: [],
+        images: [potatoCuring],
         aiBadge: false,
         likes: 15,
         liked: false,
@@ -218,7 +248,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '3d ago',
         content: 'Sweet potato leaves showing black rot signs. Make sure to rotate crops and use certified seeds.',
-        images: [],
+        images: [potatoHarvest],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Black Rot (Ceratocystis fimbriata)',
@@ -262,7 +292,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '1d ago',
         content: 'Thinning the Honeycrisp apples to ensure better fruit size and sugar concentration.',
-        images: [],
+        images: [appleThinning],
         aiBadge: false,
         likes: 18,
         liked: false,
@@ -282,7 +312,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '3d ago',
         content: 'Detected apple scab spots on some lower foliage. Ventilation pruning is vital.',
-        images: [],
+        images: [appleScab],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Apple Scab (Venturia inaequalis)',
@@ -326,7 +356,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '3d ago',
         content: 'Coffee cherries are maturing well. Shade canopy index is perfect.',
-        images: [],
+        images: [coffeeCherries],
         aiBadge: false,
         likes: 31,
         liked: false,
@@ -346,7 +376,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '5d ago',
         content: 'Some rust patches noticed on arabica leaves. Spray coffee plants before heavy monsoon rains.',
-        images: [],
+        images: [coffeeRust],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Coffee Leaf Rust (Hemileia vastatrix)',
@@ -389,7 +419,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '2h ago',
         content: 'Spotted bollworm damage in the lower cotton bolls. Requesting immediate agronomy advice.',
-        images: [],
+        images: [cottonBollworm],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Bollworm Infestation (Helicoverpa armigera)',
@@ -414,7 +444,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '1d ago',
         content: 'Healthy cotton field showing first bolls opening. High quality lint fiber expected.',
-        images: [],
+        images: [cottonHealthy],
         aiBadge: false,
         likes: 19,
         liked: false,
@@ -609,16 +639,14 @@ export default function CommunityHub() {
     }));
   };
 
-  // Render Post Attachment Image (No default/stock placeholder fallback card)
+  // Render Post Attachment Image
   const renderPostImage = (post) => {
     const imageUrl = post.images && post.images[0];
     const isBroken = !imageUrl || imageErrors[imageUrl];
 
-    // IF (relevant image exists) -> Display exactly one image.
-    // ELSE -> Display no image.
     if (imageUrl && !isBroken) {
       return (
-        <div className="w-full aspect-video rounded-2xl overflow-hidden border border-stone-100 dark:border-stone-850 bg-stone-50 dark:bg-stone-900/5">
+        <div className="w-full aspect-video rounded-2xl overflow-hidden border border-stone-100 dark:border-stone-850 bg-stone-50 dark:bg-stone-900/5 mt-3">
           <img 
             src={imageUrl} 
             alt="Crop post attachment" 
@@ -914,13 +942,6 @@ export default function CommunityHub() {
                           <span className="text-[9px] text-stone-400 block mt-0.5">{post.time} • {post.author.location}</span>
                         </div>
                       </div>
-
-                      <button 
-                        onClick={() => addNotification("Action", "More options placeholder.", "info")} 
-                        className="text-stone-400 hover:text-stone-600"
-                      >
-                        <MoreHorizontal className="h-4.5 w-4.5" />
-                      </button>
                     </div>
 
                     {/* Content text */}
@@ -1198,7 +1219,7 @@ export default function CommunityHub() {
               
               <div className="space-y-3 text-[11px] font-semibold text-stone-700 dark:text-stone-300">
                 <div className="flex justify-between p-2.5 bg-stone-50 dark:bg-stone-900/30 rounded-xl">
-                  <span>Farm Location:</span>
+                  <span>Open Location:</span>
                   <span className="font-extrabold text-stone-900 dark:text-white">{activeFarmerProfile.location || 'Maharashtra Region'}</span>
                 </div>
                 <div className="flex justify-between p-2.5 bg-stone-50 dark:bg-stone-900/30 rounded-xl">
