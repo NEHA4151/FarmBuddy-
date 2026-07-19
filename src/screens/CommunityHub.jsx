@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useFarm } from '../context/FarmContext';
 import {
-  Search,
   MessageCircle,
   Heart,
   Share2,
@@ -11,29 +10,112 @@ import {
   MapPin,
   Sprout,
   CheckCircle,
-  Plus,
-  Users,
   X,
-  Smile,
   Calendar,
   ShieldCheck,
-  ChevronLeft,
   ChevronRight,
   Play,
   Droplet,
   Clock,
-  MoreHorizontal
+  MoreHorizontal,
+  Users
 } from 'lucide-react';
 
-// Centralized Crop-Based Configuration mapping (Single Source of Truth)
+// Import local curated crop images
+import tomatoHealthy from '../assets/community/tomato/healthy-1.svg';
+import tomatoLeafCurl from '../assets/community/tomato/leaf-curl.svg';
+import tomatoBlight from '../assets/community/tomato/blight.svg';
+import tomatoHarvest from '../assets/community/tomato/harvest.svg';
+import tomatoDrip from '../assets/community/tomato/drip-irrigation.svg';
+
+import riceBlast from '../assets/community/rice/blast.svg';
+import riceNursery from '../assets/community/rice/nursery.svg';
+import riceHarvest from '../assets/community/rice/harvest.svg';
+import riceField from '../assets/community/rice/field.svg';
+
+import coffeeRust from '../assets/community/coffee/rust.svg';
+import coffeeCherries from '../assets/community/coffee/cherries.svg';
+import coffeePlantation from '../assets/community/coffee/plantation.svg';
+import coffeeHarvesting from '../assets/community/coffee/harvesting.svg';
+
+import potatoHarvest from '../assets/community/sweet-potato/harvest.svg';
+import potatoCuring from '../assets/community/sweet-potato/curing.svg';
+import potatoStorage from '../assets/community/sweet-potato/storage.svg';
+import potatoVines from '../assets/community/sweet-potato/vines.svg';
+
+import cottonBollworm from '../assets/community/cotton/bollworm.svg';
+import cottonHarvest from '../assets/community/cotton/harvest.svg';
+import cottonField from '../assets/community/cotton/field.svg';
+import cottonHealthy from '../assets/community/cotton/healthy.svg';
+
+import appleHealthy from '../assets/community/apple/healthy.svg';
+import appleScab from '../assets/community/apple/scab.svg';
+import appleThinning from '../assets/community/apple/thinning.svg';
+
+// Crop Image Mapping Library (Self-contained)
+const CROP_IMAGES = {
+  tomato: {
+    healthy: tomatoHealthy,
+    leafCurl: tomatoLeafCurl,
+    blight: tomatoBlight,
+    harvest: tomatoHarvest,
+    drip: tomatoDrip
+  },
+  rice: {
+    blast: riceBlast,
+    nursery: riceNursery,
+    harvest: riceHarvest,
+    field: riceField
+  },
+  coffee: {
+    rust: coffeeRust,
+    cherries: coffeeCherries,
+    plantation: coffeePlantation,
+    harvesting: coffeeHarvesting
+  },
+  'sweet potato': {
+    harvest: potatoHarvest,
+    curing: potatoCuring,
+    storage: potatoStorage,
+    vines: potatoVines
+  },
+  cotton: {
+    bollworm: cottonBollworm,
+    harvest: cottonHarvest,
+    field: cottonField,
+    healthy: cottonHealthy
+  },
+  apple: {
+    healthy: appleHealthy,
+    scab: appleScab,
+    thinning: appleThinning
+  }
+};
+
+// Helper for rendering group icons
+const renderGroupIcon = (type) => {
+  switch (type) {
+    case 'leaf':
+      return <Sprout className="h-4.5 w-4.5 text-[#2E7D32]" />;
+    case 'droplet':
+      return <Droplet className="h-4.5 w-4.5 text-[#2E7D32]" />;
+    case 'map-pin':
+      return <MapPin className="h-4.5 w-4.5 text-[#2E7D32]" />;
+    default:
+      return <Sprout className="h-4.5 w-4.5 text-[#2E7D32]" />;
+  }
+};
+
+// Centralized Crop-Based Configuration mapping
 const CROP_COMMUNITY_CONFIGS = {
   tomato: {
     name: '[Tomato Growers]',
-    banner: 'https://images.unsplash.com/photo-1595855759920-86582396756a?w=800&auto=format&fit=crop&q=60',
+    banner: tomatoDrip,
     description: 'Discuss vine pruning, tomato blights, and organic treatment logs.',
     placeholder: 'Share updates about your tomato crop...',
     hashtags: ['#TomatoDisease', '#LeafCurl', '#TomatoFarming'],
     iconType: 'leaf',
+    rules: '1. Tomato topics only. 2. Share organic pest control tips. 3. No commercial spam.',
     events: {
       topic: 'Webinar: Tomato Blight Organic Control & Ventilation',
       date: 'Aug 10, 2026',
@@ -51,7 +133,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '2h ago',
         content: 'Anyone else seeing this type of leaf curl on their vine tomatoes?',
-        images: ['https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=600&auto=format&fit=crop&q=60'],
+        images: [tomatoLeafCurl],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Early Blight (Alternaria Solani)',
@@ -85,7 +167,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '5h ago',
         content: 'Heirloom vine tomatoes are thriving under drip irrigation system this week.',
-        images: ['https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=600&auto=format&fit=crop&q=60'],
+        images: [tomatoHealthy],
         aiBadge: false,
         likes: 22,
         liked: false,
@@ -102,11 +184,12 @@ const CROP_COMMUNITY_CONFIGS = {
   },
   rice: {
     name: '[Rice Farmers]',
-    banner: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=800&auto=format&fit=crop&q=60',
+    banner: riceField,
     description: 'Paddy water management, SRI cultivation methods, and seasonal monsoon crop logs.',
     placeholder: 'Share updates about your rice crop...',
     hashtags: ['#SRIMethod', '#MonsoonSowing', '#PaddyWater'],
     iconType: 'map-pin',
+    rules: '1. Rice and SRI topics. 2. Post seasonal water levels.',
     events: {
       topic: 'Webinar: Drip Irrigation & SRI Paddy Cultivation',
       date: 'Aug 12, 2026',
@@ -124,7 +207,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '4h ago',
         content: 'Final harvest coming soon for our paddy crops! SRI method yielded excellent results.',
-        images: ['https://images.unsplash.com/photo-1536882240095-0379873feb4e?w=600&auto=format&fit=crop&q=60'],
+        images: [riceHarvest],
         aiBadge: false,
         likes: 24,
         liked: false,
@@ -144,7 +227,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '1d ago',
         content: 'Spotted brown spot symptoms on some early paddy leaves. Drainage is critical here.',
-        images: ['https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=600&auto=format&fit=crop&q=60'],
+        images: [riceBlast],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Brown Spot (Cochliobolus miyabeanus)',
@@ -166,11 +249,12 @@ const CROP_COMMUNITY_CONFIGS = {
   },
   'sweet potato': {
     name: '[Sweet Potato Hub]',
-    banner: 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&auto=format&fit=crop&q=60',
+    banner: potatoVines,
     description: 'Root growth logs, curing techniques, and sweet potato disease diagnostics.',
     placeholder: 'Share updates about your sweet potato crop...',
     hashtags: ['#CuringGuide', '#RootHealth', '#SoilHealth'],
     iconType: 'map-pin',
+    rules: '1. Share root logs. 2. Curing steps recommendations.',
     events: {
       topic: 'Webinar: Curing & Storage Techniques',
       date: 'Aug 15, 2026',
@@ -188,7 +272,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '2d ago',
         content: 'Curing sweet potatoes under 30°C temperature for proper skin healing.',
-        images: ['https://images.unsplash.com/photo-1606787366850-de6330128bfc?w=600&auto=format&fit=crop&q=60'],
+        images: [potatoCuring],
         aiBadge: false,
         likes: 15,
         liked: false,
@@ -208,7 +292,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '3d ago',
         content: 'Sweet potato leaves showing black rot signs. Make sure to rotate crops and use certified seeds.',
-        images: ['https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=600&auto=format&fit=crop&q=60'],
+        images: [potatoHarvest],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Black Rot (Ceratocystis fimbriata)',
@@ -230,11 +314,12 @@ const CROP_COMMUNITY_CONFIGS = {
   },
   apple: {
     name: '[Apple Growers]',
-    banner: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop&q=60',
+    banner: appleHealthy,
     description: 'Best practices for pruning, harvesting, and pest control of Honeycrisp apples.',
     placeholder: 'Share updates about your apple orchard...',
     hashtags: ['#AppleThinning', '#OrchardPest', '#SoilHealth'],
     iconType: 'leaf',
+    rules: '1. Apple pruning timelines only. 2. Organic pest control guides.',
     events: {
       topic: 'Webinar: Maximizing Orchard Quality & Thinning',
       date: 'Aug 18, 2026',
@@ -252,7 +337,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '1d ago',
         content: 'Thinning the Honeycrisp apples to ensure better fruit size and sugar concentration.',
-        images: ['https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&auto=format&fit=crop&q=60'],
+        images: [appleThinning],
         aiBadge: false,
         likes: 18,
         liked: false,
@@ -272,7 +357,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '3d ago',
         content: 'Detected apple scab spots on some lower foliage. Ventilation pruning is vital.',
-        images: ['https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?w=600&auto=format&fit=crop&q=60'],
+        images: [appleScab],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Apple Scab (Venturia inaequalis)',
@@ -294,11 +379,12 @@ const CROP_COMMUNITY_CONFIGS = {
   },
   coffee: {
     name: '[Coffee Growers]',
-    banner: 'https://images.unsplash.com/photo-1558449028-b53a39d100fc?w=800&auto=format&fit=crop&q=60',
+    banner: coffeePlantation,
     description: 'Shade management, coffee rust monitoring, and premium harvest processing.',
     placeholder: 'Share updates about your coffee crop...',
     hashtags: ['#CoffeeRust', '#CherryMaturation', '#SoilHealth'],
     iconType: 'droplet',
+    rules: '1. Focus on quality cherries. 2. Share rust alerts.',
     events: {
       topic: 'Webinar: Managing Coffee Rust in Monsoons',
       date: 'Aug 20, 2026',
@@ -316,7 +402,7 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '3d ago',
         content: 'Coffee cherries are maturing well. Shade canopy index is perfect.',
-        images: ['https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=60'],
+        images: [coffeeCherries],
         aiBadge: false,
         likes: 31,
         liked: false,
@@ -336,12 +422,12 @@ const CROP_COMMUNITY_CONFIGS = {
         },
         time: '5d ago',
         content: 'Some rust patches noticed on arabica leaves. Spray copper fungicide before heavy monsoon rains.',
-        images: ['https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600&auto=format&fit=crop&q=60'],
+        images: [coffeeRust],
         aiBadge: true,
         aiAnalysis: {
           disease: 'Coffee Leaf Rust (Hemileia vastatrix)',
           confidence: 90,
-          recommendation: 'Apply copper preventive spray. Ensure shade trees do not cause too much humidity.'
+          recommendation: 'Apply copper preventative spray. Ensure shade trees do not cause too much humidity.'
         },
         likes: 17,
         liked: false,
@@ -355,16 +441,81 @@ const CROP_COMMUNITY_CONFIGS = {
       { name: 'Soil Dr. Amit', username: 'SoilnFalter', role: 'Agronomy Specialist', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60', verified: true, followers: 2430, trustScore: 98 }
     ]
   },
+  cotton: {
+    name: '[Cotton Growers]',
+    banner: cottonField,
+    description: 'Bollworm pest control, optimal cotton sowing, and yield prediction logs.',
+    placeholder: 'Share updates about your cotton crop...',
+    hashtags: ['#BollwormAlert', '#CottonHarvesting', '#SoilHealth'],
+    iconType: 'leaf',
+    rules: '1. Cotton topics only. 2. Post bollworm alerts early.',
+    events: {
+      topic: 'Webinar: Integrated Pest Mgmt for Cotton Bolls',
+      date: 'Aug 22, 2026',
+      time: '6:00 PM'
+    },
+    samplePosts: [
+      {
+        id: 'cotton-1',
+        author: {
+          name: 'Suresh Kumar',
+          username: 'SureshGrower',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
+          verified: true,
+          location: 'Anand, Gujarat'
+        },
+        time: '2h ago',
+        content: 'Spotted bollworm damage in the lower cotton bolls. Requesting immediate agronomy advice.',
+        images: [cottonBollworm],
+        aiBadge: true,
+        aiAnalysis: {
+          disease: 'Bollworm Infestation (Helicoverpa armigera)',
+          confidence: 86,
+          recommendation: 'Release trichogramma egg parasites immediately. Spray organic Neem formulation at 5% concentration.'
+        },
+        likes: 8,
+        liked: false,
+        comments: [],
+        commentsExpanded: false,
+        saved: false,
+        shares: 0
+      },
+      {
+        id: 'cotton-2',
+        author: {
+          name: 'Farmer Priya',
+          username: 'PriyaFarms',
+          avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60',
+          verified: true,
+          location: 'Pune, Maharashtra'
+        },
+        time: '1d ago',
+        content: 'Healthy cotton field showing first bolls opening. High quality lint fiber expected.',
+        images: [cottonHealthy],
+        aiBadge: false,
+        likes: 19,
+        liked: false,
+        comments: [],
+        commentsExpanded: false,
+        saved: false,
+        shares: 1
+      }
+    ],
+    connections: [
+      { name: 'Soil Dr. Amit', username: 'SoilnFalter', role: 'Agronomy Specialist', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60', verified: true, followers: 2430, trustScore: 98 }
+    ]
+  },
   general: {
     name: '[General Crop Chat]',
-    banner: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop&q=60',
+    banner: tomatoHealthy,
     description: 'Soil diagnostics, water management, and multi-crop farming discussions.',
     placeholder: 'Share updates about your crops...',
     hashtags: ['#CropHealth', '#FarmingLogs', '#SoilHealth'],
     iconType: 'leaf',
+    rules: '1. Respect all farmers. 2. Keep posts relevant to agriculture.',
     events: {
       topic: 'Webinar: Integrated Crop Nutrition Management',
-      date: 'Aug 22, 2026',
+      date: 'Aug 25, 2026',
       time: '6:00 PM'
     },
     samplePosts: [],
@@ -376,6 +527,9 @@ const CROP_COMMUNITY_CONFIGS = {
 
 export default function CommunityHub() {
   const { user, addNotification, currentBatchId, batches } = useFarm();
+
+  // Local image error tracking state
+  const [imageErrors, setImageErrors] = useState({});
 
   // Find active batch in context
   const activeBatch = useMemo(() => {
@@ -392,6 +546,7 @@ export default function CommunityHub() {
     if (lower.includes('sweet potato') || lower.includes('potato')) return 'sweet potato';
     if (lower.includes('apple')) return 'apple';
     if (lower.includes('coffee')) return 'coffee';
+    if (lower.includes('cotton')) return 'cotton';
     return 'general';
   }, [activeCrop]);
 
@@ -518,18 +673,57 @@ export default function CommunityHub() {
   const handleShare = (postId) => {
     navigator.clipboard.writeText(`https://farmbuddy.uvfarms.in/community/post/${postId}`);
     addNotification("Copied Link", "Link copied to clipboard.", "success");
-    setPostsByCrop(prev => {
-      const cropList = prev[cropKeyword] || [];
-      const updated = cropList.map(p => {
-        if (p.id === postId) return { ...p, shares: p.shares + 1 };
-        return p;
-      });
-      return { ...prev, [cropKeyword]: updated };
-    });
   };
 
   const handleFollowToggle = (username) => {
     addNotification("Connection Updated", `You updated connection status for @${username}`, "success");
+  };
+
+  // Image load error state updater
+  const handleImageError = (imageUrl) => {
+    setImageErrors(prev => ({
+      ...prev,
+      [imageUrl]: true
+    }));
+  };
+
+  // Render Post Attachment Image / Fallback Card
+  const renderPostImage = (post) => {
+    const imageUrl = post.images && post.images[0];
+    const isBroken = !imageUrl || imageErrors[imageUrl];
+
+    if (isBroken) {
+      return (
+        <div className="rounded-2xl border border-stone-200 dark:border-stone-850 p-6 text-center select-none bg-stone-50/50 dark:bg-stone-900/10 py-8 flex flex-col items-center justify-center space-y-2">
+          <ImageIcon className="h-7 w-7 text-stone-300 dark:text-stone-700 animate-pulse" />
+          <div className="space-y-1">
+            <p className="text-xs font-black text-stone-600 dark:text-stone-300 flex items-center justify-center gap-1.5">
+              📷 No image uploaded by the farmer
+            </p>
+            <p className="text-[10px] text-stone-400 font-semibold max-w-[280px] leading-normal">
+              Upload an image to help the community understand your issue.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="rounded-2xl overflow-hidden border border-stone-100 dark:border-stone-850 bg-stone-50 dark:bg-stone-900/5">
+        <img 
+          src={imageUrl} 
+          alt="Crop post attachment" 
+          className="w-full h-64 object-cover cursor-pointer"
+          onError={() => handleImageError(imageUrl)}
+          onClick={() => {
+            if (post.aiBadge) {
+              setActiveAiPost(post);
+              setShowAiAnalysisModal(true);
+            }
+          }}
+        />
+      </div>
+    );
   };
 
   // Create Post Submit
@@ -548,14 +742,14 @@ export default function CommunityHub() {
       },
       time: 'Just now',
       content: postText,
-      crop: activeCrop, // AUTO FIXED TO ACTIVE CROP CYCLE!
+      crop: activeCrop,
       location: activeBatch?.location || null,
       images: postAttachments.map(a => a.url),
-      aiBadge: postText.includes('spot') || postText.includes('curl') || postText.includes('blight'),
-      aiAnalysis: postText.includes('spot') || postText.includes('blight') ? {
-        disease: 'Early Spot / Blight Suspect',
+      aiBadge: postText.includes('spot') || postText.includes('curl') || postText.includes('blight') || postText.includes('rust'),
+      aiAnalysis: postText.includes('spot') || postText.includes('blight') || postText.includes('curl') || postText.includes('rust') ? {
+        disease: 'Foliage Infection Suspect',
         confidence: 85,
-        recommendation: 'System detected signs of foliage fungus. Prune bottom leaves and apply organic copper formulation.'
+        recommendation: 'System detected potential disease symptoms. Prune infected shoots and maintain canopy ventilation.'
       } : null,
       likes: 0,
       liked: false,
@@ -628,16 +822,7 @@ export default function CommunityHub() {
     handleReplyChange(postId, 'text', '');
   };
 
-  const renderGroupIcon = (type) => {
-    switch (type) {
-      case 'map-pin':
-        return <MapPin className="h-4.5 w-4.5 text-[#2E7D32]" />;
-      case 'droplet':
-        return <Droplet className="h-4.5 w-4.5 text-[#2E7D32]" />;
-      default:
-        return <Sprout className="h-4.5 w-4.5 text-[#2E7D32]" />;
-    }
-  };
+  const isBannerBroken = !config.banner || imageErrors[config.banner];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-[#F8F6EF] dark:bg-[#0c140f] min-h-screen text-stone-900 dark:text-emerald-50 transition-colors duration-300">
@@ -707,14 +892,14 @@ export default function CommunityHub() {
             
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => addNotification("Attach Image", "Upload image attachments trigger.", "info")}
+                onClick={() => addNotification("Attach Image", "Local image attachment selector.", "info")}
                 className="p-2 bg-[#1b4332] text-white hover:bg-emerald-950 rounded-xl transition-all"
                 title="Upload Image"
               >
                 <ImageIcon className="h-3.5 w-3.5" />
               </button>
               <button 
-                onClick={() => addNotification("Attach Video", "Upload video attachments trigger.", "info")}
+                onClick={() => addNotification("Attach Video", "Local video attachment selector.", "info")}
                 className="p-2 bg-[#1b4332] text-white hover:bg-emerald-950 rounded-xl transition-all"
                 title="Upload Video"
               >
@@ -744,7 +929,18 @@ export default function CommunityHub() {
           {/* DYNAMIC COMMUNITY BANNER & DETAILS */}
           <div className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] overflow-hidden shadow-sm animate-fadeIn">
             <div className="h-28 relative bg-stone-100 dark:bg-stone-900">
-              <img src={config.banner} alt={config.name} className="w-full h-full object-cover" />
+              {!isBannerBroken ? (
+                <img 
+                  src={config.banner} 
+                  alt={config.name} 
+                  className="w-full h-full object-cover" 
+                  onError={() => handleImageError(config.banner)}
+                />
+              ) : (
+                <div className="w-full h-full bg-[#1b4332] flex items-center justify-center">
+                  <Sprout className="h-8 w-8 text-emerald-100" />
+                </div>
+              )}
             </div>
             <div className="p-4 space-y-3">
               <div className="flex justify-between items-start">
@@ -754,11 +950,11 @@ export default function CommunityHub() {
                     <CheckCircle className="h-3.5 w-3.5 text-[#2E7D32]" />
                   </h2>
                   <span className="text-[9px] text-[#2E7D32] font-black block mt-0.5">
-                    {config.members} Members
+                    {config.members || '1.2k'} Members
                   </span>
                 </div>
               </div>
-              <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+              <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed font-semibold">
                 {config.description}
               </p>
 
@@ -834,44 +1030,8 @@ export default function CommunityHub() {
                       {post.content}
                     </p>
 
-                    {/* Images / Videos (Strictly matching - or custom no image placeholder!) */}
-                    {post.images && post.images.length > 0 && !post.videoUrl ? (
-                      <div className="rounded-2xl overflow-hidden border border-stone-100 dark:border-stone-850">
-                        <img 
-                          src={post.images[0]} 
-                          alt="Crop log" 
-                          className="w-full h-64 object-cover cursor-pointer"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = ''; // Clear image to render placeholder text
-                            addNotification("Image Error", "Failed to load custom crop asset. Rendering placeholder.", "error");
-                          }}
-                          onClick={() => {
-                            if (post.aiBadge) {
-                              setActiveAiPost(post);
-                              setShowAiAnalysisModal(true);
-                            }
-                          }}
-                        />
-                      </div>
-                    ) : post.videoUrl ? (
-                      <div className="relative rounded-2xl overflow-hidden border border-stone-150 h-56 bg-stone-900">
-                        <img src={post.videoThumbnail} alt="video thumbnail" className="w-full h-full object-cover opacity-60" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <button 
-                            onClick={() => addNotification("Video Playing", "Simulating video playback player.", "info")}
-                            className="p-4 bg-emerald-600 text-white rounded-full hover:scale-115 transition-transform shadow-lg"
-                          >
-                            <Play className="h-6 w-6 fill-white" />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="rounded-2xl border-2 border-dashed border-stone-200 dark:border-stone-800 p-6 text-center text-stone-400 select-none bg-stone-50/50 dark:bg-stone-900/10">
-                        <ImageIcon className="h-6 w-6 mx-auto mb-1 text-stone-350 dark:text-stone-750" />
-                        <p className="text-[10px] font-bold">No image uploaded</p>
-                      </div>
-                    )}
+                    {/* Curated Local image / Fallback card */}
+                    {renderPostImage(post)}
 
                     {/* AI Leaf Scan Report tag */}
                     {post.aiBadge && (
@@ -890,7 +1050,7 @@ export default function CommunityHub() {
                       </div>
                     )}
 
-                    {/* Solid dark-green actions bar with white icons */}
+                    {/* Refactored actions bar matching agriculture dashboard style (NO RT) */}
                     <div className="flex justify-between items-center bg-[#1b4332] rounded-xl px-5 py-2.5 text-white text-xs select-none">
                       <button 
                         onClick={() => toggleComments(post.id)}
@@ -898,16 +1058,8 @@ export default function CommunityHub() {
                         title="Replies"
                       >
                         <MessageCircle className="h-4.5 w-4.5" />
-                        {post.comments.length > 0 && <span>{post.comments.length}</span>}
-                      </button>
-
-                      <button 
-                        onClick={() => handleShare(post.id)}
-                        className="flex items-center gap-1 hover:text-emerald-300 transition-colors font-extrabold text-[10px]"
-                        title="Retweet"
-                      >
-                        <Share2 className="h-4 w-4 rotate-90" />
-                        <span>RT</span>
+                        <span>Comment</span>
+                        {post.comments.length > 0 && <span className="ml-1 font-bold">({post.comments.length})</span>}
                       </button>
 
                       <button 
@@ -918,15 +1070,26 @@ export default function CommunityHub() {
                         title="Like"
                       >
                         <Heart className={`h-4.5 w-4.5 ${post.liked ? 'fill-white stroke-white' : ''}`} />
-                        <span>{post.likes}</span>
+                        <span>Like</span>
+                        {post.likes > 0 && <span className="ml-1 font-bold">({post.likes})</span>}
+                      </button>
+
+                      <button 
+                        onClick={() => handleShare(post.id)}
+                        className="flex items-center gap-1 hover:text-emerald-300 transition-colors font-extrabold text-[10px]"
+                        title="Share"
+                      >
+                        <Share2 className="h-4.5 w-4.5" strokeWidth={2.5} />
+                        <span>Share</span>
                       </button>
 
                       <button 
                         onClick={() => handleSave(post.id)}
-                        className="hover:text-emerald-300 transition-colors"
+                        className="flex items-center gap-1.5 hover:text-emerald-300 transition-colors"
                         title="Bookmark"
                       >
                         <Bookmark className={`h-4.5 w-4.5 ${post.saved ? 'fill-white stroke-white' : ''}`} />
+                        <span>Save</span>
                       </button>
                     </div>
 
