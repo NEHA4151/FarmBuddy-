@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 
 export default function AIAssistant() {
-  const { telemetry, batches, refreshBatches, currentView, setCurrentView, currentBatchId, setCurrentBatchId, generateReport, logBatchEvent } = useFarm();
+  const { telemetry, batches, refreshBatches, currentView, setCurrentView, currentBatchId, setCurrentBatchId, generateReport, logBatchEvent, user } = useFarm();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('chat'); // 'chat', 'vision', 'history'
 
@@ -63,7 +63,7 @@ export default function AIAssistant() {
   const loadHistory = async () => {
     setLoadingHistory(true);
     try {
-      const res = await fetch(`${API_BASE}/api/ai/history`);
+      const res = await fetch(`${API_BASE}/api/ai/history?farmer_id=${user?.farmerId || user?.id || 'FMR-0921'}`);
       if (res.ok) {
         const data = await res.json();
         setAiHistory(data);
@@ -110,7 +110,11 @@ export default function AIAssistant() {
       const res = await fetch(`${API_BASE}/api/ai/assistant`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'text', query: queryWithContext })
+        body: JSON.stringify({ 
+          type: 'text', 
+          query: queryWithContext,
+          farmer_id: user?.farmerId || user?.id || 'FMR-0921'
+        })
       });
       
       if (res.ok) {
@@ -161,7 +165,8 @@ export default function AIAssistant() {
         body: JSON.stringify({
           type: 'image',
           query: visionQuery,
-          image: imagePreview
+          image: imagePreview,
+          farmer_id: user?.farmerId || user?.id || 'FMR-0921'
         })
       });
 
@@ -216,10 +221,11 @@ export default function AIAssistant() {
   const handleSelectHistoryChat = (chat) => {
     setActiveTab('chat');
     
+    const cleanQuery = String(chat.user_query).replace(/^\[Context:.*?\]\s*/, '');
     const userMsg = {
       id: chat.id,
       sender: 'user',
-      text: chat.input_type === 'image' ? `[Image Analysis] ${chat.user_query}` : chat.user_query,
+      text: chat.input_type === 'image' ? `[Image Analysis] ${cleanQuery}` : cleanQuery,
       timestamp: new Date(chat.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
     
@@ -267,10 +273,10 @@ export default function AIAssistant() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-24 right-6 w-[420px] max-w-[calc(100vw-2rem)] h-[620px] bg-white dark:bg-stone-850 border border-borders dark:border-emerald-950/20 rounded-3xl shadow-xl overflow-hidden flex flex-col z-50"
+            className="fixed bottom-20 right-6 w-[420px] max-w-[calc(100vw-2rem)] h-[560px] bg-white dark:bg-stone-850 border border-borders dark:border-emerald-950/20 rounded-3xl shadow-xl overflow-hidden flex flex-col z-50"
           >
             {/* Header */}
-            <div className="p-4 border-b border-borders dark:border-stone-800 bg-gradient-to-r from-primary/5 to-transparent flex justify-between items-center">
+            <div className="pt-5 pb-4 px-4 border-b border-borders dark:border-stone-800 bg-gradient-to-r from-primary/5 to-transparent flex justify-between items-center">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-primary/10 text-primary">
                   <Bot className="h-5 w-5" />

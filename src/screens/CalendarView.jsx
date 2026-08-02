@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useFarm } from '../context/FarmContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -17,11 +17,14 @@ import {
 import confetti from 'canvas-confetti';
 
 export default function CalendarView() {
-  const { currentBatchId, batches, scheduledActivities, setScheduledActivities, addNotification, logBatchEvent } = useFarm();
+  const { currentBatchId, batches, scheduledActivities, setScheduledActivities, addNotification, logBatchEvent, timeline } = useFarm();
   
   const batch = batches.find(b => b.id === currentBatchId);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [currentMonth, setCurrentMonth] = useState(new Date(2026, 5)); // June 2026
+ 
+  // Editing state for schedules
+  const [editingTask, setEditingTask] = useState(null);
  
   // Form State for new activity
   const [showAddModal, setShowAddModal] = useState(false);
@@ -98,6 +101,36 @@ export default function CalendarView() {
  
   // Filter activities for this batch
   const batchActivities = scheduledActivities.filter(a => a.batchId === currentBatchId);
+
+  // Map logged events into same calendar schema to show them in the Interactive Crop Calendar
+  const loggedEvents = useMemo(() => {
+    const rawEvents = timeline && timeline[currentBatchId] ? timeline[currentBatchId] : [];
+    return rawEvents.map(evt => {
+      // payload extraction helper
+      let payloadNotes = '';
+      if (evt.payload && typeof evt.payload === 'object') {
+        payloadNotes = Object.entries(evt.payload)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(', ');
+      } else {
+        payloadNotes = String(evt.payload || '');
+      }
+
+      return {
+        id: evt.id || `evt-${Math.random()}`,
+        batchId: currentBatchId,
+        date: evt.timestamp ? evt.timestamp.split('T')[0] : selectedDate,
+        type: evt.type || 'Farming Log',
+        notes: payloadNotes,
+        completed: true,
+        isLoggedEvent: true
+      };
+    });
+  }, [timeline, currentBatchId, selectedDate]);
+
+  const allCalendarItems = useMemo(() => {
+    return [...batchActivities, ...loggedEvents];
+  }, [batchActivities, loggedEvents]);
  
   const handleAddTask = (e) => {
     e.preventDefault();
@@ -204,7 +237,7 @@ export default function CalendarView() {
               
               const isSelected = day.dateStr === selectedDate;
               const isToday = day.dateStr === todayStr;
-              const hasActivity = batchActivities.some(a => a.date === day.dateStr);
+              const hasActivity = allCalendarItems.some(a => a.date === day.dateStr);
               const hasMissed = batchActivities.some(a => a.date === day.dateStr && day.dateStr < todayStr && !a.completed);
               
               let cellBg = 'bg-stone-50/50 hover:bg-stone-100/70 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/60';
@@ -313,45 +346,56 @@ export default function CalendarView() {
                   Add Note for this Date
                 </button>
               )}
-            </div>
-
-            <div className="space-y-3 pt-3 border-t border-borders dark:border-emerald-950/10">
-              {batchActivities.filter(a => a.date === selectedDate).length === 0 ? (
-                <p className="text-xs text-stone-400 italic">No activities scheduled for this date.</p>
+            </div>            <div className="space-y-3 pt-3 border-t border-borders dark:border-emerald-950/10">
+              {allCalendarItems.filter(a => a.date === selectedDate).length === 0 ? (
+                <p className="text-xs text-stone-400 italic">No activities or events logged for this date.</p>
               ) : (
-                batchActivities.filter(a => a.date === selectedDate).map(act => (
+                allCalendarItems.filter(a => a.date === selectedDate).map(act => (
                   <div key={act.id} className="border border-borders/50 dark:border-emerald-950/20 p-3.5 rounded-xl flex items-start justify-between gap-2">
-                    <div className="space-y-1">
+                    <div className="space-y-1 flex-1">
                       <span className="text-[10px] font-black uppercase text-stone-400 tracking-wider flex items-center gap-1">
-                        <Droplet className="h-3 w-3 text-primary" />
-                        {act.type}
+                        <Droplet className={`h-3 w-3 ${act.isLoggedEvent ? 'text-blue-500' : 'text-primary'}`} />
+                        {act.type} {act.isLoggedEvent && '(Logged Event)'}
                       </span>
-                      <p className="text-xs font-bold text-stone-800 dark:text-stone-200">{act.notes}</p>
-                      {act.completed ? (
-                        <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-emerald-500">
+                      <p className="text-xs font-bold text-stone-850 dark:text-stone-200 leading-normal">{act.notes}</p>
+                      {act.isLoggedEvent ? (
+                        <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-500 bg-blue-500/5 px-2 py-0.5 rounded border border-blue-500/10">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Logged & Verified (Ledger)
+                        </span>
+                      ) : act.completed ? (
+                        <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-emerald-500 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10">
                           <CheckCircle2 className="h-3 w-3" />
                           Done
                         </span>
                       ) : act.date < todayStr ? (
-                        <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-red-500">
+                        <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-red-500 bg-red-500/5 px-2 py-0.5 rounded border border-red-500/10">
                           <AlertTriangle className="h-3 w-3" />
                           Missed (Affects Trust Score)
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-500">
+                        <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-500 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">
                           <Clock className="h-3 w-3" />
                           Scheduled
                         </span>
                       )}
                     </div>
                     
-                    {!act.completed && (
-                      <button
-                        onClick={() => handleCompleteTask(act.id)}
-                        className="px-2.5 py-1 text-[10px] font-bold bg-primary text-white rounded-lg hover:bg-primary/95 transition-all shadow-sm"
-                      >
-                        Complete
-                      </button>
+                    {!act.completed && !act.isLoggedEvent && (
+                      <div className="flex gap-1.5 self-center">
+                        <button
+                          onClick={() => setEditingTask(act)}
+                          className="px-2 py-1.5 text-[10px] font-bold border border-borders text-stone-600 rounded-lg hover:bg-stone-50 dark:hover:bg-zinc-800 transition-all"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleCompleteTask(act.id)}
+                          className="px-2.5 py-1.5 text-[10px] font-bold bg-primary text-white rounded-lg hover:bg-primary/95 transition-all shadow-sm"
+                        >
+                          Complete
+                        </button>
+                      </div>
                     )}
                   </div>
                 ))
@@ -431,6 +475,97 @@ export default function CalendarView() {
                   Schedule Crop Activity
                 </button>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Task Modal */}
+      <AnimatePresence>
+        {editingTask && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white dark:bg-stone-850 border border-borders dark:border-emerald-950/20 w-full max-w-md rounded-[24px] p-6 shadow-xl relative"
+            >
+              <button 
+                onClick={() => setEditingTask(null)}
+                className="absolute top-4 right-4 p-1 rounded-xl text-stone-400 hover:bg-stone-100 dark:hover:bg-zinc-800 hover:text-stone-800 dark:hover:text-stone-200 transition-all"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <h3 className="text-lg font-black text-stone-900 dark:text-stone-100 flex items-center gap-2 mb-6">
+                <Sparkles className="h-5 w-5 text-emerald-600" />
+                Edit Scheduled Task
+              </h3>
+
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-stone-700 dark:text-stone-300">Activity Type</label>
+                  <select
+                    value={editingTask.type}
+                    onChange={(e) => setEditingTask({ ...editingTask, type: e.target.value })}
+                    className="w-full bg-[#FAFAFA] dark:bg-zinc-900 border border-borders dark:border-emerald-950/40 rounded-xl px-4 py-3 text-xs text-stone-900 dark:text-stone-100 focus:outline-none"
+                  >
+                    <option value="Watering">Watering</option>
+                    <option value="Fertilizer">Fertilizer</option>
+                    <option value="Pesticide">Pesticide</option>
+                    <option value="Harvest">Harvest</option>
+                    <option value="Custom Task">Custom Task</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-stone-700 dark:text-stone-300">Scheduled Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={editingTask.date}
+                    onChange={(e) => setEditingTask({ ...editingTask, date: e.target.value })}
+                    className="w-full bg-[#FAFAFA] dark:bg-zinc-900 border border-borders dark:border-emerald-950/40 rounded-xl px-4 py-3 text-xs text-stone-900 dark:text-stone-100 focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-stone-700 dark:text-stone-300">Notes / Details</label>
+                  <textarea
+                    required
+                    value={editingTask.notes}
+                    onChange={(e) => setEditingTask({ ...editingTask, notes: e.target.value })}
+                    placeholder="Enter details..."
+                    rows={3}
+                    className="w-full bg-[#FAFAFA] dark:bg-zinc-900 border border-borders dark:border-emerald-950/40 rounded-xl px-4 py-3 text-xs text-stone-900 dark:text-stone-100 focus:outline-none resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScheduledActivities(prev => prev.map(a => a.id === editingTask.id ? editingTask : a));
+                      addNotification("Task Updated", "Scheduled activity successfully updated.", "success");
+                      setEditingTask(null);
+                    }}
+                    className="w-full py-3 rounded-xl bg-primary hover:bg-primary/95 text-white font-bold text-xs shadow-sm transition-all"
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScheduledActivities(prev => prev.filter(a => a.id !== editingTask.id));
+                      addNotification("Task Deleted", "Scheduled activity deleted.", "warning");
+                      setEditingTask(null);
+                    }}
+                    className="py-3 px-4 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-all font-bold text-xs"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}

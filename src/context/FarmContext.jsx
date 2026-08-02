@@ -1459,6 +1459,40 @@ export const FarmProvider = ({ children }) => {
     }
   }, [currentBatchId]);
 
+  // Reminder notifications for scheduled crop tasks
+  useEffect(() => {
+    if (!currentBatchId || !scheduledActivities) return;
+    
+    // Find pending scheduled activities for the current batch
+    const pendingTasks = scheduledActivities.filter(a => a.batchId === currentBatchId && !a.completed);
+    
+    setNotifications(prev => {
+      let updated = [...prev];
+      let changed = false;
+      
+      pendingTasks.forEach(task => {
+        const reminderTitle = `Task Reminder: ${task.type}`;
+        const reminderDesc = `Reminder for your scheduled task: ${task.notes} on ${task.date}.`;
+        
+        const alreadyExists = updated.some(n => n.title === reminderTitle && n.description === reminderDesc);
+        
+        if (!alreadyExists) {
+          updated = [{
+            id: `remind-${task.id}`,
+            title: reminderTitle,
+            description: reminderDesc,
+            time: 'Scheduled',
+            read: false,
+            type: 'info'
+          }, ...updated];
+          changed = true;
+        }
+      });
+      
+      return changed ? updated : prev;
+    });
+  }, [currentBatchId, scheduledActivities]);
+
   // Telemetry alerts tracking
   useEffect(() => {
     if (!currentBatchId) return;

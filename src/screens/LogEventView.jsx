@@ -194,8 +194,8 @@ export default function LogEventView() {
 
   const processFile = async (file) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert("File is too large. Max size is 5MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File is too large. Max size is 10MB.");
       return;
     }
 
@@ -677,7 +677,7 @@ export default function LogEventView() {
                   Drag & drop or <span className="text-primary hover:underline">browse files</span>
                 </span>
                 <span className="text-[10px] text-stone-400">
-                  PDF, PNG, JPG, CSV up to 5MB • Prefixed to this batch automatically
+                  PDF, PNG, JPG, CSV up to 10MB • Prefixed to this batch automatically
                 </span>
               </label>
             </div>
