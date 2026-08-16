@@ -107,12 +107,19 @@ function getLocalOfflineChatResponse(query) {
 function getLocalOfflineImageResponse(query) {
   const lowerQ = String(query || '').toLowerCase();
   
-  const isTomato = lowerQ.includes('tomato');
-  const isRice = lowerQ.includes('rice') || lowerQ.includes('paddy');
-  const isPotato = lowerQ.includes('potato');
-  const isApple = lowerQ.includes('apple');
-  const isCoffee = lowerQ.includes('coffee');
-  const isCotton = lowerQ.includes('cotton');
+  // Parse context if present
+  const contextMatch = query.match(/\[Context: Crop is (.*?) for batch (.*?)\]/i);
+  const crop = contextMatch ? contextMatch[1] : '';
+  const batchId = contextMatch ? contextMatch[2] : '';
+  
+  const cropLower = crop.toLowerCase();
+  
+  const isTomato = cropLower.includes('tomato') || lowerQ.includes('tomato');
+  const isRice = cropLower.includes('rice') || cropLower.includes('paddy') || lowerQ.includes('rice') || lowerQ.includes('paddy');
+  const isPotato = cropLower.includes('potato') || cropLower.includes('sweet potato') || lowerQ.includes('potato') || lowerQ.includes('sweet potato');
+  const isApple = cropLower.includes('apple') || lowerQ.includes('apple');
+  const isCoffee = cropLower.includes('coffee') || lowerQ.includes('coffee');
+  const isCotton = cropLower.includes('cotton') || lowerQ.includes('cotton');
 
   let response = "Based on visual analysis, the foliage appears to have mild stress.";
   let issue = "Mild Stress";
@@ -143,6 +150,27 @@ function getLocalOfflineImageResponse(query) {
     issue = "Bollworm Infestation";
     response = "Chewing damage and entry holes observed on cotton bolls, indicative of Bollworm presence.";
     recommendations = "1. Release Trichogramma wasps.\n2. Spray neem oil at 5% concentration.\n3. Monitor boll damage thresholds.";
+  }
+
+  // Answer specific questions regarding duration/curing directly
+  if (lowerQ.includes('how many days') || lowerQ.includes('how long') || lowerQ.includes('cure') || lowerQ.includes('duration') || lowerQ.includes('time') || lowerQ.includes('when')) {
+    let durationAnswer = "\n\n**To answer your question regarding treatment timeline:** ";
+    if (isTomato) {
+      durationAnswer += "If treated immediately with copper fungicide, it will take about 10 to 14 days to control the spread of Early Blight and start seeing healthy new leaf recovery.";
+    } else if (isRice) {
+      durationAnswer += "With improved potassium fertilization and improved soil drainage, the crop recovery and stabilization will take approximately 14 to 21 days.";
+    } else if (isPotato) {
+      durationAnswer += "Black Rot is difficult to cure once inside sweet potato tubers. However, pruning infected leaves and soil sanitation will take 15 to 20 days to fully protect the remaining healthy crop.";
+    } else if (isApple) {
+      durationAnswer += "Treating Apple Scab requires spraying organic sulfur at 7-10 day intervals. You will observe full infection control and new healthy growth within 2 to 3 weeks.";
+    } else if (isCoffee) {
+      durationAnswer += "Rust control with coffee copper sprays takes 15 to 30 days to halt spore propagation and stimulate new green foliage growth.";
+    } else if (isCotton) {
+      durationAnswer += "Releasing Trichogramma wasps or applying organic neem oil will reduce pest count within 5 to 7 days, but expect a 14-day total period for stabilizing the boll infestation.";
+    } else {
+      durationAnswer += "Standard recovery and treatment stabilization typically takes 10 to 14 days under proper watering and balanced ventilation.";
+    }
+    response += durationAnswer;
   }
 
   return {

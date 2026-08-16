@@ -158,13 +158,17 @@ export default function AIAssistant() {
     setAnalyzingImage(true);
     setVisionResult(null);
 
+    const activeBatch = batches.find(b => b.id === currentBatchId);
+    const cropName = activeBatch ? activeBatch.cropType || activeBatch.crop_name || '' : '';
+    const visionQueryWithContext = `[Context: Crop is ${cropName} for batch ${currentBatchId}] ${visionQuery}`;
+
     try {
       const res = await fetch(`${API_BASE}/api/ai/assistant`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: 'image',
-          query: visionQuery,
+          query: visionQueryWithContext,
           image: imagePreview,
           farmer_id: user?.farmerId || user?.id || 'FMR-0921'
         })
