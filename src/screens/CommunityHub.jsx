@@ -53,6 +53,18 @@ import appleHealthy from '../assets/community/apple/healthy.jpg';
 import appleScab from '../assets/community/apple/scab.jpg';
 import appleThinning from '../assets/community/apple/thinning.jpg';
 
+import emilyAvatar from '../assets/avatars/emily.jpg';
+import rajeshAvatar from '../assets/avatars/rajesh.jpg';
+import priyaAvatar from '../assets/avatars/priya.jpg';
+
+const getLocalAvatar = (username = '', defaultAvatar) => {
+  const lower = username.toLowerCase();
+  if (lower.includes('emily')) return emilyAvatar;
+  if (lower.includes('rajesh')) return rajeshAvatar;
+  if (lower.includes('priya')) return priyaAvatar;
+  return defaultAvatar;
+};
+
 // Helper for rendering group icons
 const renderGroupIcon = (type) => {
   switch (type) {
@@ -1174,7 +1186,7 @@ export default function CommunityHub() {
                 // Compatible parsing helpers
                 const authorName = post.author_name || post.author?.name || 'Farmer Friend';
                 const authorUsername = post.author_username || post.author?.username || 'farmer_friend';
-                const authorAvatar = post.author_avatar || post.author?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60';
+                const authorAvatar = getLocalAvatar(authorUsername, post.author_avatar || post.author?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60');
                 const authorVerified = post.author_verified !== undefined ? post.author_verified : post.author?.verified;
                 const authorLocation = post.author_location || post.author?.location || 'Green Valley Farm';
                 const postTime = post.created_at ? new Date(post.created_at).toLocaleDateString() : (post.time || 'Just now');
@@ -1296,7 +1308,7 @@ export default function CommunityHub() {
                       <div className="pt-3 space-y-3.5 border-t border-stone-100 dark:border-stone-850 animate-fadeIn text-[11px]">
                         {commentsList.map(c => (
                           <div key={c.id} className="flex gap-2.5 p-2 bg-[#F8F6EF]/60 dark:bg-stone-900/40 rounded-xl">
-                            <img src={c.avatar} alt={c.authorName} className="h-7 w-7 rounded-full object-cover" />
+                            <img src={getLocalAvatar(c.authorName, c.avatar)} alt={c.authorName} className="h-7 w-7 rounded-full object-cover" />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-baseline justify-between">
                                 <span className="font-extrabold text-stone-850 dark:text-stone-100">{c.authorName}</span>
