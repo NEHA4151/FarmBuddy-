@@ -25,3 +25,6 @@ server/.env
 *.njsproj
 *.sln
 *.sw?
+
+# Local uploaded media folder (Cloudflare R2 local fallback)
+server/public/uploads/

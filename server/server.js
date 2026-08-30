@@ -339,7 +339,7 @@ app.get('/api/status', (req, res) => {
           author_verified: true,
           author_location: 'Highland Ridge, HI',
           content: 'Check out this video of our shaded nursery setup. The wind-block fences are keeping the young plants safe.',
-          attachment_url: 'http://localhost:3000/uploads/demo_video.mp4',
+          attachment_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
           attachment_type: 'video',
           crop_tag: 'coffee'
         },
@@ -350,7 +350,7 @@ app.get('/api/status', (req, res) => {
           author_verified: true,
           author_location: 'New Delhi, India',
           content: 'Shared a quick voice tip on tomato blight organic control. Listen to the recording!',
-          attachment_url: 'http://localhost:3000/uploads/demo_audio.wav',
+          attachment_url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
           attachment_type: 'audio',
           crop_tag: 'tomato'
         }
