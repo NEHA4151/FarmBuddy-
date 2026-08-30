@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useFarm } from '../context/FarmContext';
+import { API_BASE } from '../apiConfig';
 import {
   MessageCircle,
   Heart,
@@ -17,7 +18,8 @@ import {
   Play,
   Droplet,
   Clock,
-  Users
+  Users,
+  Mic
 } from 'lucide-react';
 
 // Import local curated crop images (REAL photographs/photorealistic artwork, not SVGs)
@@ -519,44 +521,115 @@ export default function CommunityHub() {
   // Create Post text input
   const [postText, setPostText] = useState('');
   const [postAttachments, setPostAttachments] = useState([]); // Array of { name, type, url }
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [globalPosts, setGlobalPosts] = useState([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [selectedCropFilter, setSelectedCropFilter] = useState('all');
+  const [selectedPostCropTag, setSelectedPostCropTag] = useState(cropKeyword);
+
+  // Sync post crop tag with batch default crop keyword
+  useEffect(() => {
+    setSelectedPostCropTag(cropKeyword);
+  }, [cropKeyword]);
 
   // Comment Reply Form state map: { [postId]: { text: '', emojiOpen: false } }
   const [repliesState, setRepliesState] = useState({});
 
-  // Centralized crop-isolated local post databases state
-  const [postsByCrop, setPostsByCrop] = useState({});
-
-  // Active timeline posts filtered dynamically by active crop state
-  const activePosts = useMemo(() => {
-    if (!postsByCrop[cropKeyword]) {
-      setPostsByCrop(prev => ({
-        ...prev,
-        [cropKeyword]: config.samplePosts
-      }));
-      return config.samplePosts;
+  const fetchPosts = async () => {
+    setLoadingPosts(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/community/posts`);
+      if (res.ok) {
+        const data = await res.json();
+        setGlobalPosts(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch community posts:', err);
+    } finally {
+      setLoadingPosts(false);
     }
-    return postsByCrop[cropKeyword];
-  }, [cropKeyword, config, postsByCrop]);
+  };
 
-  // Filter Timeline Posts (Search & Hashtags inside active crop category!)
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const handleFileUpload = async (e, type) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const limit = 10 * 1024 * 1024; // 10MB
+    if (file.size > limit) {
+      addNotification("File Too Large", "Maximum file size is 10MB.", "error");
+      return;
+    }
+
+    setUploadingMedia(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const base64Content = reader.result;
+        const res = await fetch(`${API_BASE}/api/community/upload`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: file.name,
+            mimeType: file.type,
+            content: base64Content
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setPostAttachments(prev => [...prev, { name: file.name, type, url: data.url }]);
+          addNotification("Upload Success", `${type} attached successfully.`, "success");
+        } else {
+          const errData = await res.json();
+          addNotification("Upload Failed", errData.error || "Could not upload file.", "error");
+        }
+      } catch (err) {
+        console.error("Upload error:", err);
+        addNotification("Upload Error", "An error occurred during file upload.", "error");
+      } finally {
+        setUploadingMedia(false);
+      }
+    };
+    reader.onerror = () => {
+      addNotification("Upload Error", "Failed to read file.", "error");
+      setUploadingMedia(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Filter Timeline Posts (Search & Hashtags & Crop Tabs!)
   const filteredPosts = useMemo(() => {
-    return activePosts.filter(post => {
+    return globalPosts.filter(post => {
+      // Crop Filter
+      if (selectedCropFilter !== 'all') {
+        const tag = post.crop_tag || 'general';
+        if (tag !== selectedCropFilter) return false;
+      }
+
       // Search Query filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const matchesAuthor = post.author.name.toLowerCase().includes(query);
-        const matchesContent = post.content.toLowerCase().includes(query);
+        const authorName = post.author_name || post.author?.name || '';
+        const authorUsername = post.author_username || post.author?.username || '';
+        const matchesAuthor = authorName.toLowerCase().includes(query) || authorUsername.toLowerCase().includes(query);
+        const matchesContent = (post.content || '').toLowerCase().includes(query);
         if (!matchesAuthor && !matchesContent) return false;
       }
 
       // Hashtag filter
-      if (selectedHashtag && !post.content.toLowerCase().includes(selectedHashtag.toLowerCase())) {
+      if (selectedHashtag && !(post.content || '').toLowerCase().includes(selectedHashtag.toLowerCase())) {
         return false;
       }
 
       return true;
-    }).sort((a, b) => b.id - a.id);
-  }, [activePosts, searchQuery, selectedHashtag]);
+    }).sort((a, b) => new Date(b.created_at || b.id) - new Date(a.created_at || a.id));
+  }, [globalPosts, selectedCropFilter, searchQuery, selectedHashtag]);
 
   // Combined Active User Profile
   const activeFarmerProfile = useMemo(() => {
@@ -592,32 +665,30 @@ export default function CommunityHub() {
 
   // Social actions
   const handleLike = (postId) => {
-    setPostsByCrop(prev => {
-      const cropList = prev[cropKeyword] || [];
-      const updated = cropList.map(p => {
+    setGlobalPosts(prev => {
+      return prev.map(p => {
         if (p.id === postId) {
+          const liked = !p.liked;
+          const likesCount = liked ? (p.likes_count || 0) + 1 : Math.max(0, (p.likes_count || 0) - 1);
           return {
             ...p,
-            likes: p.liked ? p.likes - 1 : p.likes + 1,
-            liked: !p.liked
+            liked,
+            likes_count: likesCount
           };
         }
         return p;
       });
-      return { ...prev, [cropKeyword]: updated };
     });
   };
 
   const handleSave = (postId) => {
-    setPostsByCrop(prev => {
-      const cropList = prev[cropKeyword] || [];
-      const updated = cropList.map(p => {
+    setGlobalPosts(prev => {
+      return prev.map(p => {
         if (p.id === postId) {
           return { ...p, saved: !p.saved };
         }
         return p;
       });
-      return { ...prev, [cropKeyword]: updated };
     });
     addNotification("Bookmarked", "Discussion added to saved list.", "success");
   };
@@ -639,19 +710,23 @@ export default function CommunityHub() {
     }));
   };
 
-  // Render Post Attachment Image
-  const renderPostImage = (post) => {
-    const imageUrl = post.images && post.images[0];
-    const isBroken = !imageUrl || imageErrors[imageUrl];
+  // Render Post Attachment (Image, Video, Audio)
+  const renderPostMedia = (post) => {
+    const mediaUrl = post.attachment_url || (post.images && post.images[0]);
+    if (!mediaUrl) return null;
 
-    if (imageUrl && !isBroken) {
+    const mediaType = post.attachment_type || 'image';
+
+    if (mediaType === 'image') {
+      const isBroken = imageErrors[mediaUrl];
+      if (isBroken) return null;
       return (
         <div className="w-full aspect-video rounded-2xl overflow-hidden border border-stone-100 dark:border-stone-850 bg-stone-50 dark:bg-stone-900/5 mt-3">
           <img 
-            src={imageUrl} 
-            alt="Crop post attachment" 
+            src={mediaUrl} 
+            alt="Post attachment image" 
             className="w-full h-full object-cover cursor-pointer hover:scale-[1.01] transition-transform duration-300"
-            onError={() => handleImageError(imageUrl)}
+            onError={() => handleImageError(mediaUrl)}
             onClick={() => {
               if (post.aiBadge) {
                 setActiveAiPost(post);
@@ -663,64 +738,35 @@ export default function CommunityHub() {
       );
     }
 
+    if (mediaType === 'video') {
+      return (
+        <div className="w-full rounded-2xl overflow-hidden border border-stone-100 dark:border-stone-850 bg-stone-50 dark:bg-stone-900/5 mt-3">
+          <video 
+            src={mediaUrl} 
+            controls 
+            className="w-full h-full object-contain max-h-[360px]" 
+          />
+        </div>
+      );
+    }
+
+    if (mediaType === 'audio') {
+      return (
+        <div className="w-full p-4 rounded-2xl border border-stone-200 dark:border-stone-850 bg-stone-50 dark:bg-stone-900/50 mt-3 flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-stone-500">
+            <Mic className="h-4 w-4 text-[#2E7D32]" />
+            <span className="text-[10px] font-bold">Voice Recording Attachment</span>
+          </div>
+          <audio 
+            src={mediaUrl} 
+            controls 
+            className="w-full scale-95" 
+          />
+        </div>
+      );
+    }
+
     return null;
-  };
-
-  // Create Post Submit
-  const handleCreatePost = (e) => {
-    e.preventDefault();
-    if (!postText.trim() && postAttachments.length === 0) return;
-
-    const newPost = {
-      id: `${cropKeyword}-${Date.now()}`,
-      author: {
-        name: user?.name || 'Farmer Friend',
-        username: user?.email ? user.email.split('@')[0] : 'me',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=60',
-        verified: false,
-        location: activeBatch?.location || 'My Farm'
-      },
-      time: 'Just now',
-      content: postText,
-      crop: activeCrop,
-      location: activeBatch?.location || null,
-      images: postAttachments.map(a => a.url),
-      aiBadge: postText.includes('spot') || postText.includes('curl') || postText.includes('blight') || postText.includes('rust'),
-      aiAnalysis: postText.includes('spot') || postText.includes('blight') || postText.includes('curl') || postText.includes('rust') ? {
-        disease: 'Foliage Infection Suspect',
-        confidence: 85,
-        recommendation: 'System detected potential disease symptoms. Prune infected shoots and maintain canopy ventilation.'
-      } : null,
-      likes: 0,
-      liked: false,
-      comments: [],
-      commentsExpanded: false,
-      saved: false,
-      shares: 0
-    };
-
-    setPostsByCrop(prev => ({
-      ...prev,
-      [cropKeyword]: [newPost, ...(prev[cropKeyword] || [])]
-    }));
-
-    addNotification("Posted successfully", `Your update is live in the ${config.name} feed.`, "success");
-    setPostText('');
-    setPostAttachments([]);
-  };
-
-  // Comments toggles & updates
-  const toggleComments = (postId) => {
-    setPostsByCrop(prev => {
-      const cropList = prev[cropKeyword] || [];
-      const updated = cropList.map(p => {
-        if (p.id === postId) {
-          return { ...p, commentsExpanded: !p.commentsExpanded };
-        }
-        return p;
-      });
-      return { ...prev, [cropKeyword]: updated };
-    });
   };
 
   const handleReplyChange = (postId, field, value) => {
@@ -733,35 +779,94 @@ export default function CommunityHub() {
     }));
   };
 
+  // Create Post Submit
+  const handleCreatePost = async (e) => {
+    e.preventDefault();
+    if (!postText.trim() && postAttachments.length === 0) return;
+
+    const attachment = postAttachments[0] || null;
+
+    const payload = {
+      author_name: user?.name || 'Farmer Friend',
+      author_username: user?.email ? user.email.split('@')[0] : 'farmer_friend',
+      author_avatar: user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60',
+      author_verified: false,
+      author_location: activeBatch?.location || 'Green Valley Farm',
+      content: postText,
+      attachment_url: attachment ? attachment.url : null,
+      attachment_type: attachment ? attachment.type : null,
+      crop_tag: selectedPostCropTag || 'general'
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/api/community/posts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const savedPost = await res.json();
+        setGlobalPosts(prev => [savedPost, ...prev]);
+        addNotification("Posted successfully", "Your update is live in the community feed.", "success");
+        setPostText('');
+        setPostAttachments([]);
+      } else {
+        addNotification("Post Failed", "Could not publish your post.", "error");
+      }
+    } catch (err) {
+      console.error("Failed to create post:", err);
+      addNotification("Post Error", "Failed to connect to the server.", "error");
+    }
+  };
+
+  // Comments toggles & updates
+  const toggleComments = (postId) => {
+    setGlobalPosts(prev => {
+      return prev.map(p => {
+        if (p.id === postId) {
+          return { ...p, commentsExpanded: !p.commentsExpanded };
+        }
+        return p;
+      });
+    });
+  };
+
   const handleAddReply = (postId) => {
     const postState = repliesState[postId];
     if (!postState || !postState.text.trim()) return;
 
-    setPostsByCrop(prev => {
-      const cropList = prev[cropKeyword] || [];
-      const updated = cropList.map(p => {
+    setGlobalPosts(prev => {
+      return prev.map(p => {
         if (p.id === postId) {
+          let commentsList = [];
+          if (typeof p.comments === 'string') {
+            try { commentsList = JSON.parse(p.comments); } catch(err) {}
+          } else if (Array.isArray(p.comments)) {
+            commentsList = p.comments;
+          }
           const newComment = {
-            id: p.comments.length + 101,
+            id: `comment-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
             authorName: user?.name || 'Farmer Friend',
-            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=60',
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60',
             time: 'Just now',
             text: postState.text,
             replies: []
           };
           return {
             ...p,
-            comments: [...p.comments, newComment]
+            comments: [...commentsList, newComment],
+            comments_count: (p.comments_count || 0) + 1
           };
         }
         return p;
       });
-      return { ...prev, [cropKeyword]: updated };
     });
 
     handleReplyChange(postId, 'text', '');
   };
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 bg-[#F8F6EF] dark:bg-[#0c140f] min-h-screen text-stone-900 dark:text-emerald-50 transition-colors duration-300">
       
@@ -816,41 +921,162 @@ export default function CommunityHub() {
             <h1 className="text-xl font-extrabold tracking-tight">Community Hub</h1>
           </div>
 
+          {/* GLOBAL CROP FILTER TABS */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+            {[
+              { id: 'all', label: 'All Crops' },
+              { id: 'tomato', label: 'Tomatoes' },
+              { id: 'rice', label: 'Rice' },
+              { id: 'coffee', label: 'Coffee' },
+              { id: 'sweet potato', label: 'Sweet Potatoes' },
+              { id: 'cotton', label: 'Cotton' },
+              { id: 'apple', label: 'Apples' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setSelectedCropFilter(tab.id)}
+                className={`px-4 py-2 rounded-full text-xs font-black whitespace-nowrap transition-all ${
+                  selectedCropFilter === tab.id
+                    ? 'bg-[#2E7D32] text-white shadow-sm'
+                    : 'bg-white dark:bg-[#121f17] border border-stone-205 dark:border-stone-850 hover:bg-stone-50 dark:hover:bg-stone-900 text-stone-600 dark:text-stone-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
           {/* CREATE POST INPUT BAR ROW */}
-          <div className="flex items-center gap-3 bg-white dark:bg-[#121f17] p-3.5 border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] shadow-sm">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={postText}
-                onChange={(e) => setPostText(e.target.value)}
-                placeholder={config.placeholder}
-                className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-full pl-5 pr-4 py-2 text-xs placeholder-stone-450 focus:outline-none focus:ring-1 focus:ring-[#2E7D32] font-semibold"
-              />
-            </div>
+          {/* CREATE POST CARD */}
+          <div className="bg-white dark:bg-[#121f17] p-5 border border-stone-200/60 dark:border-emerald-950/10 rounded-[28px] shadow-sm space-y-4">
+            <h3 className="text-xs font-black uppercase text-stone-400 tracking-wider">Share an update with the community</h3>
+            <textarea
+              value={postText}
+              onChange={(e) => setPostText(e.target.value)}
+              placeholder="What's happening on your farm? Ask a question, share crop tips, or post photos, videos, and voice recordings..."
+              rows={3}
+              className="w-full bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 text-xs placeholder-stone-450 focus:outline-none focus:ring-1 focus:ring-[#2E7D32] font-semibold resize-none"
+            />
             
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => addNotification("Attach Image", "Local image attachment selector.", "info")}
-                className="p-2 bg-[#1b4332] text-white hover:bg-emerald-950 rounded-xl transition-all"
-                title="Upload Image"
-              >
-                <ImageIcon className="h-3.5 w-3.5" />
-              </button>
-              <button 
-                onClick={() => addNotification("Attach Video", "Local video attachment selector.", "info")}
-                className="p-2 bg-[#1b4332] text-white hover:bg-emerald-950 rounded-xl transition-all"
-                title="Upload Video"
-              >
-                <Video className="h-3.5 w-3.5" />
-              </button>
-              {postText.trim() && (
+            {/* Attachment Preview Row */}
+            {postAttachments.length > 0 && (
+              <div className="flex flex-wrap gap-3 p-3 bg-stone-50 dark:bg-stone-900/50 rounded-2xl border border-stone-100 dark:border-stone-850">
+                {postAttachments.map((file, idx) => (
+                  <div key={idx} className="relative group rounded-xl overflow-hidden border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-800 p-2 max-w-[200px]">
+                    <button
+                      type="button"
+                      onClick={() => setPostAttachments(prev => prev.filter((_, i) => i !== idx))}
+                      className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-black/80 transition-all z-10"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                    {file.type === 'image' && (
+                      <img src={file.url} alt="Attached Preview" className="h-20 w-36 object-cover rounded-lg" />
+                    )}
+                    {file.type === 'video' && (
+                      <video src={file.url} controls className="h-20 w-36 object-cover rounded-lg" />
+                    )}
+                    {file.type === 'audio' && (
+                      <div className="flex flex-col items-center gap-1 p-1.5 w-36">
+                        <span className="text-[9px] font-bold text-stone-500 truncate max-w-full">{file.name}</span>
+                        <audio src={file.url} controls className="w-full scale-90" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Media Upload Control Bar */}
+            <div className="flex items-center justify-between pt-2 border-t border-stone-100 dark:border-stone-800/50">
+              <div className="flex items-center gap-3">
+                {/* Hidden File Input */}
+                <input
+                  type="file"
+                  id="media-uploader-image"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e, 'image')}
+                />
+                <input
+                  type="file"
+                  id="media-uploader-video"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e, 'video')}
+                />
+                <input
+                  type="file"
+                  id="media-uploader-audio"
+                  accept="audio/*"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e, 'audio')}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('media-uploader-image').click()}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/25 text-[#2E7D32] dark:text-emerald-400 rounded-xl transition-all text-xs font-bold"
+                  title="Upload Image"
+                  disabled={uploadingMedia}
+                >
+                  <ImageIcon className="h-4 w-4" />
+                  Image
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('media-uploader-video').click()}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/25 text-[#2E7D32] dark:text-emerald-400 rounded-xl transition-all text-xs font-bold"
+                  title="Upload Video"
+                  disabled={uploadingMedia}
+                >
+                  <Video className="h-4 w-4" />
+                  Video
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('media-uploader-audio').click()}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/25 text-[#2E7D32] dark:text-emerald-400 rounded-xl transition-all text-xs font-bold"
+                  title="Upload Audio"
+                  disabled={uploadingMedia}
+                >
+                  <Mic className="h-4 w-4" />
+                  Audio
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <select
+                  value={selectedPostCropTag}
+                  onChange={(e) => setSelectedPostCropTag(e.target.value)}
+                  className="bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-850 rounded-xl px-2 py-1.5 text-xs text-stone-700 dark:text-stone-300 font-bold focus:outline-none focus:ring-1 focus:ring-[#2E7D32]"
+                >
+                  <option value="general">General Topic</option>
+                  <option value="tomato">Tomato Growers</option>
+                  <option value="rice">Rice Cultivators</option>
+                  <option value="coffee">Coffee Experts</option>
+                  <option value="sweet potato">Sweet Potato Fields</option>
+                  <option value="cotton">Cotton Quality</option>
+                  <option value="apple">Apple Orchards</option>
+                </select>
+
+                {uploadingMedia && (
+                  <div className="flex items-center gap-1.5 text-stone-500 text-xs font-bold animate-pulse">
+                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-stone-500 border-t-transparent" />
+                    <span>Uploading...</span>
+                  </div>
+                )}
                 <button
                   onClick={handleCreatePost}
-                  className="px-4 py-1.5 bg-[#2E7D32] hover:bg-emerald-700 text-white rounded-full text-xs font-black transition-all shadow-sm"
+                  disabled={uploadingMedia || (!postText.trim() && postAttachments.length === 0)}
+                  className="px-6 py-2.5 bg-[#2E7D32] hover:bg-emerald-700 disabled:opacity-50 text-white rounded-full text-xs font-black transition-all shadow-sm"
                 >
                   Post
                 </button>
-              )}
+              </div>
             </div>
           </div>
 
@@ -909,6 +1135,24 @@ export default function CommunityHub() {
             ) : (
               filteredPosts.map(post => {
                 const commentState = repliesState[post.id] || { text: '', emojiOpen: false };
+                
+                // Compatible parsing helpers
+                const authorName = post.author_name || post.author?.name || 'Farmer Friend';
+                const authorUsername = post.author_username || post.author?.username || 'farmer_friend';
+                const authorAvatar = post.author_avatar || post.author?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60';
+                const authorVerified = post.author_verified !== undefined ? post.author_verified : post.author?.verified;
+                const authorLocation = post.author_location || post.author?.location || 'Green Valley Farm';
+                const postTime = post.created_at ? new Date(post.created_at).toLocaleDateString() : (post.time || 'Just now');
+
+                let commentsList = [];
+                if (typeof post.comments === 'string') {
+                  try { commentsList = JSON.parse(post.comments); } catch(err) {}
+                } else if (Array.isArray(post.comments)) {
+                  commentsList = post.comments;
+                }
+                const commentsCount = post.comments_count !== undefined ? post.comments_count : (commentsList ? commentsList.length : 0);
+                const likesCount = post.likes_count !== undefined ? post.likes_count : (post.likes || 0);
+
                 return (
                   <div key={post.id} className="bg-white dark:bg-[#121f17] border border-stone-200/60 dark:border-emerald-950/10 rounded-[18px] p-5 shadow-sm space-y-4 hover:shadow-md transition-all duration-300 animate-fadeIn">
                     
@@ -916,30 +1160,30 @@ export default function CommunityHub() {
                     <div className="flex justify-between items-start">
                       <div className="flex gap-3">
                         <img 
-                          src={post.author.avatar} 
-                          alt={post.author.name} 
+                          src={authorAvatar} 
+                          alt={authorName} 
                           className="h-10 w-10 rounded-full object-cover cursor-pointer"
-                          onClick={() => setSelectedFarmerUsername(post.author.username)}
+                          onClick={() => setSelectedFarmerUsername(authorUsername)}
                         />
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span 
-                              onClick={() => setSelectedFarmerUsername(post.author.username)}
+                              onClick={() => setSelectedFarmerUsername(authorUsername)}
                               className="font-black text-xs text-stone-900 dark:text-white cursor-pointer hover:underline"
                             >
-                              {post.author.name}
+                              {authorName}
                             </span>
-                            {post.author.verified && (
+                            {authorVerified && (
                               <CheckCircle className="h-3.5 w-3.5 text-[#2E7D32]" />
                             )}
-                            <span className="text-[10px] text-stone-400">@{post.author.username}</span>
+                            <span className="text-[10px] text-stone-400">@{authorUsername}</span>
                             <span className="text-[10px] text-stone-300 dark:text-stone-750">•</span>
                             <span className="text-[9px] text-[#2E7D32] flex items-center gap-0.5 bg-emerald-50 dark:bg-emerald-950/20 px-1.5 py-0.5 rounded font-extrabold">
                               <Sprout className="h-2.5 w-2.5" />
                               Verified
                             </span>
                           </div>
-                          <span className="text-[9px] text-stone-400 block mt-0.5">{post.time} • {post.author.location}</span>
+                          <span className="text-[9px] text-stone-400 block mt-0.5">{postTime} • {authorLocation}</span>
                         </div>
                       </div>
                     </div>
@@ -949,8 +1193,8 @@ export default function CommunityHub() {
                       {post.content}
                     </p>
 
-                    {/* Render cover image strictly based on logic constraint */}
-                    {renderPostImage(post)}
+                    {/* Render cover image / media attachment */}
+                    {renderPostMedia(post)}
 
                     {/* AI Leaf Scan Report tag */}
                     {post.aiBadge && (
@@ -978,7 +1222,7 @@ export default function CommunityHub() {
                       >
                         <MessageCircle className="h-4.5 w-4.5" />
                         <span>Comment</span>
-                        {post.comments.length > 0 && <span className="ml-1 font-bold">({post.comments.length})</span>}
+                        {commentsCount > 0 && <span className="ml-1 font-bold">({commentsCount})</span>}
                       </button>
 
                       <button 
@@ -990,7 +1234,7 @@ export default function CommunityHub() {
                       >
                         <Heart className={`h-4.5 w-4.5 ${post.liked ? 'fill-white stroke-white' : ''}`} />
                         <span>Like</span>
-                        {post.likes > 0 && <span className="ml-1 font-bold">({post.likes})</span>}
+                        {likesCount > 0 && <span className="ml-1 font-bold">({likesCount})</span>}
                       </button>
 
                       <button 
@@ -1015,7 +1259,7 @@ export default function CommunityHub() {
                     {/* Comments block */}
                     {post.commentsExpanded && (
                       <div className="pt-3 space-y-3.5 border-t border-stone-100 dark:border-stone-850 animate-fadeIn text-[11px]">
-                        {post.comments.map(c => (
+                        {commentsList.map(c => (
                           <div key={c.id} className="flex gap-2.5 p-2 bg-[#F8F6EF]/60 dark:bg-stone-900/40 rounded-xl">
                             <img src={c.avatar} alt={c.authorName} className="h-7 w-7 rounded-full object-cover" />
                             <div className="flex-1 min-w-0">

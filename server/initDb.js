@@ -182,6 +182,7 @@ export async function initDb(shouldDrop = false) {
       // 1. Drop existing tables if requested
       if (shouldDrop) {
         console.log('Dropping existing tables...');
+        await pool.query('DROP TABLE IF EXISTS community_posts');
         await pool.query('DROP TABLE IF EXISTS transactions');
         await pool.query('DROP TABLE IF EXISTS crop_cycles');
         await pool.query('DROP TABLE IF EXISTS credit_contacts');
@@ -464,6 +465,24 @@ export async function initDb(shouldDrop = false) {
         )
       `);
 
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS community_posts (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          author_name VARCHAR(100) NOT NULL,
+          author_username VARCHAR(100) NOT NULL,
+          author_avatar TEXT,
+          author_verified BOOLEAN DEFAULT FALSE,
+          author_location VARCHAR(255),
+          content TEXT,
+          attachment_url TEXT,
+          attachment_type VARCHAR(50),
+          likes_count INT DEFAULT 0,
+          comments_count INT DEFAULT 0,
+          crop_tag VARCHAR(50),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       console.log('Tables created successfully.');
       
       // Seed predefined farmers in MySQL
@@ -528,7 +547,8 @@ export async function initDb(shouldDrop = false) {
       batch_events: [],
       farmers: [],
       admins: [],
-      labour_accounts: initialLabourAccounts
+      labour_accounts: initialLabourAccounts,
+      community_posts: []
     };
     
     // Save fresh JSON template first if in fallback mode

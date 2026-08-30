@@ -2,6 +2,24 @@ import { API_BASE } from '../apiConfig';
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 
+import appleHealthy from '../assets/community/apple/healthy.jpg';
+import potatoVines from '../assets/community/sweet-potato/vines.jpg';
+import coffeePlantation from '../assets/community/coffee/plantation.jpg';
+import tomatoHealthy from '../assets/community/tomato/healthy-1.jpg';
+import riceField from '../assets/community/rice/field.jpg';
+import cottonHealthy from '../assets/community/cotton/healthy.jpg';
+
+const getLocalCropImage = (cropName = '', defaultUrl) => {
+  const lower = cropName.toLowerCase();
+  if (lower.includes('apple')) return appleHealthy;
+  if (lower.includes('sweet potato') || lower.includes('potato')) return potatoVines;
+  if (lower.includes('coffee')) return coffeePlantation;
+  if (lower.includes('tomato')) return tomatoHealthy;
+  if (lower.includes('rice') || lower.includes('paddy')) return riceField;
+  if (lower.includes('cotton')) return cottonHealthy;
+  return defaultUrl;
+};
+
 const FarmContext = createContext();
 
 const mockHash = (prevHash, data) => {
@@ -36,7 +54,7 @@ const initialBatches = [
     location: 'Section 4B, Green Valley Organic Farm, CA',
     soilType: 'Sandy Loam',
     notes: 'Premium high-density orchard crop. Drip irrigation, organic mulch applied.',
-    imageUrl: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=800&q=80',
+    imageUrl: getLocalCropImage('Organic Honeycrisp Apples', 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=800&q=80'),
     status: 'Growing',
     qualityScore: 92,
     carbonFootprint: '0.18 kg CO2e / kg',
@@ -53,7 +71,7 @@ const initialBatches = [
     location: 'Hillside Terrace A, Green Valley Organic Farm, CA',
     soilType: 'Volcanic Soil',
     notes: 'High mineral soil content. Raised bed cultivation, micro-sprinklers installed.',
-    imageUrl: 'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?auto=format&fit=crop&w=800&q=80',
+    imageUrl: getLocalCropImage('Japanese Sweet Potatoes', 'https://images.unsplash.com/photo-1590779033100-9f60a05a013d?auto=format&fit=crop&w=800&q=80'),
     status: 'In Quality Check',
     qualityScore: 88,
     carbonFootprint: '0.12 kg CO2e / kg',
@@ -70,7 +88,7 @@ const initialBatches = [
     location: 'Highland Ridge Zone 2, Coffee Haven, HI',
     soilType: 'Clayey Soil',
     notes: 'Shade-grown under native canopy. Organic compost only. Hand-picked harvest.',
-    imageUrl: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80',
+    imageUrl: getLocalCropImage('Premium Arabica Coffee', 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80'),
     status: 'QA Approved',
     qualityScore: 97,
     carbonFootprint: '0.34 kg CO2e / kg',
@@ -526,7 +544,7 @@ export const FarmProvider = ({ children }) => {
           expectedHarvestDate: b.expected_harvest ? b.expected_harvest.split('T')[0] : '',
           location: b.farm_location,
           notes: '',
-          imageUrl: b.crop_image,
+          imageUrl: getLocalCropImage(b.crop_name, b.crop_image),
           status: b.status,
           qrCode: b.qr_code,
           qr_code: b.qr_code,
@@ -1122,7 +1140,7 @@ export const FarmProvider = ({ children }) => {
           location: newBatchData.location || 'Green Valley Farm',
           soilType: newBatchData.soilType || 'Loam',
           notes: newBatchData.notes || '',
-          imageUrl: newBatchData.imageUrl || 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80',
+          imageUrl: getLocalCropImage(newBatchData.cropType, newBatchData.imageUrl || 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80'),
           status: 'Planted',
           qualityScore: 90,
           carbonFootprint: '0.15 kg CO2e / kg',

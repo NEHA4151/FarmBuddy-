@@ -1699,5 +1699,75 @@ export const dbService = {
       phLevel: 6.4,
       humidity: 68.4
     };
+  },
+
+  // Save global community post
+  async saveCommunityPost(postData) {
+    const {
+      author_name,
+      author_username,
+      author_avatar,
+      author_verified,
+      author_location,
+      content,
+      attachment_url,
+      attachment_type,
+      crop_tag
+    } = postData;
+
+    if (isMysql) {
+      const [result] = await pool.query(
+        `INSERT INTO community_posts (author_name, author_username, author_avatar, author_verified, author_location, content, attachment_url, attachment_type, crop_tag, likes_count, comments_count)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)`,
+        [
+          author_name,
+          author_username,
+          author_avatar || null,
+          author_verified ? 1 : 0,
+          author_location || null,
+          content || null,
+          attachment_url || null,
+          attachment_type || null,
+          crop_tag || 'general'
+        ]
+      );
+      return { id: result.insertId, ...postData, likes_count: 0, comments_count: 0, created_at: new Date().toISOString() };
+    } else {
+      const db = readJsonDb();
+      if (!db.community_posts) {
+        db.community_posts = [];
+      }
+      const newPost = {
+        id: `post-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        author_name,
+        author_username,
+        author_avatar: author_avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=60',
+        author_verified: !!author_verified,
+        author_location: author_location || 'Global Hub',
+        content: content || '',
+        attachment_url: attachment_url || null,
+        attachment_type: attachment_type || null,
+        likes_count: 0,
+        comments_count: 0,
+        crop_tag: crop_tag || 'general',
+        created_at: new Date().toISOString()
+      };
+      db.community_posts.push(newPost);
+      writeJsonDb(db);
+      return newPost;
+    }
+  },
+
+  // Get all global community posts
+  async getCommunityPosts() {
+    if (isMysql) {
+      const [rows] = await pool.query(
+        'SELECT * FROM community_posts ORDER BY created_at DESC'
+      );
+      return rows;
+    } else {
+      const db = readJsonDb();
+      return db.community_posts || [];
+    }
   }
 };

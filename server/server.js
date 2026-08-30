@@ -10,6 +10,7 @@ import { calculateGamificationState } from './gamification.js';
 import crypto from 'crypto';
 import fs from 'fs';
 import bcrypt from 'bcryptjs';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,6 +23,35 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ limit: '15mb', extended: true }));
+
+// Cloudflare R2 Client Initialization
+const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
+const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'farmbuddy-community';
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL;
+
+let s3Client = null;
+if (CLOUDFLARE_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY) {
+  console.log('[Storage Service] Initializing Cloudflare R2 client...');
+  s3Client = new S3Client({
+    region: 'auto',
+    endpoint: `https://${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: R2_ACCESS_KEY_ID,
+      secretAccessKey: R2_SECRET_ACCESS_KEY
+    }
+  });
+} else {
+  console.warn('[Storage Service] Cloudflare R2 credentials are not defined in server environment (.env). Serving upload files from local disk.');
+}
+
+// Ensure public/uploads folder exists locally for fallback mode
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
 
 // API route: status indicator
 app.get('/api/status', (req, res) => {
@@ -247,6 +277,10 @@ app.get('/api/status', (req, res) => {
           db.subsidies = [];
           modified = true;
         }
+        if (!db.community_posts) {
+          db.community_posts = [];
+          modified = true;
+        }
         
         if (modified) {
           fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
@@ -256,6 +290,60 @@ app.get('/api/status', (req, res) => {
       console.error('JSON Farmers array initialization error:', err);
     }
   }
+
+  // Pre-seed default community posts if empty
+  async function seedCommunityPostsIfEmpty() {
+    try {
+      const existing = await dbService.getCommunityPosts();
+      if (existing && existing.length > 0) return;
+
+      console.log('[Storage Seeding] Seeding initial community posts...');
+      const defaultPosts = [
+        {
+          author_name: 'Farmer Priya',
+          author_username: 'PriyaFarms',
+          author_avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60',
+          author_verified: true,
+          author_location: 'Pune, Maharashtra',
+          content: 'Anyone else seeing this type of leaf curl on their vine tomatoes? Checked the drip lines and they look fine.',
+          attachment_url: 'https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&w=800&q=80',
+          attachment_type: 'image',
+          crop_tag: 'tomato'
+        },
+        {
+          author_name: 'Rajesh Patil',
+          author_username: 'RajeshAgri',
+          author_avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60',
+          author_verified: false,
+          author_location: 'Nashik, Maharashtra',
+          content: 'Just finished transplanting our organic paddy nursery. Soil moisture levels are looking great.',
+          attachment_url: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=800&q=80',
+          attachment_type: 'image',
+          crop_tag: 'rice'
+        },
+        {
+          author_name: 'Emily Smith',
+          author_username: 'EmilyCoffee',
+          author_avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&auto=format&fit=crop&q=60',
+          author_verified: true,
+          author_location: 'Kona Coffee Belt, Hawaii',
+          content: 'Pruning the Arabica coffee branches to optimize sunlight exposure. Rains are coming.',
+          attachment_url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80',
+          attachment_type: 'image',
+          crop_tag: 'coffee'
+        }
+      ];
+
+      for (const p of defaultPosts) {
+        await dbService.saveCommunityPost(p);
+      }
+      console.log('[Storage Seeding] Predefined community posts seeded successfully.');
+    } catch (err) {
+      console.error('[Storage Seeding Error] Failed to seed default community posts:', err);
+    }
+  }
+
+  await seedCommunityPostsIfEmpty();
 })();
 
 async function updateBatchGamificationState(batch_id) {
@@ -1159,6 +1247,92 @@ app.delete('/api/reports/:id', async (req, res) => {
   } catch (err) {
     console.error('Error deleting report:', err);
     res.status(500).json({ error: 'Failed to delete report' });
+  }
+});
+
+// API route: Upload file to Cloudflare R2 or local disk fallback
+app.post('/api/community/upload', async (req, res) => {
+  const { name, content, mimeType } = req.body;
+  if (!name || !content || !mimeType) {
+    return res.status(400).json({ error: 'Missing name, content, or mimeType' });
+  }
+
+  const cleanBase64 = content.replace(/^data:.*?;base64,/, '');
+  const buffer = Buffer.from(cleanBase64, 'base64');
+  const fileName = `${Date.now()}-${name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+
+  try {
+    if (s3Client) {
+      // Upload to Cloudflare R2
+      console.log(`[Storage] Uploading ${fileName} to Cloudflare R2 bucket: ${R2_BUCKET_NAME}`);
+      await s3Client.send(new PutObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: fileName,
+        Body: buffer,
+        ContentType: mimeType
+      }));
+
+      const publicUrl = R2_PUBLIC_URL
+        ? `${R2_PUBLIC_URL}/${fileName}`
+        : `https://${R2_BUCKET_NAME}.${CLOUDFLARE_ACCOUNT_ID}.r2.dev/${fileName}`;
+      
+      console.log(`[Storage] Uploaded to Cloudflare R2 successfully: ${publicUrl}`);
+      res.json({ url: publicUrl });
+    } else {
+      // Local disk upload fallback
+      const filePath = path.join(uploadsDir, fileName);
+      console.log(`[Storage] Saving ${fileName} locally to disk: ${filePath}`);
+      fs.writeFileSync(filePath, buffer);
+      
+      // Build a fully qualified URL back to the local Express server
+      const host = req.get('host') || `localhost:${port}`;
+      const protocol = req.protocol || 'http';
+      const publicUrl = `${protocol}://${host}/uploads/${fileName}`;
+      
+      console.log(`[Storage] Saved locally successfully: ${publicUrl}`);
+      res.json({ url: publicUrl });
+    }
+  } catch (err) {
+    console.error('[Storage Error] Failed to upload media file:', err);
+    res.status(500).json({ error: 'Failed to upload media file: ' + err.message });
+  }
+});
+
+// API route: Get community posts
+app.get('/api/community/posts', async (req, res) => {
+  try {
+    const posts = await dbService.getCommunityPosts();
+    res.json(posts);
+  } catch (err) {
+    console.error('Error fetching community posts:', err);
+    res.status(500).json({ error: 'Failed to fetch community posts' });
+  }
+});
+
+// API route: Save community post
+app.post('/api/community/posts', async (req, res) => {
+  const { author_name, author_username, author_avatar, author_verified, author_location, content, attachment_url, attachment_type, crop_tag } = req.body;
+  
+  if (!author_name || !author_username) {
+    return res.status(400).json({ error: 'Missing author name or username' });
+  }
+
+  try {
+    const post = await dbService.saveCommunityPost({
+      author_name,
+      author_username,
+      author_avatar,
+      author_verified: !!author_verified,
+      author_location,
+      content,
+      attachment_url,
+      attachment_type,
+      crop_tag
+    });
+    res.status(201).json(post);
+  } catch (err) {
+    console.error('Error saving community post:', err);
+    res.status(500).json({ error: 'Failed to save community post' });
   }
 });
 
