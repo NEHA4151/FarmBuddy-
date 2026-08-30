@@ -331,6 +331,28 @@ app.get('/api/status', (req, res) => {
           attachment_url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80',
           attachment_type: 'image',
           crop_tag: 'coffee'
+        },
+        {
+          author_name: 'Marcus Vane',
+          author_username: 'MarcusCoffee',
+          author_avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=60',
+          author_verified: true,
+          author_location: 'Highland Ridge, HI',
+          content: 'Check out this video of our shaded nursery setup. The wind-block fences are keeping the young plants safe.',
+          attachment_url: 'http://localhost:3000/uploads/demo_video.mp4',
+          attachment_type: 'video',
+          crop_tag: 'coffee'
+        },
+        {
+          author_name: 'Soil Dr. Amit',
+          author_username: 'DrAmitSoil',
+          author_avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=60',
+          author_verified: true,
+          author_location: 'New Delhi, India',
+          content: 'Shared a quick voice tip on tomato blight organic control. Listen to the recording!',
+          attachment_url: 'http://localhost:3000/uploads/demo_audio.wav',
+          attachment_type: 'audio',
+          crop_tag: 'tomato'
         }
       ];
 

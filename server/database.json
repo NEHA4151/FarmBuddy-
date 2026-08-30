@@ -1078,6 +1078,17 @@
       "login_count": 1,
       "trust_score": 100,
       "created_at": "2026-08-30T12:48:26.325Z"
+    },
+    {
+      "id": 35,
+      "farmer_id": "UO_UVFARMS",
+      "name": null,
+      "email": null,
+      "password_hash": null,
+      "is_registered": false,
+      "login_count": 1,
+      "trust_score": 100,
+      "created_at": "2026-08-30T13:15:05.088Z"
     }
   ],
   "admins": [],
@@ -1231,7 +1242,7 @@
   "subsidies": [],
   "community_posts": [
     {
-      "id": "post-1788093566532-616",
+      "id": "post-1788096189679-442",
       "author_name": "Farmer Priya",
       "author_username": "PriyaFarms",
       "author_avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=60",
@@ -1243,10 +1254,10 @@
       "likes_count": 0,
       "comments_count": 0,
       "crop_tag": "tomato",
-      "created_at": "2026-08-30T12:39:26.532Z"
+      "created_at": "2026-08-30T13:23:09.679Z"
     },
     {
-      "id": "post-1788093566554-17",
+      "id": "post-1788096189704-481",
       "author_name": "Rajesh Patil",
       "author_username": "RajeshAgri",
       "author_avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=60",
@@ -1258,10 +1269,10 @@
       "likes_count": 0,
       "comments_count": 0,
       "crop_tag": "rice",
-      "created_at": "2026-08-30T12:39:26.554Z"
+      "created_at": "2026-08-30T13:23:09.704Z"
     },
     {
-      "id": "post-1788093566573-182",
+      "id": "post-1788096189724-260",
       "author_name": "Emily Smith",
       "author_username": "EmilyCoffee",
       "author_avatar": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&auto=format&fit=crop&q=60",
@@ -1273,7 +1284,37 @@
       "likes_count": 0,
       "comments_count": 0,
       "crop_tag": "coffee",
-      "created_at": "2026-08-30T12:39:26.573Z"
+      "created_at": "2026-08-30T13:23:09.725Z"
+    },
+    {
+      "id": "post-1788096189750-387",
+      "author_name": "Marcus Vane",
+      "author_username": "MarcusCoffee",
+      "author_avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=60",
+      "author_verified": true,
+      "author_location": "Highland Ridge, HI",
+      "content": "Check out this video of our shaded nursery setup. The wind-block fences are keeping the young plants safe.",
+      "attachment_url": "http://localhost:3000/uploads/demo_video.mp4",
+      "attachment_type": "video",
+      "likes_count": 0,
+      "comments_count": 0,
+      "crop_tag": "coffee",
+      "created_at": "2026-08-30T13:23:09.750Z"
+    },
+    {
+      "id": "post-1788096189772-195",
+      "author_name": "Soil Dr. Amit",
+      "author_username": "DrAmitSoil",
+      "author_avatar": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=60",
+      "author_verified": true,
+      "author_location": "New Delhi, India",
+      "content": "Shared a quick voice tip on tomato blight organic control. Listen to the recording!",
+      "attachment_url": "http://localhost:3000/uploads/demo_audio.wav",
+      "attachment_type": "audio",
+      "likes_count": 0,
+      "comments_count": 0,
+      "crop_tag": "tomato",
+      "created_at": "2026-08-30T13:23:09.772Z"
     }
   ]
 }
